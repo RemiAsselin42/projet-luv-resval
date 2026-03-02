@@ -18,11 +18,12 @@ if (!canvasContainer) {
 // ---------------------------------------------------------------------------
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 1.5, 5);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 canvasContainer.appendChild(renderer.domElement);
@@ -182,6 +183,24 @@ const ensureObjMeshVisibility = (root: THREE.Object3D): void => {
         if (typeof materialProps.emissiveIntensity === 'number') {
           materialProps.emissiveIntensity = preset.emissiveIntensity;
         }
+      } else if (materialProps.color) {
+        materialProps.color.set('#e3d2bb');
+
+        if (typeof materialProps.roughness === 'number') {
+          materialProps.roughness = 0.72;
+        }
+
+        if (typeof materialProps.metalness === 'number') {
+          materialProps.metalness = 0.1;
+        }
+
+        if (materialProps.emissive) {
+          materialProps.emissive.set('#2a1b12');
+        }
+
+        if (typeof materialProps.emissiveIntensity === 'number') {
+          materialProps.emissiveIntensity = 0.18;
+        }
       }
 
       material.side = THREE.DoubleSide;
@@ -274,6 +293,10 @@ const removeBlenderArtifactMeshes = (root: THREE.Object3D): void => {
     }
   });
 
+  if (removable.length === 0 || removable.length >= meshStats.length) {
+    return;
+  }
+
   removable.forEach((mesh) => {
     mesh.parent?.remove(mesh);
   });
@@ -335,13 +358,30 @@ const finalizeLoadedModel = (model: THREE.Object3D): void => {
   disposeGroup(modelGroup);
   modelGroup.add(model);
 
-  camera.position.set(0, 1.6, 5);
+  const fittedBox = new THREE.Box3().setFromObject(model);
+  const fittedSize = fittedBox.getSize(new THREE.Vector3());
+  const fittedCenter = fittedBox.getCenter(new THREE.Vector3());
+  const boundingRadius = Math.max(fittedSize.x, fittedSize.y, fittedSize.z) * 0.5;
+  const fovRad = (camera.fov * Math.PI) / 180;
+  const cameraDistance = Math.max(2.8, (boundingRadius / Math.tan(fovRad / 2)) * 1.35);
+
+  camera.near = Math.max(0.01, cameraDistance / 100);
+  camera.far = Math.max(100, cameraDistance * 20);
+  camera.updateProjectionMatrix();
+
+  camera.position.set(fittedCenter.x, fittedCenter.y + boundingRadius * 0.35, cameraDistance);
   camera.lookAt(0, 0, 0);
 };
 
 const onModelLoadError = (): void => {
   const fallbackGeometry = new THREE.BoxGeometry(2.5, 0.8, 1.7);
-  const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0x2b2b2b });
+  const fallbackMaterial = new THREE.MeshStandardMaterial({
+    color: 0xe6c8a6,
+    roughness: 0.55,
+    metalness: 0.1,
+    emissive: 0x2a1208,
+    emissiveIntensity: 0.25,
+  });
   const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
   modelGroup.add(fallbackMesh);
 };
@@ -364,9 +404,9 @@ interface RotationAxes {
 }
 
 const BASE_ROTATION: Readonly<RotationAxes> = {
-  x: 1.1,
+  x: 0.35,
   y: 0,
-  z: 0.1,
+  z: 0,
 } as const;
 
 const targetRotation: RotationAxes = { ...BASE_ROTATION };
