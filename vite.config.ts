@@ -1,10 +1,7 @@
 import { defineConfig } from 'vite';
 
-const repository = process.env.GITHUB_REPOSITORY?.split('/')[1];
-const base = repository ? `/${repository}/` : '/';
-
 export default defineConfig({
-  base,
+  base: '/projet-luv-resval/',
   resolve: {
     alias: {
       '@': '/src',
