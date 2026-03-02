@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "stylelint.vscode-stylelint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "editorconfig.editorconfig",
+    "slevesque.shader",
+    "rioj7.command-variable"
+  ]
+}

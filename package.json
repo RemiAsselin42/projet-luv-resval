@@ -6,13 +6,33 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint \"src/**/*.{js,ts,tsx}\" --max-warnings 0",
+    "lint:fix": "eslint \"src/**/*.{js,ts,tsx}\" --fix",
+    "lint:style": "stylelint \"src/**/*.{css,scss}\"",
+    "lint:style:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,tsx,css,scss,html,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,tsx,css,scss,html,json}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests configured yet\" && exit 0",
+    "validate": "npm run format:check && npm run lint && npm run lint:style && npm run typecheck && npm run build"
   },
   "dependencies": {
     "gsap": "^3.14.2",
     "three": "^0.183.2"
   },
   "devDependencies": {
-    "vite": "^6.2.0"
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "globals": "^14.0.0",
+    "prettier": "^3.2.0",
+    "postcss": "^8.4.35",
+    "postcss-html": "^1.6.0",
+    "sass": "^1.70.0",
+    "stylelint": "^16.2.0",
+    "stylelint-config-standard-scss": "^13.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0"
   }
 }
