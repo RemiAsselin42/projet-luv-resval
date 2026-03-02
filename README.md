@@ -15,29 +15,6 @@ Site web artistique mettant en lumière le style unique de Luv Resval et son inf
 - Références complètes à sa discographie
 - Thèmes : Star Wars, Zelda, Harry Potter, dystopie, mélancolie
 
-## Installation
-
-```bash
-# Installer les dépendances
-npm install
-
-# Développement
-npm run dev              # Serveur sur localhost:3000
-
-# Qualité du code
-npm run lint             # Lint JavaScript/TypeScript
-npm run lint:style       # Lint SCSS/CSS
-npm run typecheck        # Vérification TypeScript
-npm run format:check     # Vérifier le formatage
-
-# Build
-npm run build            # Build de production
-npm run preview          # Prévisualiser le build
-
-# All-in-one
-npm run validate         # Vérifie tout d'un coup
-```
-
 ## Technologies
 
 - **Build & Dev**: [Vite](https://vitejs.dev/)
