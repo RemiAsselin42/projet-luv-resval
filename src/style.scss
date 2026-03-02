@@ -1,0 +1,31 @@
+// Import variables and mixins
+@use './styles/variables' as *;
+@use './styles/mixins' as *;
+
+// Base styles
+* {
+  @include reset-spacing;
+
+  box-sizing: border-box;
+}
+
+body {
+  background-color: $color-bg-primary;
+  color: $color-text-primary;
+  font-family: $font-family-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+// Canvas container for Three.js
+#canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: $z-index-background;
+}
+
+// Components (à étendre selon les besoins du projet)

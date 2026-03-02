@@ -1,0 +1,44 @@
+// Colors
+$color-bg-primary: #000;
+$color-bg-secondary: #111;
+$color-text-primary: #fff;
+$color-text-secondary: #ccc;
+$color-accent: #ff0080;
+$color-accent-secondary: #00d9ff;
+
+// Star Wars theme colors
+$color-dark-side: #f00;
+$color-light-side: #0f0;
+$color-saber-blue: #0080ff;
+
+// Typography
+$font-family-base:
+  -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+  'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+$font-family-monospace: 'Courier New', Courier, monospace;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-xxl: 3rem;
+
+// Breakpoints
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+$breakpoint-desktop: 1280px;
+
+// Z-index layers
+$z-index-background: -1;
+$z-index-normal: 1;
+$z-index-elevated: 10;
+$z-index-overlay: 100;
+$z-index-modal: 1000;
+
+// Transitions
+$transition-speed-fast: 0.2s;
+$transition-speed-normal: 0.3s;
+$transition-speed-slow: 0.5s;
+$transition-easing: ease-in-out;
