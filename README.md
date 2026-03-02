@@ -29,7 +29,7 @@ Site web artistique mettant en lumière le style unique de Luv Resval et son inf
 
 ```bash
 # Développement
-npm run dev              # Lance le serveur de dev (port 3000)
+npm run dev              # Lance le serveur de dev (port 5173)
 
 # Build
 npm run build            # Build de production
@@ -56,12 +56,12 @@ projet-luv-resval/
 │   └── workflows/       # GitHub Actions CI/CD
 ├── src/
 │   ├── styles/          # Variables et mixins SCSS
-│   ├── main.js          # Point d'entrée
+│   ├── main.ts          # Point d'entrée
 │   └── style.scss       # Styles principaux
 ├── docs/
 │   └── AGENTS.md        # Documentation pour les agents
 ├── index.html           # HTML principal
-└── vite.config.js       # Configuration Vite
+└── vite.config.ts       # Configuration Vite
 ```
 
 ## Workflow CI/CD
