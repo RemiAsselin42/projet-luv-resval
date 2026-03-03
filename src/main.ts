@@ -13,54 +13,6 @@ if (!canvasContainer) {
   throw new Error('Conteneur #canvas-container introuvable.');
 }
 
-const debug3dFromQuery = new URLSearchParams(window.location.search).get('debug3d') === '1';
-const debug3dFromStorage = window.localStorage.getItem('debug3d') === 'true';
-const DEBUG_3D = import.meta.env.DEV || debug3dFromQuery || debug3dFromStorage;
-
-const log3d = (...args: unknown[]): void => {
-  if (!DEBUG_3D) {
-    return;
-  }
-  console.log('[3D]', ...args);
-};
-
-const warn3d = (...args: unknown[]): void => {
-  if (!DEBUG_3D) {
-    return;
-  }
-  console.warn('[3D]', ...args);
-};
-
-const countMeshes = (root: THREE.Object3D): number => {
-  let count = 0;
-  root.traverse((node) => {
-    if (node instanceof THREE.Mesh) {
-      count += 1;
-    }
-  });
-  return count;
-};
-
-const countVertices = (root: THREE.Object3D): number => {
-  let total = 0;
-  root.traverse((node) => {
-    if (node instanceof THREE.Mesh) {
-      total += node.geometry?.attributes?.position?.count ?? 0;
-    }
-  });
-  return total;
-};
-
-log3d('Debug activé', {
-  dev: import.meta.env.DEV,
-  debug3dFromQuery,
-  debug3dFromStorage,
-});
-log3d('Conteneur canvas trouvé', {
-  width: canvasContainer.clientWidth,
-  height: canvasContainer.clientHeight,
-});
-
 // ---------------------------------------------------------------------------
 // Scène, caméra, renderer
 // ---------------------------------------------------------------------------
@@ -75,20 +27,6 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 canvasContainer.appendChild(renderer.domElement);
-
-log3d('Renderer initialisé', {
-  width: window.innerWidth,
-  height: window.innerHeight,
-  pixelRatio: renderer.getPixelRatio(),
-  alpha: false,
-  sceneBackground: '#000000',
-});
-log3d('Caméra initialisée', {
-  fov: camera.fov,
-  near: camera.near,
-  far: camera.far,
-  position: camera.position.toArray(),
-});
 
 // ---------------------------------------------------------------------------
 // Éclairage
@@ -111,6 +49,16 @@ scene.add(fillLight);
 
 const modelGroup = new THREE.Group();
 scene.add(modelGroup);
+
+const MODEL_VIEW_CONFIG = {
+  targetDimension: 1,
+  objectRotationX: 0.5,
+  objectRotationY: Math.PI * 5, // rotation de 180° pour faire face à l'utilisateur
+  objectRotationZ: 0,
+  minCameraDistance: 2.8,
+  cameraDistancePadding: 1.35,
+  cameraHeightFactor: 0.35,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Presets de matériaux
@@ -401,42 +349,21 @@ const disposeGroup = (group: THREE.Object3D): void => {
 // ---------------------------------------------------------------------------
 
 const finalizeLoadedModel = (model: THREE.Object3D): void => {
-  const meshCountBefore = countMeshes(model);
-  const verticesBefore = countVertices(model);
-  log3d('Modèle OBJ reçu', {
-    meshCountBefore,
-    verticesBefore,
-  });
-
   ensureObjMeshVisibility(model);
-
-  const meshCountAfterMaterialPass = countMeshes(model);
   removeBlenderArtifactMeshes(model);
-
-  const meshCountAfterCleanup = countMeshes(model);
-  const verticesAfterCleanup = countVertices(model);
-  log3d('Après préparation du modèle', {
-    meshCountAfterMaterialPass,
-    meshCountAfterCleanup,
-    verticesAfterCleanup,
-  });
-
-  if (meshCountAfterCleanup === 0) {
-    warn3d('Aucun mesh visible après nettoyage.');
-  }
 
   const box = new THREE.Box3().setFromObject(model);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const maxDimension = Math.max(size.x, size.y, size.z);
-  const targetDimension = 1.8;
-  const scale = maxDimension > 0 ? targetDimension / maxDimension : 1;
+  const scale = maxDimension > 0 ? MODEL_VIEW_CONFIG.targetDimension / maxDimension : 1;
 
   model.position.sub(center);
   model.scale.setScalar(scale);
 
-  // Retourne le modèle de 180° pour qu'il fasse face à l'utilisateur
-  model.rotation.y = Math.PI;
+  model.rotation.x = MODEL_VIEW_CONFIG.objectRotationX;
+  model.rotation.y = MODEL_VIEW_CONFIG.objectRotationY;
+  model.rotation.z = MODEL_VIEW_CONFIG.objectRotationZ;
 
   disposeGroup(modelGroup);
   modelGroup.add(model);
@@ -446,31 +373,24 @@ const finalizeLoadedModel = (model: THREE.Object3D): void => {
   const fittedCenter = fittedBox.getCenter(new THREE.Vector3());
   const boundingRadius = Math.max(fittedSize.x, fittedSize.y, fittedSize.z) * 0.5;
   const fovRad = (camera.fov * Math.PI) / 180;
-  const cameraDistance = Math.max(2.8, (boundingRadius / Math.tan(fovRad / 2)) * 1.35);
+  const cameraDistance = Math.max(
+    MODEL_VIEW_CONFIG.minCameraDistance,
+    (boundingRadius / Math.tan(fovRad / 2)) * MODEL_VIEW_CONFIG.cameraDistancePadding,
+  );
 
   camera.near = Math.max(0.01, cameraDistance / 100);
   camera.far = Math.max(100, cameraDistance * 20);
   camera.updateProjectionMatrix();
 
-  camera.position.set(fittedCenter.x, fittedCenter.y + boundingRadius * 0.35, cameraDistance);
-  camera.lookAt(0, 0, 0);
-
-  log3d('Modèle finalisé', {
-    boxCenter: center.toArray(),
-    boxSize: size.toArray(),
-    scale,
-    fittedCenter: fittedCenter.toArray(),
-    fittedSize: fittedSize.toArray(),
+  camera.position.set(
+    fittedCenter.x,
+    fittedCenter.y + boundingRadius * MODEL_VIEW_CONFIG.cameraHeightFactor,
     cameraDistance,
-    cameraNear: camera.near,
-    cameraFar: camera.far,
-    cameraPosition: camera.position.toArray(),
-    modelGroupChildren: modelGroup.children.length,
-  });
+  );
+  camera.lookAt(0, 0, 0);
 };
 
-const onModelLoadError = (error: unknown): void => {
-  warn3d('Erreur de chargement OBJ, fallback activé', error);
+const onModelLoadError = (): void => {
   const fallbackGeometry = new THREE.BoxGeometry(2.5, 0.8, 1.7);
   const fallbackMaterial = new THREE.MeshStandardMaterial({
     color: 0xe6c8a6,
@@ -488,26 +408,7 @@ const onModelLoadError = (error: unknown): void => {
 // ---------------------------------------------------------------------------
 
 const loader = new OBJLoader();
-const onModelLoadProgress = (event: ProgressEvent<EventTarget>): void => {
-  if (!DEBUG_3D) {
-    return;
-  }
-
-  const hasTotal = Number.isFinite(event.total) && event.total > 0;
-  const percent = hasTotal ? Math.round((event.loaded / event.total) * 100) : null;
-
-  log3d('Progression chargement OBJ', {
-    loaded: event.loaded,
-    total: event.total,
-    percent,
-  });
-};
-
-log3d('Démarrage chargement OBJ', {
-  url: mpd218ModelUrl,
-});
-
-loader.load(mpd218ModelUrl, finalizeLoadedModel, onModelLoadProgress, onModelLoadError);
+loader.load(mpd218ModelUrl, finalizeLoadedModel, undefined, onModelLoadError);
 
 // ---------------------------------------------------------------------------
 // Rotation interactive (souris + tactile)
@@ -573,12 +474,8 @@ canvasContainer.addEventListener('touchend', resetTargetRotation);
 // ---------------------------------------------------------------------------
 
 let animationFrameId: number | null = null;
-let renderFrameCount = 0;
-let hasLoggedFirstRenderFrames = false;
 
 const renderLoop = (): void => {
-  renderFrameCount += 1;
-
   currentRotation.x += (targetRotation.x - currentRotation.x) * LERP_SPEED;
   currentRotation.y += (targetRotation.y - currentRotation.y) * LERP_SPEED;
   currentRotation.z += (targetRotation.z - currentRotation.z) * LERP_SPEED;
@@ -586,26 +483,6 @@ const renderLoop = (): void => {
   modelGroup.rotation.x = currentRotation.x;
   modelGroup.rotation.y = currentRotation.y;
   modelGroup.rotation.z = currentRotation.z;
-
-  if (DEBUG_3D && !hasLoggedFirstRenderFrames && renderFrameCount >= 30) {
-    hasLoggedFirstRenderFrames = true;
-    log3d('État rendu après 30 frames', {
-      modelGroupChildren: modelGroup.children.length,
-      meshCountInGroup: countMeshes(modelGroup),
-      rendererInfo: {
-        calls: renderer.info.render.calls,
-        triangles: renderer.info.render.triangles,
-        points: renderer.info.render.points,
-        lines: renderer.info.render.lines,
-      },
-      cameraPosition: camera.position.toArray(),
-      rotation: {
-        x: modelGroup.rotation.x,
-        y: modelGroup.rotation.y,
-        z: modelGroup.rotation.z,
-      },
-    });
-  }
 
   renderer.render(scene, camera);
   animationFrameId = window.requestAnimationFrame(renderLoop);
@@ -622,13 +499,6 @@ const onResize = (): void => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  log3d('Resize', {
-    width: window.innerWidth,
-    height: window.innerHeight,
-    pixelRatio: renderer.getPixelRatio(),
-    cameraAspect: camera.aspect,
-  });
 };
 
 window.addEventListener('resize', onResize);
