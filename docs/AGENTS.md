@@ -12,8 +12,10 @@ The website is in french only, and will include:
 - A 3D drillz mouse that opens (when scrolled) to reveal a hidden world of Luv Resval's music and art.
 - Multiple references to all of Luv Resval's songs
 - Main themes: cinema / drugs (lean) / Zelda / Harry Potter / Star Wars / science fiction - space / apocalyptic / dystopian / melancholic / spleen
+- Among those elements, some of them will be in 3D, with a modal that opens when the user hovers over them, providing more information about the reference and its connection to Luv Resval's work.
 - An MPC drum machine interface that allows users to create their own beats, inspired by Luv Resval's musical style.
 - Star Wars-style scrolling text that tells the story of Luv Resval's career and his influence on the rap scene.
+- A parallax scrolling effect with Big Brother (from 1984) watching over the site, symbolizing the themes of surveillance and control often present in Luv Resval's music.
 
 ## Task Flow
 
