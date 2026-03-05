@@ -1,3 +1,5 @@
+@use './variables' as *;
+
 // Reset spacing
 @mixin reset-spacing {
   margin: 0;
