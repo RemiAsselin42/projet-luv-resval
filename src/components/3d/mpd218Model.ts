@@ -53,9 +53,9 @@ const MODEL_VIEW_CONFIG = {
   objectRotationX: 0.5,
   objectRotationY: Math.PI * 5,
   objectRotationZ: 0,
-  minCameraDistance: 2.8,
-  cameraDistancePadding: 1.35,
-  cameraHeightFactor: 0.35,
+  minCameraDistance: 1.2,
+  cameraDistancePadding: 1.15,
+  cameraHeightFactor: 0,
 } as const;
 
 interface MeshStat {
@@ -327,9 +327,9 @@ const finalizeLoadedModel = (
   camera.position.set(
     fittedCenter.x,
     fittedCenter.y + boundingRadius * MODEL_VIEW_CONFIG.cameraHeightFactor,
-    cameraDistance,
+    fittedCenter.z + cameraDistance,
   );
-  camera.lookAt(0, 0, 0);
+  camera.lookAt(fittedCenter.x, fittedCenter.y, fittedCenter.z);
 };
 
 interface Mpd218ModelComponent {
