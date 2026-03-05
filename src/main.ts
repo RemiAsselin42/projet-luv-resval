@@ -1,8 +1,11 @@
 import './style.scss';
 import { addDefaultLights } from './core/lights';
-import { createThreeViewport } from './core/scene';
-import { createMpd218ModelComponent } from './components/3d/mpd218Model';
-import { createModelRotationController } from './controllers/modelRotationController';
+import { createThreeViewport, FIXED_CANVAS_ASPECT_RATIO, getFixedCanvasSize } from './core/scene';
+import { createRenderPipeline } from './core/postprocessing';
+import { createScrollManager } from './core/scrollManager';
+import { createAssetLoader } from './core/assetLoader';
+import { createSectionManager } from './sections/sectionManager';
+import { sectionLoaders } from './sections/registry';
 
 const canvasContainer = document.getElementById('canvas-container');
 
@@ -12,26 +15,50 @@ if (!canvasContainer) {
 
 const { scene, camera, renderer } = createThreeViewport(canvasContainer);
 addDefaultLights(scene);
+const renderPipeline = createRenderPipeline(renderer, scene, camera);
+const scrollManager = createScrollManager();
+const assetLoader = createAssetLoader();
+const sectionManager = createSectionManager({
+  scene,
+  camera,
+  renderer,
+  canvasContainer,
+  scrollManager,
+  assetLoader,
+});
 
-const modelComponent = createMpd218ModelComponent(scene, camera);
-const { modelGroup } = modelComponent;
-const rotationController = createModelRotationController(canvasContainer, modelGroup);
+void sectionManager
+  .initialize(sectionLoaders)
+  .catch((error: unknown) => {
+    console.error("Échec de l'initialisation des sections.", error);
+  })
+  .finally(() => {
+    scrollManager.refresh();
+  });
 
 let animationFrameId: number | null = null;
+let lastFrameTime = window.performance.now();
 
-const renderLoop = (): void => {
-  rotationController.update();
+const renderLoop = (time: number): void => {
+  const deltaSeconds = (time - lastFrameTime) / 1000;
+  lastFrameTime = time;
 
-  renderer.render(scene, camera);
+  scrollManager.update(time);
+  sectionManager.update(deltaSeconds, time / 1000);
+
+  renderPipeline.render();
   animationFrameId = window.requestAnimationFrame(renderLoop);
 };
 
-renderLoop();
+animationFrameId = window.requestAnimationFrame(renderLoop);
 
 const onResize = (): void => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const availableWidth = Math.max(canvasContainer.clientWidth, window.innerWidth);
+  const size = getFixedCanvasSize(availableWidth);
+
+  camera.aspect = FIXED_CANVAS_ASPECT_RATIO;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(size.width, size.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 };
 
@@ -43,10 +70,12 @@ if (import.meta.hot) {
       window.cancelAnimationFrame(animationFrameId);
     }
 
-    rotationController.dispose();
+    sectionManager.dispose();
+    scrollManager.dispose();
+    assetLoader.dispose();
     window.removeEventListener('resize', onResize);
 
-    modelComponent.dispose();
+    renderPipeline.dispose();
     renderer.dispose();
     renderer.domElement.remove();
   });
