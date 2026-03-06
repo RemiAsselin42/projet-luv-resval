@@ -1,6 +1,7 @@
 // Import variables and mixins
 @use './styles/variables' as *;
 @use './styles/mixins' as *;
+@use './styles/responsive';
 
 // Base styles
 * {
@@ -20,12 +21,75 @@ body {
 
 // Canvas container for Three.js
 #canvas-container {
-  position: fixed;
-  top: 0;
-  left: 0;
+  display: flex;
+  justify-content: center;
   width: 100%;
-  height: 100%;
+  position: relative;
   z-index: 0;
+  pointer-events: auto;
+}
+
+#experience-sections {
+  position: relative;
+  z-index: $z-index-normal;
+  pointer-events: none;
+}
+
+.experience-section {
+  @include flex-center;
+
+  min-height: 100vh;
+  padding: $spacing-xxl $spacing-lg;
+}
+
+.section-content {
+  max-width: 900px;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.section-content h2 {
+  margin-bottom: $spacing-md;
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.section-content p {
+  color: $color-text-secondary;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+}
+
+.experience-section[data-section='mpc-beatmaker'] {
+  flex-direction: column;
+  justify-content: center;
+  gap: $spacing-xl;
+}
+
+.experience-section[data-section='mpc-beatmaker'] .section-content {
+  pointer-events: none;
+}
+
+.experience-section[data-section='mpc-beatmaker'] #canvas-container canvas {
+  display: block;
+  pointer-events: auto;
+}
+
+.hero-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.02em;
+  font-size: clamp(2.6rem, 11vw, 8rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.hero-letter {
+  display: inline-block;
+  color: $color-text-primary;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 // Components (à étendre selon les besoins du projet)

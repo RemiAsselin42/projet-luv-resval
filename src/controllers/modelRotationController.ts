@@ -12,13 +12,13 @@ interface ModelRotationController {
 }
 
 const BASE_ROTATION: Readonly<RotationAxes> = {
-  x: 0.35,
+  x: 0.2,
   y: 0,
   z: 0,
 } as const;
 
 const HOVER_RANGE_Y = 0.08;
-const HOVER_RANGE_X = 0.15;
+const HOVER_RANGE_X = 0.08;
 const HOVER_RANGE_Z = 0.2;
 const LERP_SPEED = 0.06;
 

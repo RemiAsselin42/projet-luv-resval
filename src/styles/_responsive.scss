@@ -1,0 +1,39 @@
+@use './variables' as *;
+@use './mixins' as *;
+
+@include tablet {
+  .experience-section {
+    padding: $spacing-xl $spacing-md;
+  }
+
+  .experience-section[data-section='mpc-beatmaker'] {
+    gap: $spacing-lg;
+  }
+}
+
+@include mobile {
+  .experience-section {
+    padding: $spacing-xl $spacing-sm;
+  }
+
+  .section-content {
+    max-width: 100%;
+  }
+
+  .section-content h2 {
+    font-size: clamp(1.25rem, 6vw, 1.8rem);
+  }
+
+  .section-content p {
+    font-size: clamp(0.9rem, 3.3vw, 1rem);
+  }
+
+  .hero-title {
+    letter-spacing: 0.04em;
+    font-size: clamp(2rem, 12vw, 3.4rem);
+  }
+
+  .experience-section[data-section='mpc-beatmaker'] {
+    gap: $spacing-md;
+  }
+}

@@ -1,98 +1,100 @@
 # Projet Luv Resval
 
-Tribute artistique au rappeur Luv Resval avec une expérience web immersive combinant 3D, animations, et interactivité.
+Expérience web artistique immersive autour de l'univers de Luv Resval (3D, animation, narration visuelle).
 
-## Description
+## Vision
 
-Site web artistique mettant en lumière le style unique de Luv Resval et son influence dans le rap. Le projet combine des éléments visuels 3D (Three.js), des animations fluides (GSAP), et une interface interactive inspirée de ses thèmes musicaux : cinéma, science-fiction, Star Wars, et ambiances dystopiques.
+Le projet n'est pas un site vitrine classique orienté UX "standard", mais une oeuvre interactive : ambiance cinématographique, références pop culture, esthétique dystopique et forte identité sonore/visuelle.
 
-## Fonctionnalités
+## État actuel
 
-- **Visage 3D hybride** : Luv Resval / Darth Vader réactif aux interactions
-- **Drillz 3D** : Souris animée révélant un univers musical
-- **MPC Drum Machine** : Interface pour créer des beats
-- **Défilement Star Wars** : Histoire et carrière de l'artiste
-- Références complètes à sa discographie
-- Thèmes : Star Wars, Zelda, Harry Potter, dystopie, mélancolie
+- Stack en place : Vite + TypeScript strict + Three.js + GSAP + SCSS.
+- Scène 3D fonctionnelle avec modèle MPD218 et interactions de rotation.
+- Objectif à court terme : passer d'un prototype 3D unique à une expérience multi-sections orchestrée au scroll.
 
-## Technologies
+## Approche technique recommandée (simple et robuste)
 
-- **Build & Dev**: [Vite](https://vitejs.dev/)
-- **3D Rendering**: [Three.js](https://threejs.org/) v0.183
-- **Animations**: [GSAP](https://greensock.com/gsap/) v3.14
-- **Styles**: SASS/SCSS
-- **Type Checking**: TypeScript v5.8 (strict mode)
-- **Linting**: ESLint v9 + Stylelint v16
-- **Formatage**: Prettier v3
+### Principes
+
+- Garder une base **vanilla TypeScript** (pas de framework UI lourd).
+- Utiliser **une seule scène Three.js** pour tout le site.
+- Orchestrer les transitions avec **GSAP + ScrollTrigger**.
+- Charger les sections et assets de manière **progressive** (lazy loading).
+
+### Librairies recommandées
+
+- [Three.js](https://threejs.org/) : rendu 3D principal.
+- [GSAP](https://greensock.com/gsap/) + ScrollTrigger : animation timeline et scroll.
+- [Lenis](https://github.com/darkroomengineering/lenis) : smooth scroll stable et pilotable.
+- `GLTFLoader` + `DRACOLoader` (Three examples) : chargement 3D performant (`.glb` compressé).
+- Optionnel : [postprocessing](https://github.com/pmndrs/postprocessing) pour bloom/vignette légers.
+
+## Architecture cible (progressive)
+
+```text
+src/
+├── main.ts
+├── core/
+│   ├── scene.ts
+│   ├── lights.ts
+│   ├── scrollManager.ts
+│   ├── assetLoader.ts
+│   └── postprocessing.ts
+├── sections/
+│   ├── 01-hero/
+│   ├── 02-face-vader/
+│   ├── 03-thematic-objects/
+│   ├── 04-big-brother/
+│   ├── 05-mpc-beatmaker/
+│   ├── 06-star-wars-crawl/
+│   └── 07-grunt/
+├── components/
+├── controllers/
+├── shaders/
+├── utils/
+└── styles/
+```
+
+## Performance : checklist minimale
+
+- Limiter le `pixelRatio` (`Math.min(devicePixelRatio, 2)`).
+- Privilégier `.glb` plutôt que `.obj`.
+- Compresser les meshes (Draco) et textures.
+- Utiliser `THREE.LOD` pour les objets secondaires.
+- Déclencher le chargement des assets section par section.
+- Réduire les effets postprocess sur mobile / petites GPUs.
 
 ## Scripts disponibles
 
 ```bash
-# Développement
-npm run dev              # Lance le serveur de dev (port 5173)
-
-# Build
-npm run build            # Build de production
-npm run preview          # Prévisualiser le build
-
-# Qualité de code
-npm run lint             # Lint JavaScript/TypeScript
-npm run lint:fix         # Fix auto des problèmes ESLint
-npm run lint:style       # Lint SCSS/CSS
-npm run lint:style:fix   # Fix auto des problèmes Stylelint
-npm run format           # Formater le code avec Prettier
-npm run format:check     # Vérifier le formatage
-npm run typecheck        # Vérifier les types TypeScript
-
-# Tests
-npm test                 # Lancer les tests (à configurer)
+npm run dev
+npm run build
+npm run preview
+npm run lint
+npm run lint:fix
+npm run lint:style
+npm run lint:style:fix
+npm run format
+npm run format:check
+npm run typecheck
+npm run test
+npm run validate
 ```
 
-## Structure du projet
+## Roadmap de livraison (recommandée)
 
-```
-projet-luv-resval/
-├── .github/
-│   └── workflows/       # GitHub Actions CI/CD
-├── src/
-│   ├── styles/          # Variables et mixins SCSS
-│   ├── main.ts          # Point d'entrée
-│   └── style.scss       # Styles principaux
-├── docs/
-│   └── AGENTS.md        # Documentation pour les agents
-├── index.html           # HTML principal
-└── vite.config.ts       # Configuration Vite
-```
-
-## Workflow CI/CD
-
-Deux workflows GitHub Actions :
-
-- **CI** (`ci.yml`) : Lint, typecheck, build sur push/PR
-- **Deploy** (`deploy.yml`) : Déploiement automatique sur GitHub Pages
-
-## 🔧 Configuration
-
-- **TypeScript**: Mode strict activé (`tsconfig.json`)
-- **ESLint**: Flat config moderne (`eslint.config.js`)
-- **Stylelint**: Configuration SCSS standard (`.stylelintrc.json`)
-- **Prettier**: Formatage cohérent (`.prettierrc.json`)
-- **EditorConfig**: Consistance entre éditeurs (`.editorconfig`)
-
-## Variables d'environnement
-
-Copier `.env.example` vers `.env` et ajuster selon vos besoins.
-
-## Développement
-
-1. Créer une **branche** (`git checkout -b feature/nouvelle-fonctionnalite`)
-2. **Commit** (`git commit -m 'Ajout nouvelle fonctionnalité'`)
-3. **Push** (`git push origin feature/nouvelle-fonctionnalite`)
+1. Stabiliser l'infra (`core`: scene, resize, render loop, scroll manager).
+2. Implémenter Hero + Face/Vader avec transitions GSAP.
+3. Ajouter galerie d'objets 3D + modal d'information.
+4. Ajouter parallax Big Brother + crawl Star Wars.
+5. Ajouter MPC beatmaker + section Grünt.
+6. Finaliser optimisation perf (LOD, lazy loading, quality fallback).
 
 ## Ressources
 
 - [Documentation Three.js](https://threejs.org/docs/)
 - [Documentation GSAP](https://greensock.com/docs/)
+- [Exemples Three.js](https://threejs.org/examples/)
 - [Site officiel Luv Resval](https://luvresval-officiel.com)
 - [Wikipedia Luv Resval](https://fr.wikipedia.org/wiki/Luv_Resval)
 
