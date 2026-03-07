@@ -21,9 +21,24 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          gsap: ['gsap'],
+        manualChunks(id) {
+          if (id.includes('node_modules/three/examples/jsm/')) {
+            return 'three-examples';
+          }
+
+          if (id.includes('node_modules/three/')) {
+            return 'three';
+          }
+
+          if (id.includes('node_modules/gsap/')) {
+            return 'gsap';
+          }
+
+          if (id.includes('/src/sections/')) {
+            return 'sections';
+          }
+
+          return undefined;
         },
       },
     },

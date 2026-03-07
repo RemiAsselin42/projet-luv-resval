@@ -5,10 +5,7 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-  ],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
@@ -36,6 +33,26 @@ module.exports = {
     'comma-dangle': ['error', 'always-multiline'],
     'eol-last': ['error', 'always'],
     'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: [
+              '*.ts',
+              '*.tsx',
+              './*.ts',
+              './*.tsx',
+              '../*.ts',
+              '../*.tsx',
+              '**/*.ts',
+              '**/*.tsx',
+            ],
+            message: 'Utiliser des imports sans extension TypeScript.',
+          },
+        ],
+      },
+    ],
   },
   ignorePatterns: ['dist/', 'node_modules/', '*.config.js', 'vite.config.js'],
   overrides: [
