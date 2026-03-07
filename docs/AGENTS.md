@@ -66,6 +66,14 @@ The website is in french only, and will include (in this specific order) :
 4. Run the most specific tests first, then broader checks if needed.
 5. Report changed files, expected behavior, and verification status.
 
+## CI/CD Guardrails (must pass before push)
+
+- Run `npm run validate` locally before pushing to `main` or opening a PR.
+- Keep ESLint strict: `npm run lint` must pass with `--max-warnings 0`.
+- Do not use `console.log/info/debug` in production code (`console.warn/error` only when justified).
+- Keep TypeScript and `@typescript-eslint/*` versions compatible to avoid CI parser warnings.
+- If lint, typecheck, or build fails, fix root causes in code/config before pushing.
+
 ## Source of Truth
 
 Documentation and references for Luv Resval:
