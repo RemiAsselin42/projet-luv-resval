@@ -25,6 +25,7 @@
   "files.associations": {
     "*.css": "scss"
   },
+  "debug.javascript.autoAttachFilter": "disabled",
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
 }
