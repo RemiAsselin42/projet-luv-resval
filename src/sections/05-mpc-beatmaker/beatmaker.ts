@@ -1,28 +1,17 @@
-import { createMpd218ModelComponent } from '../../components/3d/mpd218Model';
-import { createModelRotationController } from '../../controllers/modelRotationController';
 import type { SectionInitializer } from '../types';
 
-const initBeatmakerSection: SectionInitializer = (context) => {
-  const { scene, camera, canvasContainer } = context;
-  const modelComponent = createMpd218ModelComponent(scene, camera);
-  const rotationController = createModelRotationController(
-    canvasContainer,
-    modelComponent.modelGroup,
-  );
-
+const initBeatmakerSection: SectionInitializer = (_context) => {
   const sectionElement = document.querySelector('[data-section="mpc-beatmaker"]');
+
   if (sectionElement instanceof HTMLElement) {
-    sectionElement.dataset.state = 'active-3d';
+    sectionElement.dataset.state = 'active';
   }
 
   return {
     update: () => {
-      rotationController.update();
+      return;
     },
     dispose: () => {
-      rotationController.dispose();
-      modelComponent.dispose();
-
       if (sectionElement instanceof HTMLElement) {
         delete sectionElement.dataset.state;
       }

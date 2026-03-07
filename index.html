@@ -6,6 +6,8 @@
     <title>Luv Resval</title>
   </head>
   <body>
+    <!-- Canvas 3D global (overlay fixe, rendu partagé par toutes les sections) -->
+    <div id="canvas-container" aria-label="Scène 3D"></div>
     <main id="experience-sections" aria-label="Parcours immersif Luv Resval">
       <section class="experience-section" data-section="hero" aria-labelledby="hero-title">
         <div class="section-content">
@@ -21,9 +23,11 @@
         aria-labelledby="face-vader-title"
       >
         <div class="section-content">
-          <h2 id="face-vader-title">Visage hybride</h2>
-          <p>Section 3D : moitié Luv Resval / moitié Dark Vador</p>
+          <h2 id="face-vader-title"></h2>
+          <p></p>
         </div>
+        <!-- Rendu dans le canvas global -->
+        <div data-3d-model="vader-helmet" aria-hidden="true"></div>
       </section>
 
       <section
@@ -35,6 +39,8 @@
           <h2 id="thematic-objects-title">Objets 3D thématiques</h2>
           <p>Lean cup, Triforce, sabre laser, et autres références à implémenter.</p>
         </div>
+        <!-- Rendu dans le canvas global -->
+        <div data-3d-model="thematic-objects" aria-hidden="true"></div>
       </section>
 
       <section

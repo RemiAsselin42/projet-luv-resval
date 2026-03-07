@@ -1,6 +1,6 @@
 import './style.scss';
 import { addDefaultLights } from './core/lights';
-import { createThreeViewport, FIXED_CANVAS_ASPECT_RATIO, getFixedCanvasSize } from './core/scene';
+import { createThreeViewport, getRecommendedPixelRatio } from './core/scene';
 import { createRenderPipeline } from './core/postprocessing';
 import { createScrollManager } from './core/scrollManager';
 import { createAssetLoader } from './core/assetLoader';
@@ -53,13 +53,13 @@ const renderLoop = (time: number): void => {
 animationFrameId = window.requestAnimationFrame(renderLoop);
 
 const onResize = (): void => {
-  const availableWidth = Math.max(canvasContainer.clientWidth, window.innerWidth);
-  const size = getFixedCanvasSize(availableWidth);
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
-  camera.aspect = FIXED_CANVAS_ASPECT_RATIO;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(size.width, size.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(getRecommendedPixelRatio());
 };
 
 window.addEventListener('resize', onResize);

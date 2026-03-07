@@ -19,19 +19,27 @@ body {
   overflow-x: hidden;
 }
 
-// Canvas container for Three.js
+// Canvas container for Three.js (fixed viewport overlay, behind sections)
 #canvas-container {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  position: relative;
-  z-index: 0;
-  pointer-events: auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: $z-index-normal;
+  pointer-events: none;
+  overflow: hidden;
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 #experience-sections {
   position: relative;
-  z-index: $z-index-normal;
+  z-index: $z-index-elevated;
   pointer-events: none;
 }
 
@@ -58,19 +66,15 @@ body {
   font-size: clamp(1rem, 1.3vw, 1.2rem);
 }
 
+// Section face-vader : interactions 3D actives
+.experience-section[data-section='face-vader'] {
+  pointer-events: auto;
+}
+
 .experience-section[data-section='mpc-beatmaker'] {
   flex-direction: column;
   justify-content: center;
   gap: $spacing-xl;
-}
-
-.experience-section[data-section='mpc-beatmaker'] .section-content {
-  pointer-events: none;
-}
-
-.experience-section[data-section='mpc-beatmaker'] #canvas-container canvas {
-  display: block;
-  pointer-events: auto;
 }
 
 .hero-title {
