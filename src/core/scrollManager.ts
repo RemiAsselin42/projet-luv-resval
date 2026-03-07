@@ -29,7 +29,9 @@ export interface ScrollManager {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SNAP_COOLDOWN_MS = 500;
+const SNAP_COOLDOWN_MS = 450; // Durée minimale entre deux snaps consécutifs
+const SNAP_ANCHOR_RATIO_DOWN = 0.8; // Sensibilité de snap vers le bas - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
+const SNAP_ANCHOR_RATIO_UP = 0.6; // Sensibilité de snap vers le haut - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
 
 export const createScrollManager = (): ScrollManager => {
   const listeners = new Set<ScrollListener>();
@@ -52,18 +54,22 @@ export const createScrollManager = (): ScrollManager => {
     listeners.forEach((listener) => listener(scrollY));
   };
 
-  const getSectionIndexAtViewportCenter = (currentScrollY: number): number => {
+  const getSectionIndexAtViewportAnchor = (
+    currentScrollY: number,
+    isScrollingDown: boolean,
+  ): number => {
     if (sectionElements.length === 0) {
       return -1;
     }
 
-    const viewportCenter = currentScrollY + window.innerHeight * 0.5;
+    const anchorRatio = isScrollingDown ? SNAP_ANCHOR_RATIO_DOWN : SNAP_ANCHOR_RATIO_UP;
+    const viewportAnchor = currentScrollY + window.innerHeight * anchorRatio;
 
     for (const [index, section] of sectionElements.entries()) {
       const top = section.offsetTop;
       const bottom = top + section.offsetHeight;
 
-      if (viewportCenter >= top && viewportCenter < bottom) {
+      if (viewportAnchor >= top && viewportAnchor < bottom) {
         return index;
       }
     }
@@ -71,8 +77,8 @@ export const createScrollManager = (): ScrollManager => {
     return sectionElements.length - 1;
   };
 
-  const snapToSectionIfNeeded = (currentScrollY: number): void => {
-    const sectionIndex = getSectionIndexAtViewportCenter(currentScrollY);
+  const snapToSectionIfNeeded = (currentScrollY: number, isScrollingDown: boolean): void => {
+    const sectionIndex = getSectionIndexAtViewportAnchor(currentScrollY, isScrollingDown);
 
     if (sectionIndex === -1) {
       return;
@@ -117,8 +123,10 @@ export const createScrollManager = (): ScrollManager => {
   };
 
   lenis.on('scroll', (event: LenisScrollEvent) => {
+    const previousScrollY = scrollY;
     scrollY = event.scroll;
-    snapToSectionIfNeeded(scrollY);
+    const isScrollingDown = scrollY >= previousScrollY;
+    snapToSectionIfNeeded(scrollY, isScrollingDown);
     emit();
     ScrollTrigger.update();
   });
