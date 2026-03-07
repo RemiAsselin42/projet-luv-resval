@@ -4,13 +4,13 @@ Expérience web artistique immersive autour de l'univers de Luv Resval (3D, anim
 
 ## Vision
 
-Le projet n'est pas un site vitrine classique orienté UX "standard", mais une oeuvre interactive : ambiance cinématographique, références pop culture, esthétique dystopique et forte identité sonore/visuelle.
+Le projet n'est pas un site vitrine classique, mais une oeuvre interactive : ambiance cinématographique, références pop culture, esthétique dystopique et forte identité sonore/visuelle.
 
 ## État actuel
 
-- Stack en place : Vite + TypeScript strict + Three.js + GSAP + SCSS.
-- Scène 3D fonctionnelle avec modèle MPD218 et interactions de rotation.
-- Objectif à court terme : passer d'un prototype 3D unique à une expérience multi-sections orchestrée au scroll.
+- Stack en place : Vite + TypeScript strict + Three.js + GSAP/ScrollTrigger + Lenis + SCSS.
+- Une scène Three.js globale est initialisée dans `main.ts` et rendue en continu.
+- Les sections sont chargées dynamiquement via un registre (`sectionLoaders`) et un `sectionManager`.
 
 ## Approche technique recommandée (simple et robuste)
 
@@ -29,7 +29,7 @@ Le projet n'est pas un site vitrine classique orienté UX "standard", mais une o
 - `GLTFLoader` + `DRACOLoader` (Three examples) : chargement 3D performant (`.glb` compressé).
 - Optionnel : [postprocessing](https://github.com/pmndrs/postprocessing) pour bloom/vignette légers.
 
-## Architecture cible (progressive)
+## Architecture actuelle
 
 ```text
 src/
@@ -49,9 +49,9 @@ src/
 │   ├── 06-star-wars-crawl/
 │   └── 07-grunt/
 ├── components/
+│   └── 3d/
+│       └── glbModel.ts
 ├── controllers/
-├── shaders/
-├── utils/
 └── styles/
 ```
 
@@ -80,15 +80,6 @@ npm run typecheck
 npm run test
 npm run validate
 ```
-
-## Roadmap de livraison (recommandée)
-
-1. Stabiliser l'infra (`core`: scene, resize, render loop, scroll manager).
-2. Implémenter Hero + Face/Vader avec transitions GSAP.
-3. Ajouter galerie d'objets 3D + modal d'information.
-4. Ajouter parallax Big Brother + crawl Star Wars.
-5. Ajouter MPC beatmaker + section Grünt.
-6. Finaliser optimisation perf (LOD, lazy loading, quality fallback).
 
 ## Ressources
 
