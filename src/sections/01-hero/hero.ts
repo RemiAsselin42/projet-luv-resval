@@ -8,11 +8,12 @@ import { hasWebGLSupport, detectGpuTier, getShaderComplexity } from '../../core/
 import initHeroFallback from './heroFallback';
 import { getSectionSelector, SECTION_IDS, crtMenuSectionIds } from '../definitions';
 
-const initHeroSection: SectionInitializer = (context) => {
+const initHeroSection: SectionInitializer = async (context) => {
   // Fallback for browsers without WebGL support
   if (!hasWebGLSupport()) {
     console.warn('WebGL not supported, using HTML fallback for hero section');
-    return initHeroFallback(context);
+    const fallbackResult = initHeroFallback(context);
+    return fallbackResult instanceof Promise ? await fallbackResult : fallbackResult;
   }
 
   const { scene, camera, renderer } = context;
@@ -27,7 +28,8 @@ const initHeroSection: SectionInitializer = (context) => {
   }
 
   // ── Écran CRT 3D ──────────────────────────────────────────────
-  const crt = createCrtScreen(16 / 9, shaderSettings.textureResolution);
+  // Await font loading for crisp text rendering on the CRT screen
+  const crt = await createCrtScreen(16 / 9, shaderSettings.textureResolution);
   crt.mesh.position.set(0, 0, 0);
   scene.add(crt.mesh);
 

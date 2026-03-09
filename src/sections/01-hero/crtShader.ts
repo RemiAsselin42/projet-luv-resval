@@ -1,6 +1,45 @@
 import * as THREE from 'three';
 import { CRT_MENU_CONFIG, CRT_TITLE_CONFIG } from './crtConfig';
 
+// ─── Font Preloading ────────────────────────────────────────────
+// Ensures fonts are loaded before drawing on canvas to prevent fallback rendering
+const preloadFonts = async (): Promise<void> => {
+  const fontsToLoad = [
+    new FontFace('Silvermist-Italic', 'url(/src/assets/fonts/Silvermist-Italic.otf)', {
+      weight: 'normal',
+      style: 'italic',
+    }),
+    new FontFace('Silvermist-Regular', 'url(/src/assets/fonts/Silvermist-Regular.otf)', {
+      weight: 'normal',
+      style: 'normal',
+    }),
+    new FontFace('Futura-CondensedExtraBold', 'url(/src/assets/fonts/Futura-CondensedExtraBold.otf)', {
+      weight: '800',
+      style: 'normal',
+    }),
+    new FontFace('Futura-Medium', 'url(/src/assets/fonts/Futura-Medium.otf)', {
+      weight: '500',
+      style: 'normal',
+    }),
+  ];
+
+  try {
+    const loadedFonts = await Promise.all(fontsToLoad.map((font) => font.load()));
+    loadedFonts.forEach((font) => document.fonts.add(font));
+    // eslint-disable-next-line no-console
+    console.debug('CRT fonts preloaded successfully');
+  } catch (error) {
+    console.error('Failed to preload CRT fonts:', error);
+  }
+};
+
+let fontsPreloaded = false;
+const ensureFontsLoaded = async (): Promise<void> => {
+  if (fontsPreloaded) return;
+  await preloadFonts();
+  fontsPreloaded = true;
+};
+
 // ─── Vertex Shader ──────────────────────────────────────────────
 // Passe les UV au fragment shader et applique la projection standard.
 const vertexShader = /* glsl */ `
@@ -296,10 +335,12 @@ export interface CrtScreen {
   dispose: () => void;
 }
 
-export const createCrtScreen = (
+export const createCrtScreen = async (
   aspectRatio: number = 16 / 9,
   textureResolution: number = 1024,
-): CrtScreen => {
+): Promise<CrtScreen> => {
+  // Wait for fonts to be loaded before creating the canvas texture
+  await ensureFontsLoaded();
   const texWidth = textureResolution;
   const texHeight = Math.round(texWidth / aspectRatio);
   const textTexture = createTextCanvasTexture('LUV RESVAL', texWidth, texHeight);
