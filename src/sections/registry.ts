@@ -6,6 +6,10 @@ export const sectionLoaders: SectionLoader[] = [
     load: async () => (await import('./01-hero/hero')).default,
   },
   {
+    id: 'menu',
+    load: async () => (await import('./02-menu/menu')).default,
+  },
+  {
     id: 'face-vader',
     load: async () => (await import('./02-face-vader/faceVader')).default,
   },
