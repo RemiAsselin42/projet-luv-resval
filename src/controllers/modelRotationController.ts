@@ -27,10 +27,10 @@ const DEFAULT_BASE_ROTATION: Readonly<RotationAxes> = {
   z: 0,
 } as const;
 
-const DEFAULT_HOVER_RANGE_Y = 0.08;
-const DEFAULT_HOVER_RANGE_X = 0.08;
-const DEFAULT_HOVER_RANGE_Z = 0.2;
-const DEFAULT_LERP_SPEED = 0.06;
+const DEFAULT_HOVER_RANGE_Y = 1; // Valeur par défaut pour la rotation autour de l'axe Y (gauche-droite) | 1 = 90 degrés, 0.5 = 45 degrés, etc.
+const DEFAULT_HOVER_RANGE_X = 1; // Valeur par défaut pour la rotation autour de l'axe X (haut-bas) | 1 = 90 degrés, 0.5 = 45 degrés, etc.
+const DEFAULT_HOVER_RANGE_Z = 1; // Valeur par défaut pour la rotation autour de l'axe Z (inclinaison latérale) | 1 = 90 degrés, 0.5 = 45 degrés, etc.
+const DEFAULT_LERP_SPEED = 0.1; // Valeur par défaut pour la vitesse de lissage (0.06 correspond à une transition douce) | 1 = transition instantanée, 0.1 = transition rapide, 0.01 = transition très lente, etc.
 
 export const createModelRotationController = (
   container: HTMLElement,
