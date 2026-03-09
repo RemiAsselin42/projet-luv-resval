@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as THREE from 'three';
-import { createCrtScreen } from './crtShader';
+import { createCrtScreen, CrtScreen } from './crtShader';
 
 describe('createCrtScreen', () => {
-  let crtScreen: ReturnType<typeof createCrtScreen>;
+  let crtScreen: CrtScreen;
 
   afterEach(() => {
     if (crtScreen) {
@@ -11,8 +11,8 @@ describe('createCrtScreen', () => {
     }
   });
 
-  it('creates a CRT screen with the correct aspect ratio', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('creates a CRT screen with the correct aspect ratio', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     expect(crtScreen.mesh).toBeDefined();
     expect(crtScreen.mesh).toBeInstanceOf(THREE.Mesh);
@@ -20,8 +20,8 @@ describe('createCrtScreen', () => {
     expect(crtScreen.mesh.material).toBeInstanceOf(THREE.ShaderMaterial);
   });
 
-  it('initializes with correct uniforms', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('initializes with correct uniforms', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     expect(crtScreen.uniforms.uTime.value).toBe(0);
     expect(crtScreen.uniforms.uPowerOn.value).toBe(0);
@@ -30,8 +30,8 @@ describe('createCrtScreen', () => {
     expect(crtScreen.uniforms.uResolution.value).toBeInstanceOf(THREE.Vector2);
   });
 
-  it('updates time uniform when update is called', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('updates time uniform when update is called', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     crtScreen.update(1.5);
     expect(crtScreen.uniforms.uTime.value).toBe(1.5);
@@ -40,8 +40,8 @@ describe('createCrtScreen', () => {
     expect(crtScreen.uniforms.uTime.value).toBe(3.0);
   });
 
-  it('updates power-on uniform when setPowerOn is called', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('updates power-on uniform when setPowerOn is called', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     crtScreen.setPowerOn(0.5);
     expect(crtScreen.uniforms.uPowerOn.value).toBe(0.5);
@@ -50,8 +50,8 @@ describe('createCrtScreen', () => {
     expect(crtScreen.uniforms.uPowerOn.value).toBe(1.0);
   });
 
-  it('updates fade uniform when setFade is called', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('updates fade uniform when setFade is called', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     crtScreen.setFade(0.7);
     expect(crtScreen.uniforms.uFade.value).toBe(0.7);
@@ -60,8 +60,8 @@ describe('createCrtScreen', () => {
     expect(crtScreen.uniforms.uFade.value).toBe(0.0);
   });
 
-  it('updates UI progress without crashing', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('updates UI progress without crashing', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     // Should not throw
     expect(() => {
@@ -77,8 +77,8 @@ describe('createCrtScreen', () => {
     }).not.toThrow();
   });
 
-  it('disposes all resources properly', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('disposes all resources properly', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     const geometryDisposeSpy = vi.spyOn(crtScreen.mesh.geometry, 'dispose');
     const material = crtScreen.mesh.material as THREE.ShaderMaterial;
@@ -90,9 +90,9 @@ describe('createCrtScreen', () => {
     expect(materialDisposeSpy).toHaveBeenCalled();
   });
 
-  it('creates correct geometry dimensions for different aspect ratios', () => {
+  it('creates correct geometry dimensions for different aspect ratios', async () => {
     const aspectRatio = 16 / 9;
-    crtScreen = createCrtScreen(aspectRatio);
+    crtScreen = await createCrtScreen(aspectRatio);
 
     const geometry = crtScreen.mesh.geometry as THREE.PlaneGeometry;
     const params = geometry.parameters;
@@ -104,8 +104,8 @@ describe('createCrtScreen', () => {
     expect(params.height).toBe(expectedHeight);
   });
 
-  it('has transparent material with correct settings', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('has transparent material with correct settings', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     const material = crtScreen.mesh.material as THREE.ShaderMaterial;
 
@@ -113,23 +113,23 @@ describe('createCrtScreen', () => {
     expect(material.depthWrite).toBe(false);
   });
 
-  it('accepts custom texture resolution', () => {
-    crtScreen = createCrtScreen(16 / 9, 512);
+  it('accepts custom texture resolution', async () => {
+    crtScreen = await createCrtScreen(16 / 9, 512);
 
     expect(crtScreen.uniforms.uResolution.value.x).toBe(512);
     expect(crtScreen.uniforms.uResolution.value.y).toBeCloseTo(512 / (16 / 9), 0);
   });
 
-  it('uses default texture resolution when not specified', () => {
-    crtScreen = createCrtScreen(16 / 9);
+  it('uses default texture resolution when not specified', async () => {
+    crtScreen = await createCrtScreen(16 / 9);
 
     expect(crtScreen.uniforms.uResolution.value.x).toBe(1024);
     expect(crtScreen.uniforms.uResolution.value.y).toBeCloseTo(1024 / (16 / 9), 0);
   });
 
   describe('canvas dirty flag optimization', () => {
-    beforeEach(() => {
-      crtScreen = createCrtScreen(16 / 9);
+    beforeEach(async () => {
+      crtScreen = await createCrtScreen(16 / 9);
     });
 
     it('does not redraw if values have not changed significantly', () => {

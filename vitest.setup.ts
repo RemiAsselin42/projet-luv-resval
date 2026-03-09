@@ -6,6 +6,40 @@ if (typeof WebGLRenderingContext === 'undefined') {
   global.WebGLRenderingContext = class WebGLRenderingContext {};
 }
 
+// Mock FontFace API for font preloading tests
+if (typeof FontFace === 'undefined') {
+  // @ts-expect-error - mocking global FontFace class
+  global.FontFace = class FontFace {
+    family: string;
+    source: string;
+    descriptors: FontFaceDescriptors;
+
+    constructor(family: string, source: string, descriptors?: FontFaceDescriptors) {
+      this.family = family;
+      this.source = source;
+      this.descriptors = descriptors || {};
+    }
+
+    load(): Promise<FontFace> {
+      return Promise.resolve(this);
+    }
+  };
+
+  // Mock document.fonts
+  if (typeof document !== 'undefined' && !document.fonts) {
+    Object.defineProperty(document, 'fonts', {
+      value: {
+        add: vi.fn(),
+        delete: vi.fn(),
+        clear: vi.fn(),
+        load: vi.fn(() => Promise.resolve()),
+      },
+      writable: true,
+      configurable: true,
+    });
+  }
+}
+
 // Mock HTMLCanvasElement.getContext for WebGL and 2D canvas tests
 
 const createMock2dContext = (): CanvasRenderingContext2D => {
