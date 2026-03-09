@@ -20,7 +20,16 @@ export const CRT_MENU_CONFIG = {
   FONT_FAMILY: 'Futura-Medium',
   /** Font weight for the menu */
   FONT_WEIGHT: '500',
+  /** Vertical slide distance used by menu reveal animation (0-1, canvas space) */
+  SLIDE_DISTANCE: 0.25,
 } as const;
+
+export const getCrtMenuStartY = (menuOpacity: number): number => {
+  const clampedOpacity = Math.min(Math.max(menuOpacity, 0), 1);
+  const totalMenuHeight = CRT_MENU_CONFIG.MENU_COUNT * CRT_MENU_CONFIG.LINE_HEIGHT;
+  const slideUpOffset = (1 - clampedOpacity) * CRT_MENU_CONFIG.SLIDE_DISTANCE;
+  return CRT_MENU_CONFIG.Y_START - totalMenuHeight / 2 + slideUpOffset;
+};
 
 export const CRT_TITLE_CONFIG = {
   /** Title text to display */

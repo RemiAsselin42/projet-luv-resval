@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CRT_MENU_CONFIG, CRT_TITLE_CONFIG } from './crtConfig';
+import { CRT_MENU_CONFIG, CRT_TITLE_CONFIG, getCrtMenuStartY } from './crtConfig';
 
 // ─── Font Preloading ────────────────────────────────────────────
 // Ensures fonts are loaded before drawing on canvas to prevent fallback rendering
@@ -23,21 +23,30 @@ const preloadFonts = async (): Promise<void> => {
     }),
   ];
 
-  try {
-    const loadedFonts = await Promise.all(fontsToLoad.map((font) => font.load()));
-    loadedFonts.forEach((font) => document.fonts.add(font));
-    // eslint-disable-next-line no-console
-    console.debug('CRT fonts preloaded successfully');
-  } catch (error) {
-    console.error('Failed to preload CRT fonts:', error);
-  }
+  const loadedFonts = await Promise.all(fontsToLoad.map((font) => font.load()));
+  loadedFonts.forEach((font) => document.fonts.add(font));
+  // eslint-disable-next-line no-console
+  console.debug('CRT fonts preloaded successfully');
 };
 
 let fontsPreloaded = false;
+let fontPreloadPromise: Promise<void> | null = null;
 const ensureFontsLoaded = async (): Promise<void> => {
   if (fontsPreloaded) return;
-  await preloadFonts();
-  fontsPreloaded = true;
+
+  if (!fontPreloadPromise) {
+    fontPreloadPromise = preloadFonts()
+      .then(() => {
+        fontsPreloaded = true;
+      })
+      .catch((error) => {
+        // Allow retry on the next call if preload fails.
+        fontPreloadPromise = null;
+        throw error;
+      });
+  }
+
+  await fontPreloadPromise;
 };
 
 // ─── Vertex Shader ──────────────────────────────────────────────
@@ -270,11 +279,7 @@ const createTextCanvasTexture = (
     // Menu incruste dans l'ecran CRT (donc affecte par le shader)
     if (clampedMenuOpacity > 0.02) {
       const menuX = width * 0.08;
-      // Menu centré verticalement dans sa slide
-      const baseMenuY = height * CRT_MENU_CONFIG.Y_START;
-      const totalMenuHeight =
-        CRT_MENU_CONFIG.MENU_COUNT * Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
-      const menuY = baseMenuY - totalMenuHeight / 2;
+      const menuY = height * getCrtMenuStartY(clampedMenuOpacity);
       const menuLineHeight = Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
       const menuFontSize = Math.max(Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO), 18);
 
@@ -340,7 +345,12 @@ export const createCrtScreen = async (
   textureResolution: number = 1024,
 ): Promise<CrtScreen> => {
   // Wait for fonts to be loaded before creating the canvas texture
-  await ensureFontsLoaded();
+  try {
+    await ensureFontsLoaded();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn('Failed to preload CRT fonts, continuing with fallback fonts:', error);
+  }
   const texWidth = textureResolution;
   const texHeight = Math.round(texWidth / aspectRatio);
   const textTexture = createTextCanvasTexture('LUV RESVAL', texWidth, texHeight);
