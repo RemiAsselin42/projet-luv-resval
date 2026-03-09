@@ -30,8 +30,8 @@ export interface ScrollManager {
 gsap.registerPlugin(ScrollTrigger);
 
 const SNAP_COOLDOWN_MS = 450; // Durée minimale entre deux snaps consécutifs
-const SNAP_ANCHOR_RATIO_DOWN = 0.8; // Sensibilité de snap vers le bas - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
-const SNAP_ANCHOR_RATIO_UP = 0.6; // Sensibilité de snap vers le haut - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
+const SNAP_ANCHOR_RATIO_DOWN = 0.7; // Sensibilité de snap vers le bas - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
+const SNAP_ANCHOR_RATIO_UP = 0.7; // Sensibilité de snap vers le haut - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
 
 export const createScrollManager = (): ScrollManager => {
   const listeners = new Set<ScrollListener>();
