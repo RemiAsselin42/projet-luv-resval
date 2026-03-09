@@ -1,0 +1,333 @@
+import * as THREE from 'three';
+import { CRT_MENU_CONFIG, CRT_TITLE_CONFIG } from './crtConfig';
+
+// ─── Vertex Shader ──────────────────────────────────────────────
+// Passe les UV au fragment shader et applique la projection standard.
+const vertexShader = /* glsl */ `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+// ─── Fragment Shader ────────────────────────────────────────────
+// Simule un écran CRT : barrel distortion, scanlines, bruit,
+// aberration chromatique, vignette, phosphor glow et power-on.
+const fragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform sampler2D uTexture;
+  uniform float uTime;
+  uniform float uPowerOn;       // 0 → 1 : animation d'allumage
+  uniform float uFade;          // 1 → 0 : fondu de sortie
+  uniform vec2  uResolution;
+
+  varying vec2 vUv;
+
+  // ── Bruit pseudo-aléatoire (Hash without Sine - David Hoskins) ──
+  // Plus stable que sin() sur tous les GPU
+  float hash(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  // ── Barrel distortion (écran bombé) ───────────────────────────
+  vec2 barrelDistortion(vec2 uv, float strength) {
+    vec2 centered = uv - 0.5;
+    float r2 = dot(centered, centered);
+    float distortion = 1.0 + r2 * strength;
+    return centered * distortion + 0.5;
+  }
+
+  void main() {
+    // --- Power-on : effet d'allumage progressif ---
+    // Phase 1 (0→0.3) : ligne horizontale blanche qui s'étend
+    // Phase 2 (0.3→1.0) : l'image apparaît progressivement
+    float linePhase  = smoothstep(0.0, 0.3, uPowerOn);
+    float imagePhase = smoothstep(0.3, 1.0, uPowerOn);
+
+    // Ligne horizontale lumineuse pendant l'allumage
+    float lineWidth = mix(0.002, 1.0, linePhase);
+    float lineGlow  = exp(-abs(vUv.y - 0.5) / max(lineWidth * 0.15, 0.001));
+
+    if (uPowerOn < 0.3) {
+      vec3 lineColor = vec3(0.7, 0.85, 1.0) * lineGlow * linePhase;
+      gl_FragColor = vec4(lineColor, lineGlow * linePhase);
+      return;
+    }
+
+    // --- Distorsion en barillet (écran bombé) ---
+    vec2 uv = barrelDistortion(vUv, 0.8);
+
+    // Bordures noires hors de l'écran distordu
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+      return;
+    }
+
+    // --- Aberration chromatique ---
+    float aberration = 0.003;
+
+    // --- Glitch Effect (bandes horizontales qui se déplacent) ---
+    float glitchTime = uTime * 2.0;
+    float glitchLine = floor(uv.y * 12.0); // 12 bandes horizontales
+    float glitchNoise = hash(vec2(glitchLine, floor(glitchTime * 3.0)));
+
+    // Probabilité de glitch par bande (rare mais visible)
+    float glitchTrigger = step(0.96, glitchNoise);
+
+    // Déplacement horizontal aléatoire des bandes affectées
+    float glitchOffset = (hash(vec2(glitchLine, floor(glitchTime * 10.0))) - 0.5) * 0.15 * glitchTrigger;
+    vec2 glitchedUv = vec2(uv.x + glitchOffset, uv.y);
+
+    // Clamp pour éviter les débordements
+    glitchedUv.x = fract(glitchedUv.x);
+
+    // Séparation RGB exacerbée sur les zones glitchées
+    float glitchAberration = aberration + glitchTrigger * 0.012;
+    // Drift horizontal subtil de l'aberration chromatique
+    float chromaDrift = sin(uTime * 1.8) * 0.0015;
+    float dynamicAberration = glitchAberration + chromaDrift;
+
+    float r = texture2D(uTexture, glitchedUv + vec2( dynamicAberration, 0.0)).r;
+    float g = texture2D(uTexture, glitchedUv).g;
+    float b = texture2D(uTexture, glitchedUv + vec2(-dynamicAberration, 0.0)).b;
+    vec3 color = vec3(r, g, b);
+
+    // Ajouter du bruit blanc sur les bandes glitchées
+    color += glitchTrigger * 0.2 * hash(uv * uResolution + glitchTime * 500.0);
+
+    // --- Scanlines (fréquence virtuelle fixe pour look rétro) ---
+    // Résolution virtuelle SD : 480 lignes pour un effet visible même en 4K
+    float virtualLines = 480.0;
+    float scanline = sin(uv.y * virtualLines * 3.14159) * 0.5 + 0.5;
+    scanline = mix(1.0, scanline, 0.22);
+    color *= scanline;
+
+    // --- Phosphor RGB sub-pixels ---
+    float pixelX = mod(uv.x * uResolution.x, 3.0);
+    vec3 phosphor = vec3(
+      smoothstep(0.0, 1.0, pixelX),
+      smoothstep(1.0, 2.0, pixelX),
+      smoothstep(2.0, 3.0, pixelX)
+    );
+    color *= mix(vec3(1.0), phosphor, 0.08);
+
+    // --- Bruit / grain / neige ---
+    float noise = hash(uv * uResolution + uTime * 1000.0);
+    // Neige : petits points blancs aléatoires
+    float snow = step(0.985, noise) * 0.6;
+    // Grain analogique fin
+    float grain = (noise - 0.5) * 0.08;
+    color += grain + snow;
+
+    // --- Flicker léger (scintillement CRT) ---
+    float flicker = 1.0 - 0.02 * sin(uTime * 8.0) * sin(uTime * 13.0 + 2.0);
+    color *= flicker;
+
+    // --- Vignette (assombrissement des bords) ---
+    vec2 vignetteUv = vUv - 0.5;
+    float vignette = 1.0 - dot(vignetteUv, vignetteUv) * 1.8;
+    vignette = clamp(vignette, 0.0, 1.0);
+    color *= vignette;
+
+    // --- Bezel Shadow (ombre interne du cadre CRT) ---
+    // Simule la profondeur du tube sous le plastique
+    vec2 bezelUv = abs(vUv - 0.5) * 2.0;
+    float bezelDist = max(bezelUv.x, bezelUv.y);
+    float bezelShadow = smoothstep(0.88, 1.0, bezelDist);
+    color *= 1.0 - bezelShadow * 0.5;
+
+    // --- Lueur de fond CRT (bleu foncé très subtil) ---
+    vec3 crtGlow = vec3(0.01, 0.02, 0.04);
+    color += crtGlow;
+
+    // --- Application du power-on ---
+    // Révélation progressive depuis le centre
+    float revealY = abs(vUv.y - 0.5);
+    float reveal = smoothstep(imagePhase * 0.6, imagePhase * 0.5, revealY);
+    color *= reveal;
+
+    // Résidu de la ligne d'allumage pendant la transition
+    float residualLine = exp(-abs(vUv.y - 0.5) / 0.02) * (1.0 - imagePhase) * 0.5;
+    color += vec3(0.7, 0.85, 1.0) * residualLine;
+
+    gl_FragColor = vec4(color, uFade);
+  }
+`;
+
+// ─── Texture canvas « LUV RESVAL » ─────────────────────────────
+const createTextCanvasTexture = (
+  text: string,
+  width: number,
+  height: number,
+): {
+  texture: THREE.CanvasTexture;
+  draw: (titleProgress: number, menuOpacity: number, hoverIndex: number) => void;
+  dispose: () => void;
+} => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+
+  // Dirty flag optimization: only redraw if values changed significantly
+  let lastTitleProgress = -1;
+  let lastMenuOpacity = -1;
+  let lastHoverIndex = -2;
+
+  const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number): void => {
+    const clampedTitleProgress = Math.min(Math.max(titleProgress, 0), 1);
+    const clampedMenuOpacity = Math.min(Math.max(menuOpacity, 0), 1);
+
+    // Skip redraw if nothing changed significantly
+    if (
+      Math.abs(clampedTitleProgress - lastTitleProgress) < 0.001 &&
+      Math.abs(clampedMenuOpacity - lastMenuOpacity) < 0.001 &&
+      hoverIndex === lastHoverIndex
+    ) {
+      return;
+    }
+
+    lastTitleProgress = clampedTitleProgress;
+    lastMenuOpacity = clampedMenuOpacity;
+    lastHoverIndex = hoverIndex;
+
+    // Fond noir
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+
+    // Titre qui sort par le haut au scroll
+    const fontSize = Math.floor(width / (7 + clampedTitleProgress * 0.8));
+    const titleY = height * (0.5 - clampedTitleProgress * 0.65);
+    ctx.font = `${CRT_TITLE_CONFIG.FONT_WEIGHT} ${fontSize}px ${CRT_TITLE_CONFIG.FONT_FAMILY}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, width / 2, titleY);
+
+    // Menu incruste dans l'ecran CRT (donc affecte par le shader)
+    if (clampedMenuOpacity > 0.02) {
+      const menuX = width * 0.08;
+      const menuY = height * CRT_MENU_CONFIG.Y_START;
+      const menuLineHeight = Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
+      const menuFontSize = Math.max(Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO), 18);
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = `700 ${menuFontSize}px "Courier New", Courier, monospace`;
+
+      for (const [index, item] of CRT_MENU_CONFIG.ITEMS.entries()) {
+        const lineY = menuY + index * menuLineHeight;
+        const isHovered = index === hoverIndex;
+        const textWidth = ctx.measureText(item).width;
+        const prefix = isHovered ? '> ' : '  ';
+        const prefixWidth = ctx.measureText('> ').width;
+
+        if (isHovered) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * clampedMenuOpacity})`;
+          ctx.fillRect(menuX - 8, lineY - 2, textWidth + prefixWidth + 16, menuLineHeight - 6);
+          ctx.fillStyle = `rgba(0, 0, 0, ${clampedMenuOpacity})`;
+        } else {
+          ctx.fillStyle = `rgba(255, 255, 255, ${clampedMenuOpacity})`;
+        }
+
+        ctx.fillText(prefix + item, menuX, lineY);
+      }
+    }
+
+    texture.needsUpdate = true;
+  };
+
+  draw(0, 0, -1);
+
+  return {
+    texture,
+    draw,
+    dispose: () => {
+      texture.dispose();
+    },
+  };
+};
+
+// ─── Interface publique ─────────────────────────────────────────
+interface CrtUniforms {
+  [uniform: string]: THREE.IUniform;
+  uTexture: THREE.IUniform<THREE.CanvasTexture>;
+  uTime: THREE.IUniform<number>;
+  uPowerOn: THREE.IUniform<number>;
+  uFade: THREE.IUniform<number>;
+  uResolution: THREE.IUniform<THREE.Vector2>;
+}
+
+export interface CrtScreen {
+  mesh: THREE.Mesh;
+  uniforms: CrtUniforms;
+  update: (elapsedSeconds: number) => void;
+  setPowerOn: (value: number) => void;
+  setUiProgress: (titleProgress: number, menuOpacity: number, hoverIndex: number) => void;
+  setFade: (value: number) => void;
+  dispose: () => void;
+}
+
+export const createCrtScreen = (
+  aspectRatio: number = 16 / 9,
+  textureResolution: number = 1024,
+): CrtScreen => {
+  const texWidth = textureResolution;
+  const texHeight = Math.round(texWidth / aspectRatio);
+  const textTexture = createTextCanvasTexture('LUV RESVAL', texWidth, texHeight);
+
+  const uniforms: CrtUniforms = {
+    uTexture: { value: textTexture.texture },
+    uTime: { value: 0.0 },
+    uPowerOn: { value: 0.0 },
+    uFade: { value: 1.0 },
+    uResolution: { value: new THREE.Vector2(texWidth, texHeight) },
+  };
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  // Écran CRT occupant la majorité du viewport
+  const planeHeight = 3.5;
+  const planeWidth = planeHeight * aspectRatio;
+  const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
+  const mesh = new THREE.Mesh(geometry, material);
+
+  return {
+    mesh,
+    uniforms,
+    update: (elapsedSeconds: number) => {
+      uniforms.uTime.value = elapsedSeconds;
+    },
+    setPowerOn: (value: number) => {
+      uniforms.uPowerOn.value = value;
+    },
+    setUiProgress: (titleProgress: number, menuOpacity: number, hoverIndex: number) => {
+      textTexture.draw(titleProgress, menuOpacity, hoverIndex);
+    },
+    setFade: (value: number) => {
+      uniforms.uFade.value = value;
+    },
+    dispose: () => {
+      geometry.dispose();
+      material.dispose();
+      textTexture.dispose();
+    },
+  };
+};
