@@ -9,15 +9,30 @@
     <!-- Canvas 3D global (overlay fixe, rendu partagé par toutes les sections) -->
     <div id="canvas-container" aria-label="Scène 3D"></div>
     <main id="experience-sections" aria-label="Parcours immersif Luv Resval">
-      <section class="experience-section" data-section="hero" aria-labelledby="hero-title">
+      <section
+        id="hero"
+        class="experience-section"
+        data-section="hero"
+        aria-labelledby="hero-title"
+      >
         <div class="section-content">
-          <h1 id="hero-title" class="hero-title" data-hero-title data-label="LUV RESVAL">
-            LUV RESVAL
-          </h1>
+          <h1 id="hero-title" class="hero-title sr-only">LUV RESVAL</h1>
         </div>
       </section>
 
       <section
+        id="menu"
+        class="experience-section"
+        data-section="menu"
+        aria-labelledby="menu-title"
+      >
+        <div class="section-content">
+          <h2 id="menu-title" class="sr-only">Menu CRT</h2>
+        </div>
+      </section>
+
+      <section
+        id="face-vader"
         class="experience-section"
         data-section="face-vader"
         aria-labelledby="face-vader-title"
@@ -31,6 +46,7 @@
       </section>
 
       <section
+        id="thematic-objects"
         class="experience-section"
         data-section="thematic-objects"
         aria-labelledby="thematic-objects-title"
@@ -44,6 +60,7 @@
       </section>
 
       <section
+        id="big-brother"
         class="experience-section"
         data-section="big-brother"
         aria-labelledby="big-brother-title"
@@ -54,7 +71,12 @@
         </div>
       </section>
 
-      <section class="experience-section" data-section="mpc-beatmaker" aria-labelledby="mpc-title">
+      <section
+        id="mpc-beatmaker"
+        class="experience-section"
+        data-section="mpc-beatmaker"
+        aria-labelledby="mpc-title"
+      >
         <div class="section-content">
           <h2 id="mpc-title">MPC Drum Machine 3D</h2>
           <p>Espace dédié au séquenceur et aux interactions audio.</p>
@@ -63,6 +85,7 @@
       </section>
 
       <section
+        id="star-wars-crawl"
         class="experience-section"
         data-section="star-wars-crawl"
         aria-labelledby="star-wars-crawl-title"
@@ -73,7 +96,12 @@
         </div>
       </section>
 
-      <section class="experience-section" data-section="grunt" aria-labelledby="grunt-title">
+      <section
+        id="grunt"
+        class="experience-section"
+        data-section="grunt"
+        aria-labelledby="grunt-title"
+      >
         <div class="section-content">
           <h2 id="grunt-title">Section Grünt 30 minutes</h2>
           <p>Bloc final pour l'intégration vidéo.</p>
