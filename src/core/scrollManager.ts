@@ -24,6 +24,7 @@ export interface ScrollManager {
   createTrigger: (options: ScrollTrigger.Vars) => ScrollTrigger;
   refresh: () => void;
   getScrollY: () => number;
+  scrollToSection: (sectionId: string) => void;
   dispose: () => void;
 }
 
@@ -77,7 +78,14 @@ export const createScrollManager = (): ScrollManager => {
     return sectionElements.length - 1;
   };
 
+  let isManualScrolling = false;
+
   const snapToSectionIfNeeded = (currentScrollY: number, isScrollingDown: boolean): void => {
+    // Ne pas snapper si on est en scroll manuel (clic menu)
+    if (isManualScrolling) {
+      return;
+    }
+
     const sectionIndex = getSectionIndexAtViewportAnchor(currentScrollY, isScrollingDown);
 
     if (sectionIndex === -1) {
@@ -174,6 +182,39 @@ export const createScrollManager = (): ScrollManager => {
       ScrollTrigger.refresh();
     },
     getScrollY: () => scrollY,
+    scrollToSection: (sectionId: string) => {
+      const targetElement = document.querySelector<HTMLElement>(
+        `[data-section="${sectionId}"]`,
+      );
+
+      if (!targetElement) {
+        console.warn(`Section not found: ${sectionId}`);
+        return;
+      }
+
+      const targetTop = targetElement.offsetTop;
+      const targetIndex = sectionElements.findIndex((el) => el === targetElement);
+
+      // Bypass temporairement le système de snap
+      isManualScrolling = true;
+      isSnapping = true;
+      lastSnapTimestamp = window.performance.now();
+
+      if (targetIndex !== -1) {
+        activeSectionIndex = targetIndex;
+      }
+
+      lenis.scrollTo(targetTop, {
+        duration: 1.2,
+        force: true,
+        lock: true,
+        easing: (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+        onComplete: () => {
+          isSnapping = false;
+          isManualScrolling = false;
+        },
+      });
+    },
     dispose: () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       lenis.destroy();
