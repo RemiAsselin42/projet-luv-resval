@@ -10,19 +10,19 @@ Main themes of Luv Resval's music : cinema / drugs (lean) / Zelda / Harry Potter
 
 The website is in french only, and will include (in this specific order) :
 
-- The name Luv Resval in the Hero section, with a hover effect on the letters
+- L'Amorce (Hero): full CRT screen intro with visual/sound static, retro loading bar, glitch title "Luv Resval" + subtitle "Grunt #45", and blinking prompt "Scrollez pour allumer".
 
-- A 3D representation composed half of Luv Resval's face and half of Darth Vader, which reacts to user interactions such as mouse movements and clicks, using Three.js for 3D rendering and GSAP for animations.
+- Le Hub Central (Menu TV): menu navigation style TV 90s, centered on left after first scroll, navigable via mouse, arrows and Tab, with associated visual preview on the right.
 
-- After that will be multiple 3D objets representing the themes of Luv Resval's music, such as a 3D representation of a lean cup, a Zelda Triforce, a Harry Potter wand, a Star Wars lightsaber, etc. These objects will react to user interactions such as mouse movements and clicks, using Three.js for 3D rendering and GSAP for animations. On hover, a modal will open providing more information about the reference and its connection to Luv Resval's work.
+- Section 1 - Les Reliques: four interactive 3D objects (Darth Vader mask, Zelda DS cartridge, silver grillz, Cerberus head) with hover modals (title + short lore).
 
-- A parallax scrolling effect with Big Brother (from 1984) watching over the site, symbolizing the themes of surveillance and control often present in Luv Resval's music.
+- Section 2 - L'Oeil de Big Brother: dystopian transition with giant face behind wall, lifting head toward the user with scroll-based parallax.
 
-- An 3D MPC drum machine interface that allows users to create their own beats, inspired by Luv Resval's musical style.
+- Section 3 - La MPC 3D: interactive 9-pad drum machine; keyboard and click interactions trigger stems including lead vocal and ad-libs; all pads rebuild the full track.
 
-- Star Wars-style scrolling text that tells the story of Luv Resval's career and his influence on the rap scene.
+- Section Outro - L'Eclipse: return to darkness, 4 stage spotlights from original video, final wheel movement tilts lights down then turns them off one by one.
 
-- At the bottom of the page, a section dedicated to Luv Resval's famous 30-minute Grünt, with an embedded video player
+- Global interface: persistent corner button "Retour au Hub" for instant jump back to CRT menu.
 
 ## Technical Direction (MUST FOLLOW)
 

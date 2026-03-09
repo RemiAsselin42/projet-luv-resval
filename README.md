@@ -42,18 +42,30 @@ src/
 │   └── postprocessing.ts
 ├── sections/
 │   ├── 01-hero/
-│   ├── 02-face-vader/
-│   ├── 03-thematic-objects/
-│   ├── 04-big-brother/
-│   ├── 05-mpc-beatmaker/
-│   ├── 06-star-wars-crawl/
-│   └── 07-grunt/
+│   ├── 02-hub-central-menu/
+│   ├── 03-les-reliques/
+│   ├── 04-oeil-big-brother/
+│   ├── 05-mpc-3d/
+│   └── 06-outro-eclipse/
 ├── components/
 │   └── 3d/
 │       └── glbModel.ts
 ├── controllers/
 └── styles/
 ```
+
+## Structure narrative cible
+
+Ordre centralise dans `src/sections/definitions.ts` :
+
+1. `hero` : L'Amorce (CRT, boot retro, titre glitch, invite scroll)
+2. `hub-central` : Hub Central (menu TV 90s, preview, navigation clavier/souris)
+3. `reliques` : Les Reliques (4 objets 3D + modales lore)
+4. `oeil-big-brother` : L'Oeil de Big Brother (parallaxe dystopique)
+5. `mpc-3d` : La MPC 3D (9 pads + stems)
+6. `outro-eclipse` : L'Eclipse (4 projecteurs, extinction finale)
+
+Interface globale cible : bouton persistant `Retour au Hub`.
 
 ## Performance : checklist minimale
 
