@@ -3,6 +3,39 @@
 @use './styles/mixins' as *;
 @use './styles/responsive';
 
+// Font faces
+@font-face {
+  font-family: Silvermist-Regular;
+  src: url('/src/assets/fonts/Silvermist-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Silvermist-Italic;
+  src: url('/src/assets/fonts/Silvermist-Italic.otf') format('opentype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Futura-CondensedExtraBold;
+  src: url('/src/assets/fonts/Futura-CondensedExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Futura-Medium;
+  src: url('/src/assets/fonts/Futura-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 // Base styles
 * {
   @include reset-spacing;
@@ -13,7 +46,7 @@
 body {
   background-color: $color-bg-primary;
   color: $color-text-primary;
-  font-family: $font-family-base;
+  font-family: Futura-Medium, $font-family-base;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -46,7 +79,7 @@ body {
 .experience-section {
   @include flex-center;
 
-  min-height: 100vh;
+  min-height: var(--section-min-height, 100vh);
   padding: $spacing-xxl $spacing-lg;
 }
 
@@ -66,17 +99,12 @@ body {
   font-size: clamp(1rem, 1.3vw, 1.2rem);
 }
 
-// Section menu : hauteur responsive pour scroll confortable
-.experience-section[data-section='menu'] {
-  min-height: clamp(200vh, 300vh, 400vh);
-}
-
-// Section face-vader : interactions 3D actives
-.experience-section[data-section='face-vader'] {
+// Section reliques : interactions 3D actives
+.experience-section[data-section='reliques'] {
   pointer-events: auto;
 }
 
-.experience-section[data-section='mpc-beatmaker'] {
+.experience-section[data-section='mpc'] {
   flex-direction: column;
   justify-content: center;
   gap: $spacing-xl;

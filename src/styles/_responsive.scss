@@ -6,7 +6,7 @@
     padding: $spacing-xl $spacing-md;
   }
 
-  .experience-section[data-section='mpc-beatmaker'] {
+  .experience-section[data-section='mpc'] {
     gap: $spacing-lg;
   }
 }
@@ -33,7 +33,7 @@
     font-size: clamp(2rem, 12vw, 3.4rem);
   }
 
-  .experience-section[data-section='mpc-beatmaker'] {
+  .experience-section[data-section='mpc'] {
     gap: $spacing-md;
   }
 }
