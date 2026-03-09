@@ -206,25 +206,42 @@ const createTextCanvasTexture = (
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
-    // Titre qui sort par le haut au scroll
-    const fontSize = Math.floor(width / (7 + clampedTitleProgress * 0.8));
-    const titleY = height * (0.5 - clampedTitleProgress * 0.65);
+    // Titre + sous-titre qui sortent par le haut au scroll
+    const fontSize = CRT_TITLE_CONFIG.TITLE_FONT_SIZE;
+    const titleY = height * (0.45 - clampedTitleProgress * 0.65);
     ctx.font = `${CRT_TITLE_CONFIG.FONT_WEIGHT} ${fontSize}px ${CRT_TITLE_CONFIG.FONT_FAMILY}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(text, width / 2, titleY);
 
+    const subtitleSize = CRT_TITLE_CONFIG.SUBTITLE_FONT_SIZE;
+    const subtitleY = titleY + fontSize * 0.68;
+    ctx.font = `${CRT_TITLE_CONFIG.SUBTITLE_FONT_WEIGHT} ${subtitleSize}px ${CRT_TITLE_CONFIG.SUBTITLE_FONT_FAMILY}`;
+    ctx.fillStyle = '#d9d9d9';
+    ctx.fillText(CRT_TITLE_CONFIG.SUBTITLE_TEXT, width / 2, subtitleY);
+
+    // Date sous le sous-titre
+    const dateSize = CRT_TITLE_CONFIG.DATE_FONT_SIZE;
+    const dateY = subtitleY + subtitleSize * 1;
+    ctx.font = `${CRT_TITLE_CONFIG.DATE_FONT_WEIGHT} ${dateSize}px ${CRT_TITLE_CONFIG.DATE_FONT_FAMILY}`;
+    ctx.fillStyle = '#d9d9d9';
+    ctx.fillText(CRT_TITLE_CONFIG.DATE_TEXT, width / 2, dateY);
+
     // Menu incruste dans l'ecran CRT (donc affecte par le shader)
     if (clampedMenuOpacity > 0.02) {
       const menuX = width * 0.08;
-      const menuY = height * CRT_MENU_CONFIG.Y_START;
+      // Menu centré verticalement dans sa slide
+      const baseMenuY = height * CRT_MENU_CONFIG.Y_START;
+      const totalMenuHeight =
+        CRT_MENU_CONFIG.MENU_COUNT * Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
+      const menuY = baseMenuY - totalMenuHeight / 2;
       const menuLineHeight = Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
       const menuFontSize = Math.max(Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO), 18);
 
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
-      ctx.font = `700 ${menuFontSize}px "Courier New", Courier, monospace`;
+      ctx.font = `${CRT_MENU_CONFIG.FONT_WEIGHT} ${menuFontSize}px ${CRT_MENU_CONFIG.FONT_FAMILY}`;
 
       for (const [index, item] of CRT_MENU_CONFIG.ITEMS.entries()) {
         const lineY = menuY + index * menuLineHeight;

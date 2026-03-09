@@ -6,6 +6,7 @@ import { clamp01 } from '../../utils/math';
 import { CRT_MENU_CONFIG } from './crtConfig';
 import { hasWebGLSupport, detectGpuTier, getShaderComplexity } from '../../core/gpuCapabilities';
 import initHeroFallback from './heroFallback';
+import { getSectionSelector, SECTION_IDS, crtMenuSectionIds } from '../definitions';
 
 const initHeroSection: SectionInitializer = (context) => {
   // Fallback for browsers without WebGL support
@@ -45,20 +46,20 @@ const initHeroSection: SectionInitializer = (context) => {
 
   // ── Parallax au scroll ────────────────────────────────────────
   // La télévision reste visible pendant hero + menu (2 sections)
-  const heroElement = document.querySelector('[data-section="hero"]');
-  const menuElement = document.querySelector('[data-section="menu"]');
+  const heroElement = document.querySelector(getSectionSelector(SECTION_IDS.HERO));
+  const menuElement = document.querySelector(getSectionSelector(SECTION_IDS.MENU));
 
   const heroTimeline =
     heroElement && menuElement
       ? gsap.timeline({
-          scrollTrigger: {
-            trigger: heroElement,
-            start: 'top top',
-            endTrigger: menuElement,
-            end: 'bottom top',
-            scrub: true,
-          },
-        })
+        scrollTrigger: {
+          trigger: heroElement,
+          start: 'top top',
+          endTrigger: menuElement,
+          end: 'bottom top',
+          scrub: true,
+        },
+      })
       : null;
 
   if (heroTimeline) {
@@ -74,45 +75,67 @@ const initHeroSection: SectionInitializer = (context) => {
   const mouseNDC = new THREE.Vector2();
   let hoverMenuIndex = -1;
 
+  const getHoverMenuIndexFromPointer = (clientX: number, clientY: number): number => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouseNDC, camera);
+    const hits = raycaster.intersectObject(crt.mesh);
+
+    if (hits.length === 0 || !hits[0]?.uv) {
+      return -1;
+    }
+
+    // UV.y=0 en bas, UV.y=1 en haut -> canvas Y inverse
+    const canvasRelY = 1 - hits[0].uv.y;
+    // Le menu est centre : Y_START - (totalHeight / 2)
+    const totalMenuHeight = CRT_MENU_CONFIG.MENU_COUNT * CRT_MENU_CONFIG.LINE_HEIGHT;
+    const menuStartY = CRT_MENU_CONFIG.Y_START - totalMenuHeight / 2;
+    const relativeY = canvasRelY - menuStartY;
+    const idx = Math.floor(relativeY / CRT_MENU_CONFIG.LINE_HEIGHT);
+
+    return idx >= 0 && idx < CRT_MENU_CONFIG.MENU_COUNT ? idx : -1;
+  };
+
   const onMouseMove = (event: MouseEvent): void => {
     try {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouseNDC, camera);
-      const hits = raycaster.intersectObject(crt.mesh);
-
-      if (hits.length > 0 && hits[0]?.uv) {
-        // UV.y=0 en bas, UV.y=1 en haut → canvas Y inversé
-        const canvasRelY = 1 - hits[0].uv.y;
-        const idx = Math.floor(
-          (canvasRelY - CRT_MENU_CONFIG.Y_START) / CRT_MENU_CONFIG.LINE_HEIGHT,
-        );
-        hoverMenuIndex = idx >= 0 && idx < CRT_MENU_CONFIG.MENU_COUNT ? idx : -1;
-      } else {
-        hoverMenuIndex = -1;
-      }
+      hoverMenuIndex = getHoverMenuIndexFromPointer(event.clientX, event.clientY);
     } catch (error) {
       console.warn('Raycasting hover detection failed:', error);
       hoverMenuIndex = -1;
     }
   };
 
+  // ── Gestion du clic sur le menu ───────────────────────────
+
+  const onClick = (event: MouseEvent): void => {
+    hoverMenuIndex = getHoverMenuIndexFromPointer(event.clientX, event.clientY);
+
+    if (hoverMenuIndex >= 0 && hoverMenuIndex < crtMenuSectionIds.length) {
+      const targetSectionId = crtMenuSectionIds[hoverMenuIndex];
+      if (!targetSectionId) return;
+
+      // Utiliser le scrollManager pour bypasser les snaps
+      context.scrollManager.scrollToSection(targetSectionId);
+    }
+  };
+
   window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('click', onClick);
 
   // ── Fondu de sortie TV quand face-vader arrive ─────────────────────
-  const faceVaderElement = document.querySelector('[data-section="face-vader"]');
+  const faceVaderElement = document.querySelector(getSectionSelector(SECTION_IDS.FACE_VADER));
   const fadeTvState = { fade: 1 };
   const faceVaderFadeTimeline = faceVaderElement
     ? gsap.timeline({
-        scrollTrigger: {
-          trigger: faceVaderElement,
-          start: 'top 80%',
-          end: 'top top',
-          scrub: true,
-        },
-      })
+      scrollTrigger: {
+        trigger: faceVaderElement,
+        start: 'top 80%',
+        end: 'top top',
+        scrub: true,
+      },
+    })
     : null;
 
   if (faceVaderFadeTimeline) {
@@ -140,6 +163,7 @@ const initHeroSection: SectionInitializer = (context) => {
     },
     dispose: () => {
       window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('click', onClick);
       heroTimeline?.kill();
       faceVaderFadeTimeline?.kill();
 

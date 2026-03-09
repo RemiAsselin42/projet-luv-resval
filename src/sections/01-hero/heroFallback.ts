@@ -1,12 +1,13 @@
 import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
+import { getSectionSelector, SECTION_IDS } from '../definitions';
 
 /**
  * Fallback HTML/CSS implementation of the hero section
  * for browsers without WebGL support.
  */
 const initHeroFallback: SectionInitializer = (_context) => {
-  const heroElement = document.querySelector('[data-section="hero"]');
+  const heroElement = document.querySelector(getSectionSelector(SECTION_IDS.HERO));
   if (!heroElement) {
     console.warn('Hero section element not found for fallback');
     return {
