@@ -74,8 +74,6 @@ npm run lint
 npm run lint:fix
 npm run lint:style
 npm run lint:style:fix
-npm run format
-npm run format:check
 npm run typecheck
 npm run test
 npm run validate

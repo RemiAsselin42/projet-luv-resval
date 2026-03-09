@@ -106,7 +106,7 @@ Inspiration for design and interactivity:
 - Strict mode enabled with all compiler flags
 - No explicit any usage without justification
 - 100% type coverage for public APIs
-- ESLint and Prettier configured
+- ESLint configured and enforced
 - Test coverage exceeding 90%
 - Source maps properly configured
 - Declaration files generated
@@ -121,8 +121,6 @@ Inspiration for design and interactivity:
 - `npm run lint:fix` : run ESLint with auto-fix
 - `npm run lint:style` : run style-specific ESLint checks
 - `npm run lint:style:fix` : run style-specific ESLint checks with auto-fix
-- `npm run format` : run Prettier formatting
-- `npm run format:check` : check Prettier formatting without changing files
 - `npm run typecheck` : run TypeScript type checks
 - `npm run test` : run unit tests
 - `npm run validate` : run all validation checks (lint, format, typecheck, test)
