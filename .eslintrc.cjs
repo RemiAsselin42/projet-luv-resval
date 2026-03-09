@@ -31,6 +31,7 @@ module.exports = {
     quotes: ['error', 'single', { avoidEscape: true }],
     indent: ['error', 2, { SwitchCase: 1 }],
     'comma-dangle': ['error', 'always-multiline'],
+    'linebreak-style': ['error', 'unix'],
     'eol-last': ['error', 'always'],
     'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
     'no-restricted-imports': [
