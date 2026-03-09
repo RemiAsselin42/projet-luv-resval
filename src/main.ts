@@ -6,12 +6,20 @@ import { createScrollManager } from './core/scrollManager';
 import { createAssetLoader } from './core/assetLoader';
 import { createSectionManager } from './sections/sectionManager';
 import { sectionLoaders } from './sections/registry';
+import { renderSectionsLayout } from './sections/dom';
 
 const canvasContainer = document.getElementById('canvas-container');
+const sectionsRoot = document.getElementById('experience-sections');
 
 if (!canvasContainer) {
   throw new Error('Conteneur #canvas-container introuvable.');
 }
+
+if (!sectionsRoot) {
+  throw new Error('Conteneur #experience-sections introuvable.');
+}
+
+renderSectionsLayout(sectionsRoot);
 
 const { scene, camera, renderer } = createThreeViewport(canvasContainer);
 addDefaultLights(scene);
