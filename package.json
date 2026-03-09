@@ -11,11 +11,9 @@
     "lint:fix": "cross-env NODE_OPTIONS= eslint \"src/**/*.{js,ts,tsx}\" --fix",
     "lint:style": "cross-env NODE_OPTIONS= stylelint \"src/**/*.{css,scss}\"",
     "lint:style:fix": "cross-env NODE_OPTIONS= stylelint \"src/**/*.{css,scss}\" --fix",
-    "format": "cross-env NODE_OPTIONS= prettier --write \"src/**/*.{js,ts,tsx,css,scss,html,json}\"",
-    "format:check": "cross-env NODE_OPTIONS= prettier --check \"src/**/*.{js,ts,tsx,css,scss,html,json}\"",
     "typecheck": "cross-env NODE_OPTIONS= tsc --noEmit",
     "test": "cross-env NODE_OPTIONS= vitest run",
-    "validate": "npm run format:check && npm run lint && npm run lint:style && npm run typecheck && npm run build"
+    "validate": "npm run lint && npm run lint:style && npm run typecheck && npm run build"
   },
   "dependencies": {
     "gsap": "^3.14.2",
@@ -33,7 +31,6 @@
     "jsdom": "^25.0.1",
     "postcss": "^8.4.35",
     "postcss-html": "^1.6.0",
-    "prettier": "^3.2.0",
     "sass": "^1.70.0",
     "stylelint": "^16.2.0",
     "stylelint-config-standard-scss": "^13.0.0",
