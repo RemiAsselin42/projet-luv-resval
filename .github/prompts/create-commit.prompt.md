@@ -111,6 +111,12 @@ Corrige #42
 
 - Utilise `git commit -v` pour voir le diff pendant la rédaction
 - Ou `git commit -m "type(scope): message"` pour les messages courts
+- Pour les messages multi-lignes, privilégie `git commit -F <fichier_message>`
+   ou `git commit` (éditeur interactif) pour garantir de vrais retours à la ligne
+   dans le corps.
+- N'utilise jamais des séquences littérales `\n` dans les arguments `-m`.
+- Si `-m` est nécessaire en CLI, passe plusieurs options `-m` avec du texte
+   réel, sans antislash d'échappement, puis vérifie avec `git log -1 --pretty=%B`.
 - Exécute la commande et affiche le résultat
 
 ### 8. Vérification rapide
