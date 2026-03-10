@@ -37,6 +37,19 @@ export const getCrtMenuStartY = (menuOpacity: number): number => {
   return CRT_MENU_CONFIG.Y_START - totalMenuHeight / 2 + slideUpOffset;
 };
 
+export const CRT_LOADER_CONFIG = {
+  /** Panel width as a ratio of canvas width */
+  PANEL_WIDTH_RATIO: 0.56,
+  /** Panel height as a ratio of canvas height */
+  PANEL_HEIGHT_RATIO: 0.045,
+  /** Minimum panel height in pixels */
+  PANEL_HEIGHT_MIN_PX: 40,
+  /** Panel vertical position as a ratio of canvas height */
+  PANEL_Y_RATIO: 0.53,
+  /** Vertical offset of the label above the bar in pixels (before textScale) */
+  LABEL_OFFSET_PX: 26,
+} as const;
+
 export const CRT_TITLE_CONFIG = {
   /** Title text to display */
   TEXT: 'LUV RESVAL',

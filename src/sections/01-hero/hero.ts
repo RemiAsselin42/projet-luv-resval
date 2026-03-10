@@ -30,6 +30,48 @@ export const computeCrtScale = (
   return containScale;
 };
 
+export const LOADER_TOTAL_DURATION_SECONDS = 3.8;
+export const LOADER_HOLD_SECONDS = 2.0;
+// Durée du fondu croisé entre l'écran de chargement et le contenu héro.
+export const LOADER_TRANSITION_SECONDS = 0.6;
+
+const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
+const easeInOutSine = (t: number): number => -(Math.cos(Math.PI * t) - 1) / 2;
+const easeOutQuad = (t: number): number => 1 - (1 - t) * (1 - t);
+const easeInOutQuad = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+const easeOutExpo = (t: number): number => (t === 1 ? 1 : 1 - 2 ** (-10 * t));
+
+export const computeLoadingProgress = (elapsedSeconds: number): number => {
+  const t = Math.max(elapsedSeconds, 0);
+
+  if (t >= LOADER_TOTAL_DURATION_SECONDS) {
+    return 1;
+  }
+
+  if (t < 0.6) {
+    const localT = t / 0.6;
+    return 0.18 * easeOutCubic(localT);
+  }
+
+  if (t < 1.45) {
+    const localT = (t - 0.6) / 0.85;
+    return 0.18 + (0.47 - 0.18) * easeInOutSine(localT);
+  }
+
+  if (t < 2.3) {
+    const localT = (t - 1.45) / 0.85;
+    return 0.47 + (0.76 - 0.47) * easeOutQuad(localT);
+  }
+
+  if (t < 3.05) {
+    const localT = (t - 2.3) / 0.75;
+    return 0.76 + (0.93 - 0.76) * easeInOutQuad(localT);
+  }
+
+  const localT = (t - 3.05) / (LOADER_TOTAL_DURATION_SECONDS - 3.05);
+  return 0.93 + (1 - 0.93) * easeOutExpo(localT);
+};
+
 const initHeroSection: SectionInitializer = async (context) => {
   // Fallback for browsers without WebGL support
   if (!hasWebGLSupport()) {
@@ -80,6 +122,9 @@ const initHeroSection: SectionInitializer = async (context) => {
 
   // ── Animation d'allumage (power-on) ───────────────────────────
   const powerOnState = { value: 0 };
+  // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
+  // Ancre le timer du loader à l'animation réelle, sans offset codé en dur.
+  let loaderStartTime: number | null = null;
 
   gsap.to(powerOnState, {
     value: 1,
@@ -88,6 +133,9 @@ const initHeroSection: SectionInitializer = async (context) => {
     ease: 'power2.inOut',
     onUpdate: () => {
       crt.setPowerOn(powerOnState.value);
+      if (loaderStartTime === null && powerOnState.value >= 0.3) {
+        loaderStartTime = performance.now();
+      }
     },
   });
 
@@ -326,7 +374,20 @@ const initHeroSection: SectionInitializer = async (context) => {
       // Menu opacité : préchargé à 50% du hero scroll → pleinement visible à l'entrée de la section menu
       const menuOpacity = clamp01((scrollY / viewportHeight - 0.5) / 0.5);
       currentMenuOpacity = menuOpacity;
-      crt.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex);
+      // elapsed = 0 tant que l'image CRT n'est pas visible (loaderStartTime null avant uPowerOn ≥ 0.3).
+      const elapsed = loaderStartTime !== null ? (performance.now() - loaderStartTime) / 1000 : 0;
+      const barProgress = computeLoadingProgress(elapsed);
+      let loadingProgress: number;
+      if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
+        loadingProgress = barProgress; // 0..1 pendant le chargement
+      } else if (elapsed < LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS) {
+        loadingProgress = 1; // hold à 100%
+      } else {
+        // 1..2 sur LOADER_TRANSITION_SECONDS : fondu croisé loader → héro
+        const transitionElapsed = elapsed - LOADER_TOTAL_DURATION_SECONDS - LOADER_HOLD_SECONDS;
+        loadingProgress = 1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
+      }
+      crt.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, loadingProgress);
 
       // Afficher/masquer les boutons d'accessibilité en fonction de la visibilité du menu ET de la position du scroll
       if (menuOpacity > 0.3 && isAtMenuSection()) {
