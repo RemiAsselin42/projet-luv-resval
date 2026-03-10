@@ -232,16 +232,25 @@ const createTextCanvasTexture = (
   let lastTitleProgress = -1;
   let lastMenuOpacity = -1;
   let lastHoverIndex = -2;
+  let lastTextScale = -1;
+
+  const clamp = (value: number, min: number, max: number): number => {
+    return Math.min(Math.max(value, min), max);
+  };
 
   const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number): void => {
     const clampedTitleProgress = Math.min(Math.max(titleProgress, 0), 1);
     const clampedMenuOpacity = Math.min(Math.max(menuOpacity, 0), 1);
+    // Échelle de texte basée sur la hauteur CSS du viewport.
+    // Objectif: éviter un texte visuellement trop petit sur les écrans 2K/Retina.
+    const textScale = clamp(window.innerHeight / 1080, 0.9, 1.3);
 
     // Skip redraw if nothing changed significantly
     if (
       Math.abs(clampedTitleProgress - lastTitleProgress) < 0.001 &&
       Math.abs(clampedMenuOpacity - lastMenuOpacity) < 0.001 &&
-      hoverIndex === lastHoverIndex
+      hoverIndex === lastHoverIndex &&
+      Math.abs(textScale - lastTextScale) < 0.001
     ) {
       return;
     }
@@ -249,13 +258,14 @@ const createTextCanvasTexture = (
     lastTitleProgress = clampedTitleProgress;
     lastMenuOpacity = clampedMenuOpacity;
     lastHoverIndex = hoverIndex;
+    lastTextScale = textScale;
 
     // Fond noir
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
     // Titre + sous-titre qui sortent par le haut au scroll
-    const fontSize = CRT_TITLE_CONFIG.TITLE_FONT_SIZE;
+    const fontSize = Math.round(CRT_TITLE_CONFIG.TITLE_FONT_SIZE * textScale);
     const titleY = height * (0.45 - clampedTitleProgress * 0.65);
     ctx.font = `${CRT_TITLE_CONFIG.FONT_WEIGHT} ${fontSize}px ${CRT_TITLE_CONFIG.FONT_FAMILY}`;
     ctx.textAlign = 'center';
@@ -263,14 +273,14 @@ const createTextCanvasTexture = (
     ctx.fillStyle = '#ffffff';
     ctx.fillText(text, width / 2, titleY);
 
-    const subtitleSize = CRT_TITLE_CONFIG.SUBTITLE_FONT_SIZE;
+    const subtitleSize = Math.round(CRT_TITLE_CONFIG.SUBTITLE_FONT_SIZE * textScale);
     const subtitleY = titleY + fontSize * 0.68;
     ctx.font = `${CRT_TITLE_CONFIG.SUBTITLE_FONT_WEIGHT} ${subtitleSize}px ${CRT_TITLE_CONFIG.SUBTITLE_FONT_FAMILY}`;
     ctx.fillStyle = '#d9d9d9';
     ctx.fillText(CRT_TITLE_CONFIG.SUBTITLE_TEXT, width / 2, subtitleY);
 
     // Date sous le sous-titre
-    const dateSize = CRT_TITLE_CONFIG.DATE_FONT_SIZE;
+    const dateSize = Math.max(1, Math.round(CRT_TITLE_CONFIG.DATE_FONT_SIZE * textScale));
     const dateY = subtitleY + subtitleSize * 1;
     ctx.font = `${CRT_TITLE_CONFIG.DATE_FONT_WEIGHT} ${dateSize}px ${CRT_TITLE_CONFIG.DATE_FONT_FAMILY}`;
     ctx.fillStyle = '#d9d9d9';
@@ -281,7 +291,10 @@ const createTextCanvasTexture = (
       const menuX = width * 0.08;
       const menuY = height * getCrtMenuStartY(clampedMenuOpacity);
       const menuLineHeight = Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
-      const menuFontSize = Math.max(Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO), 18);
+      const menuFontSize = Math.max(
+        Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO * textScale),
+        Math.round(18 * textScale),
+      );
 
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
@@ -296,12 +309,12 @@ const createTextCanvasTexture = (
         const textHeight =
           labelMetrics.actualBoundingBoxAscent + labelMetrics.actualBoundingBoxDescent || menuFontSize;
         const prefixWidth = ctx.measureText(prefix).width;
-        const itemVerticalOffset = CRT_MENU_CONFIG.ITEM_VERTICAL_OFFSET;
+        const itemVerticalOffset = Math.round(CRT_MENU_CONFIG.ITEM_VERTICAL_OFFSET * textScale);
 
         if (isHovered) {
           ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * clampedMenuOpacity})`;
-          const highlightPaddingX = CRT_MENU_CONFIG.HIGHLIGHT_PADDING_X;
-          const highlightPaddingY = CRT_MENU_CONFIG.HIGHLIGHT_PADDING_Y;
+          const highlightPaddingX = Math.round(CRT_MENU_CONFIG.HIGHLIGHT_PADDING_X * textScale);
+          const highlightPaddingY = Math.round(CRT_MENU_CONFIG.HIGHLIGHT_PADDING_Y * textScale);
           const highlightHeight = textHeight + highlightPaddingY * 2;
           ctx.fillRect(
             menuX - highlightPaddingX,
