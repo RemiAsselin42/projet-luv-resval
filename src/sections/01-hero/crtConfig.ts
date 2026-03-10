@@ -22,6 +22,12 @@ export const CRT_MENU_CONFIG = {
   FONT_WEIGHT: '500',
   /** Vertical slide distance used by menu reveal animation (0-1, canvas space) */
   SLIDE_DISTANCE: 0.25,
+  /** Hover highlight horizontal padding in pixels */
+  HIGHLIGHT_PADDING_X: 8,
+  /** Hover highlight vertical padding in pixels */
+  HIGHLIGHT_PADDING_Y: 4,
+  /** Vertical offset applied to menu item text in pixels */
+  ITEM_VERTICAL_OFFSET: 2,
 } as const;
 
 export const getCrtMenuStartY = (menuOpacity: number): number => {

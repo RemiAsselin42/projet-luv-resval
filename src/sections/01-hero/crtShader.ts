@@ -117,15 +117,15 @@ const fragmentShader = /* glsl */ `
     }
 
     // --- Aberration chromatique ---
-    float aberration = 0.003;
+    float aberration = 0.0015;
 
     // --- Glitch Effect (bandes horizontales qui se déplacent) ---
-    float glitchTime = uTime * 2.0;
+    float glitchTime = uTime * 1.6;
     float glitchLine = floor(uv.y * 12.0); // 12 bandes horizontales
-    float glitchNoise = hash(vec2(glitchLine, floor(glitchTime * 3.0)));
+    float glitchNoise = hash(vec2(glitchLine, floor(glitchTime * 2.0)));
 
     // Probabilité de glitch par bande (rare mais visible)
-    float glitchTrigger = step(0.96, glitchNoise);
+    float glitchTrigger = step(0.980, glitchNoise);
 
     // Déplacement horizontal aléatoire des bandes affectées
     float glitchOffset = (hash(vec2(glitchLine, floor(glitchTime * 10.0))) - 0.5) * 0.15 * glitchTrigger;
@@ -135,9 +135,9 @@ const fragmentShader = /* glsl */ `
     glitchedUv.x = fract(glitchedUv.x);
 
     // Séparation RGB exacerbée sur les zones glitchées
-    float glitchAberration = aberration + glitchTrigger * 0.012;
+    float glitchAberration = aberration + glitchTrigger * 0.008;
     // Drift horizontal subtil de l'aberration chromatique
-    float chromaDrift = sin(uTime * 1.8) * 0.0015;
+    float chromaDrift = sin(uTime * 1.8) * 0.001;
     float dynamicAberration = glitchAberration + chromaDrift;
 
     float r = texture2D(uTexture, glitchedUv + vec2( dynamicAberration, 0.0)).r;
@@ -284,25 +284,38 @@ const createTextCanvasTexture = (
       const menuFontSize = Math.max(Math.floor(width * CRT_MENU_CONFIG.FONT_SIZE_RATIO), 18);
 
       ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
+      ctx.textBaseline = 'middle';
       ctx.font = `${CRT_MENU_CONFIG.FONT_WEIGHT} ${menuFontSize}px ${CRT_MENU_CONFIG.FONT_FAMILY}`;
 
       for (const [index, item] of CRT_MENU_CONFIG.ITEMS.entries()) {
-        const lineY = menuY + index * menuLineHeight;
+        const lineCenterY = menuY + index * menuLineHeight + menuLineHeight * 0.5;
         const isHovered = index === hoverIndex;
-        const textWidth = ctx.measureText(item).width;
         const prefix = isHovered ? '> ' : '  ';
-        const prefixWidth = ctx.measureText('> ').width;
+        const labelMetrics = ctx.measureText(prefix + item);
+        const textWidth = labelMetrics.width;
+        const textHeight =
+          labelMetrics.actualBoundingBoxAscent + labelMetrics.actualBoundingBoxDescent || menuFontSize;
+        const prefixWidth = ctx.measureText(prefix).width;
+        const itemVerticalOffset = CRT_MENU_CONFIG.ITEM_VERTICAL_OFFSET;
 
         if (isHovered) {
           ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * clampedMenuOpacity})`;
-          ctx.fillRect(menuX - 8, lineY - 2, textWidth + prefixWidth + 16, menuLineHeight - 6);
+          const highlightPaddingX = CRT_MENU_CONFIG.HIGHLIGHT_PADDING_X;
+          const highlightPaddingY = CRT_MENU_CONFIG.HIGHLIGHT_PADDING_Y;
+          const highlightHeight = textHeight + highlightPaddingY * 2;
+          ctx.fillRect(
+            menuX - highlightPaddingX,
+            lineCenterY - highlightHeight / 2,
+            textWidth + highlightPaddingX * 2,
+            highlightHeight,
+          );
           ctx.fillStyle = `rgba(0, 0, 0, ${clampedMenuOpacity})`;
         } else {
           ctx.fillStyle = `rgba(255, 255, 255, ${clampedMenuOpacity})`;
         }
 
-        ctx.fillText(prefix + item, menuX, lineY);
+        ctx.fillText(prefix, menuX, lineCenterY);
+        ctx.fillText(item, menuX + prefixWidth, lineCenterY + itemVerticalOffset);
       }
     }
 
