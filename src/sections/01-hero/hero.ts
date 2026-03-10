@@ -8,6 +8,28 @@ import { hasWebGLSupport, detectGpuTier, getShaderComplexity } from '../../core/
 import initHeroFallback from './heroFallback';
 import { getSectionSelector, SECTION_IDS, crtMenuSectionIds } from '../definitions';
 
+const HEIGHT_LOCK_MIN_ASPECT_RATIO = 1.6;
+
+export const computeCrtScale = (
+  visibleHeight: number,
+  viewportAspectRatio: number,
+  basePlaneWidth: number,
+  basePlaneHeight: number,
+): number => {
+  const safeVisibleHeight = Math.max(visibleHeight, 0.0001);
+  const safeViewportAspect = Math.max(viewportAspectRatio, 0.0001);
+
+  const heightLockedScale = safeVisibleHeight / basePlaneHeight;
+
+  if (safeViewportAspect >= HEIGHT_LOCK_MIN_ASPECT_RATIO) {
+    return heightLockedScale;
+  }
+
+  const visibleWidth = safeVisibleHeight * safeViewportAspect;
+  const containScale = Math.min(heightLockedScale, visibleWidth / basePlaneWidth);
+  return containScale;
+};
+
 const initHeroSection: SectionInitializer = async (context) => {
   // Fallback for browsers without WebGL support
   if (!hasWebGLSupport()) {
@@ -37,15 +59,20 @@ const initHeroSection: SectionInitializer = async (context) => {
   crt.mesh.position.set(0, 0, 0);
   scene.add(crt.mesh);
 
-  // ── Contain-fit responsive : le mesh 16/9 occupe tout le viewport sans crop ──
+  // ── Responsive sizing du CRT ───────────────────────────────────────
+  // On verrouille la taille apparente sur la hauteur du viewport.
+  // Le mode "contain" (min(width,height)) rétrécit le CRT sur des ratios
+  // plus étroits que 16:9 (ex: 16:10 sur MacBook), ce qui explique le
+  // rendu visuellement plus petit sur certaines résolutions/écrans.
   const fitCrtToViewport = (): void => {
     const fovRad = (camera.fov * Math.PI) / 180;
     // Distance caméra → mesh (camera z=4, mesh initial z=0)
     const distToMesh = camera.position.z;
     const visibleHeight = 2 * distToMesh * Math.tan(fovRad / 2);
-    const visibleWidth = visibleHeight * (window.innerWidth / window.innerHeight);
-    // Contain fit : on prend le plus petit facteur pour ne jamais rogner
-    const scale = Math.min(visibleHeight / BASE_PLANE_HEIGHT, visibleWidth / BASE_PLANE_WIDTH);
+    const viewportAspect = window.innerWidth / Math.max(window.innerHeight, 1);
+    // Taille stable sur les ratios proches de 16:9, avec fallback contain-fit
+    // sur écrans très étroits pour éviter de couper excessivement le menu.
+    const scale = computeCrtScale(visibleHeight, viewportAspect, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT);
     crt.mesh.scale.set(scale, scale, 1);
   };
 
