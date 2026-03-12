@@ -28,83 +28,146 @@ describe('getCrtMenuStartY', () => {
 });
 
 describe('getResponsiveTextScale', () => {
-  it('uses baseline scale on 1080p desktop', () => {
-    const originalInnerHeight = window.innerHeight;
-    const originalDpr = window.devicePixelRatio;
+  it('returns mobile scale at 480px', () => {
+    const originalInnerWidth = window.innerWidth;
 
-    Object.defineProperty(window, 'innerHeight', {
+    Object.defineProperty(window, 'innerWidth', {
       configurable: true,
-      value: 1080,
+      value: 480,
     });
-    Object.defineProperty(window, 'devicePixelRatio', {
+
+    try {
+      expect(getResponsiveTextScale()).toBe(0.9);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
+  it('returns tablet-sm scale at 481px', () => {
+    const originalInnerWidth = window.innerWidth;
+
+    Object.defineProperty(window, 'innerWidth', {
       configurable: true,
-      value: 1,
+      value: 481,
+    });
+
+    try {
+      expect(getResponsiveTextScale()).toBe(0.95);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
+  it('returns tablet-sm scale at 768px', () => {
+    const originalInnerWidth = window.innerWidth;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 768,
+    });
+
+    try {
+      expect(getResponsiveTextScale()).toBe(0.95);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
+  it('returns desktop scale at 769px', () => {
+    const originalInnerWidth = window.innerWidth;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 769,
+    });
+
+    try {
+      expect(getResponsiveTextScale()).toBe(1);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
+  it('returns stable desktop scale on 1080p', () => {
+    const originalInnerWidth = window.innerWidth;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1920,
     });
 
     try {
       expect(getResponsiveTextScale()).toBeCloseTo(1, 6);
     } finally {
-      Object.defineProperty(window, 'innerHeight', {
+      Object.defineProperty(window, 'innerWidth', {
         configurable: true,
-        value: originalInnerHeight,
-      });
-      Object.defineProperty(window, 'devicePixelRatio', {
-        configurable: true,
-        value: originalDpr,
+        value: originalInnerWidth,
       });
     }
   });
 
-  it('clamps aggressively on mobile viewport', () => {
-    const originalInnerHeight = window.innerHeight;
-    const originalDpr = window.devicePixelRatio;
+  it('keeps same desktop scale on 1440p ultrawide', () => {
+    const originalInnerWidth = window.innerWidth;
 
-    Object.defineProperty(window, 'innerHeight', {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 3440,
+    });
+
+    try {
+      expect(getResponsiveTextScale()).toBeCloseTo(1, 6);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    }
+  });
+
+  it('uses reduced scale on mobile viewport', () => {
+    const originalInnerWidth = window.innerWidth;
+
+    Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 430,
     });
-    Object.defineProperty(window, 'devicePixelRatio', {
-      configurable: true,
-      value: 4,
-    });
 
     try {
-      expect(getResponsiveTextScale()).toBe(1.4);
+      expect(getResponsiveTextScale()).toBe(0.9);
     } finally {
-      Object.defineProperty(window, 'innerHeight', {
+      Object.defineProperty(window, 'innerWidth', {
         configurable: true,
-        value: originalInnerHeight,
-      });
-      Object.defineProperty(window, 'devicePixelRatio', {
-        configurable: true,
-        value: originalDpr,
+        value: originalInnerWidth,
       });
     }
   });
 
-  it('clamps desktop scale upper bound', () => {
-    const originalInnerHeight = window.innerHeight;
-    const originalDpr = window.devicePixelRatio;
+  it('uses slight reduction on small tablets', () => {
+    const originalInnerWidth = window.innerWidth;
 
-    Object.defineProperty(window, 'innerHeight', {
+    Object.defineProperty(window, 'innerWidth', {
       configurable: true,
-      value: 4000,
-    });
-    Object.defineProperty(window, 'devicePixelRatio', {
-      configurable: true,
-      value: 2,
+      value: 700,
     });
 
     try {
-      expect(getResponsiveTextScale()).toBe(2.5);
+      expect(getResponsiveTextScale()).toBe(0.95);
     } finally {
-      Object.defineProperty(window, 'innerHeight', {
+      Object.defineProperty(window, 'innerWidth', {
         configurable: true,
-        value: originalInnerHeight,
-      });
-      Object.defineProperty(window, 'devicePixelRatio', {
-        configurable: true,
-        value: originalDpr,
+        value: originalInnerWidth,
       });
     }
   });
