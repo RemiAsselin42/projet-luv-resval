@@ -7,8 +7,15 @@ import { CRT_MENU_CONFIG, getCrtMenuStartY } from './crtConfig';
 import { hasWebGLSupport, detectGpuTier, getShaderComplexity } from '../../core/gpuCapabilities';
 import initHeroFallback from './heroFallback';
 import { getSectionSelector, SECTION_IDS, crtMenuSectionIds } from '../definitions';
+import { createMenuPreview3D, getMenuPreviewQualityOptions } from '../../components/3d/menuPreview3D';
+import darthVaderHelmetUrl from '../../3d-models/darth_vader_helmet.glb?url';
+import cctvCameraUrl from '../../3d-models/low-poly_cctv_camera.glb?url';
 
 const HEIGHT_LOCK_MIN_ASPECT_RATIO = 1.6;
+const MENU_PREVIEW_TARGET_DIMENSIONS = {
+  RELIQUES: 2.5,
+  BIG_BROTHER: 1.8,
+} as const;
 
 export const computeCrtScale = (
   visibleHeight: number,
@@ -100,6 +107,26 @@ const initHeroSection: SectionInitializer = async (context) => {
   const crt = await createCrtScreen(CRT_ASPECT, shaderSettings.textureResolution);
   crt.mesh.position.set(0, 0, 0);
   scene.add(crt.mesh);
+  const menuPreviewQuality = getMenuPreviewQualityOptions(gpuTier);
+
+  // ── Preview 3D au survol des items du menu ────────────────────────────────
+  // Le modèle est rendu dans un WebGLRenderTarget dédié et compacté dans
+  // le fragment shader CRT avant les effets, pour apparaître à l'intérieur de l'écran.
+  // Mapping modulaire : menuIndex → modèle GLB
+  // Index 1 = 'LES RELIQUES'
+  // Index 2 = 'BIG BROTHER'
+  const menuPreview = createMenuPreview3D(renderer, [
+    {
+      menuIndex: 1,
+      modelUrl: darthVaderHelmetUrl,
+      targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.RELIQUES,
+    },
+    {
+      menuIndex: 2,
+      modelUrl: cctvCameraUrl,
+      targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.BIG_BROTHER,
+    },
+  ], menuPreviewQuality);
 
   // ── Responsive sizing du CRT ───────────────────────────────────────
   // On verrouille la taille apparente sur la hauteur du viewport.
@@ -388,6 +415,10 @@ const initHeroSection: SectionInitializer = async (context) => {
         loadingProgress = 1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
       }
       crt.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, loadingProgress);
+      menuPreview.setHoveredIndex(isAtMenuSection() ? hoverMenuIndex : -1);
+      menuPreview.update(_deltaSeconds);
+      menuPreview.renderPreview();
+      crt.setModelPreview(menuPreview.getTexture(), menuPreview.getOpacity(), menuPreview.getTexelSize());
 
       // Afficher/masquer les boutons d'accessibilité en fonction de la visibilité du menu ET de la position du scroll
       if (menuOpacity > 0.3 && isAtMenuSection()) {
@@ -428,6 +459,7 @@ const initHeroSection: SectionInitializer = async (context) => {
         heroFocusElement.parentNode.removeChild(heroFocusElement);
       }
 
+      menuPreview.dispose();
       scene.remove(crt.mesh);
       crt.dispose();
     },
