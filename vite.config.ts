@@ -2,6 +2,11 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: '/projet-luv-resval/',
+  optimizeDeps: {
+    esbuildOptions: {
+      sourcemap: false,
+    },
+  },
   resolve: {
     alias: {
       '@': '/src',
