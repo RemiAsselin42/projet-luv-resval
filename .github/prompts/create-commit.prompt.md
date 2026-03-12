@@ -115,8 +115,13 @@ Corrige #42
    ou `git commit` (éditeur interactif) pour garantir de vrais retours à la ligne
    dans le corps.
 - N'utilise jamais des séquences littérales `\n` dans les arguments `-m`.
-- Si `-m` est nécessaire en CLI, passe plusieurs options `-m` avec du texte
-   réel, sans antislash d'échappement, puis vérifie avec `git log -1 --pretty=%B`.
+- Important : chaque option `-m` crée un paragraphe distinct. Ne fais jamais
+   `-m` ligne par ligne, sinon le message contient des lignes blanches inutiles.
+- Si `-m` est nécessaire en CLI, limite-toi à :
+   - un `-m` pour le sujet
+   - un seul `-m` pour tout le corps (multi-lignes dans un seul bloc)
+- Après commit, vérifie systématiquement le rendu exact avec
+   `git log -1 --pretty=%B`.
 - Exécute la commande et affiche le résultat
 
 ### 8. Vérification rapide
