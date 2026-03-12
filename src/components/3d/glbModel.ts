@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { emitTelemetry } from '../../core/telemetry';
+import { loadGlbWithDracoFallback } from './glbLoader';
 
 export interface ModelViewConfig {
   /** Dimension maximale cible en unités monde (défaut : 1.5) */
@@ -53,62 +54,6 @@ const disposeObject3D = (object: THREE.Object3D): void => {
   });
 };
 
-interface DracoLoaderLike {
-  setDecoderPath: (path: string) => void;
-  setDecoderConfig: (config: { type: 'js' }) => void;
-}
-
-interface GltfLoaderLike {
-  setDRACOLoader: (loader: DracoLoaderLike) => GltfLoaderLike;
-  load: (
-    url: string,
-    onLoad: (gltf: { scene: THREE.Object3D }) => void,
-    onProgress?: (event: ProgressEvent<EventTarget>) => void,
-    onError?: (error: unknown) => void,
-  ) => void;
-}
-
-interface ThreeExampleLoaders {
-  GLTFLoader: new () => GltfLoaderLike;
-  DRACOLoader: new () => DracoLoaderLike;
-}
-
-let sharedDracoLoader: DracoLoaderLike | null = null;
-let sharedThreeExampleLoadersPromise: Promise<ThreeExampleLoaders> | null = null;
-
-const DRACO_DECODER_PATHS = [
-  `${import.meta.env.BASE_URL}draco/`,
-  'https://www.gstatic.com/draco/versioned/decoders/1.5.7/',
-  'https://www.gstatic.com/draco/v1/decoders/',
-] as const;
-
-const loadThreeExampleLoaders = async (): Promise<ThreeExampleLoaders> => {
-  if (!sharedThreeExampleLoadersPromise) {
-    sharedThreeExampleLoadersPromise = Promise.all([
-      import('three/examples/jsm/loaders/GLTFLoader.js'),
-      import('three/examples/jsm/loaders/DRACOLoader.js'),
-    ]).then(([gltfLoaderModule, dracoLoaderModule]) => {
-      return {
-        GLTFLoader: gltfLoaderModule.GLTFLoader as unknown as new () => GltfLoaderLike,
-        DRACOLoader: dracoLoaderModule.DRACOLoader as unknown as new () => DracoLoaderLike,
-      };
-    });
-  }
-
-  return sharedThreeExampleLoadersPromise;
-};
-
-const getDracoLoader = async (): Promise<DracoLoaderLike> => {
-  if (!sharedDracoLoader) {
-    const { DRACOLoader } = await loadThreeExampleLoaders();
-    sharedDracoLoader = new DRACOLoader();
-    sharedDracoLoader.setDecoderPath(DRACO_DECODER_PATHS[0]);
-    sharedDracoLoader.setDecoderConfig({ type: 'js' });
-  }
-
-  return sharedDracoLoader;
-};
-
 const buildModelFromGltf = (
   modelGroup: THREE.Group,
   gltf: { scene: THREE.Object3D },
@@ -147,50 +92,6 @@ const setMaterialsTransparentOnGroup = (modelGroup: THREE.Group): void => {
   });
 };
 
-const loadWithDracoFallback = (
-  modelUrl: string,
-  dracoPathIndex: number,
-): Promise<{ scene: THREE.Object3D; decoderPath: string }> => {
-  return (async () => {
-    const decoderPath = DRACO_DECODER_PATHS[dracoPathIndex];
-    if (!decoderPath) {
-      throw new Error('Aucun chemin de fallback Draco disponible.');
-    }
-
-    const [{ GLTFLoader }, dracoLoader] = await Promise.all([
-      loadThreeExampleLoaders(),
-      getDracoLoader(),
-    ]);
-
-    dracoLoader.setDecoderPath(decoderPath);
-
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.setDRACOLoader(dracoLoader);
-
-    return await new Promise<{ scene: THREE.Object3D; decoderPath: string }>((resolve, reject) => {
-      gltfLoader.load(
-        modelUrl,
-        (gltf) => {
-          resolve({ scene: gltf.scene, decoderPath });
-        },
-        undefined,
-        (error: unknown) => {
-          const hasNextFallback = dracoPathIndex + 1 < DRACO_DECODER_PATHS.length;
-
-          if (hasNextFallback) {
-            void loadWithDracoFallback(modelUrl, dracoPathIndex + 1)
-              .then(resolve)
-              .catch(reject);
-            return;
-          }
-
-          reject(error instanceof Error ? error : new Error(String(error)));
-        },
-      );
-    });
-  })();
-};
-
 export const createGlbModelComponent = (
   scene: THREE.Scene,
   modelUrl: string,
@@ -204,7 +105,7 @@ export const createGlbModelComponent = (
   const loaded = new Promise<void>((resolve, reject) => {
     const loadStart = performance.now();
 
-    void loadWithDracoFallback(modelUrl, 0)
+    void loadGlbWithDracoFallback(modelUrl)
       .then((gltf) => {
         buildModelFromGltf(modelGroup, gltf, config);
         setMaterialsTransparentOnGroup(modelGroup);
