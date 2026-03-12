@@ -117,13 +117,15 @@ Inspiration for design and interactivity:
 - `npm run dev` : start development server with hot reload
 - `npm run build` : create production build
 - `npm run preview` : preview production build locally
+- `npm run lf:check` : check tracked text files for CRLF/LF issues
+- `npm run lf:fix` : normalize tracked text files to LF
 - `npm run lint` : run ESLint checks
 - `npm run lint:fix` : run ESLint with auto-fix
-- `npm run lint:style` : run style-specific ESLint checks
-- `npm run lint:style:fix` : run style-specific ESLint checks with auto-fix
+- `npm run lint:style` : run Stylelint checks for CSS/SCSS
+- `npm run lint:style:fix` : run Stylelint with auto-fix for CSS/SCSS
 - `npm run typecheck` : run TypeScript type checks
 - `npm run test` : run unit tests
-- `npm run validate` : run all validation checks (lint, format, typecheck, test)
+- `npm run validate` : run `lf:check`, lint, stylelint, typecheck, and build
 
 ## Response Format for Agent Work
 

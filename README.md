@@ -82,6 +82,8 @@ Interface globale cible : bouton persistant `Retour au Hub`.
 npm run dev
 npm run build
 npm run preview
+npm run lf:check
+npm run lf:fix
 npm run lint
 npm run lint:fix
 npm run lint:style
@@ -90,6 +92,19 @@ npm run typecheck
 npm run test
 npm run validate
 ```
+
+## Linting
+
+- `ESLint` verifie le code TypeScript/JavaScript du projet (`src/**/*.{js,ts,tsx}`).
+- `Stylelint` verifie les styles CSS/SCSS (`src/**/*.{css,scss}`).
+
+Utilisation rapide :
+
+- Verifier le code : `npm run lint`
+- Corriger automatiquement le code : `npm run lint:fix`
+- Verifier les styles : `npm run lint:style`
+- Corriger automatiquement les styles : `npm run lint:style:fix`
+- Verifier tout le pipeline qualite (LF + lint + typecheck + build) : `npm run validate`
 
 ## Ressources
 
