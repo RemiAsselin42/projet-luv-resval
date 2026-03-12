@@ -74,6 +74,12 @@ Corps du message expliquant :
 BREAKING CHANGE: description si applicable
 ```
 
+**Règles de mise en page du corps (OBLIGATOIRE) :**
+
+- **Texte continu :** écris les paragraphes sur une seule ligne sans retours à la ligne manuels au milieu des phrases. Ne coupe jamais une phrase pour respecter une largeur visuelle.
+- **Séparation :** garde une ligne vide entre les paragraphes logiques.
+- **Listes à puces (recommandées quand il y a beaucoup de modifications) :** chaque item puce = une seule ligne complète. Les puces améliorent la lisibilité et restent un format privilégié pour énumérer plusieurs changements.
+
 **Types de commits :**
 
 - `feat`: Nouvelle fonctionnalité
@@ -92,19 +98,24 @@ BREAKING CHANGE: description si applicable
 ```
 feat(scroll-manager): ajoute la synchronisation avec les sections 3D
 
-Implémente un système qui synchronise le scroll de la page avec
-les animations des objets Three.js. Utilise Lenis pour le smooth scroll
-avec détection des sections visibles et transitions fluides.
+Implémente un système qui synchronise le scroll de la page avec les animations des objets Three.js. Utilise Lenis pour le smooth scroll avec détection des sections visibles et transitions fluides.
 
 Impact : améliore la fluidité de l'expérience utilisateur.
 
 fix(beatmaker): corrige le timing des samples audio
 
-Les samples entre 0.5 et 1.5 secondes étaient incorrectement décalés.
-Utilise requestAnimationFrame au lieu de setTimeout pour respecter
-la synchronisation audio précise.
+Les samples entre 0.5 et 1.5 secondes étaient incorrectement décalés. Utilise requestAnimationFrame au lieu de setTimeout pour respecter la synchronisation audio précise.
 
 Corrige #42
+
+refactor(ui): simplifie le rendu des composants modaux
+
+Changements apportés :
+- extraction de la logique d'affichage dans un hook custom useModalState
+- suppression de 3 fichiers de styles redondants
+- consolidation des deux variantes de bouton en une seule avec prop `variant`
+
+Impact : réduit la taille du bundle CSS de 15% et améliore la maintenabilité du code modal.
 ```
 
 ### 7. Exécution du commit
@@ -114,6 +125,7 @@ Corrige #42
 - Pour les messages multi-lignes, privilégie `git commit -F <fichier_message>`
    ou `git commit` (éditeur interactif) pour garantir de vrais retours à la ligne
    dans le corps.
+- **Structure du corps :** écris des paragraphes continus sur une seule ligne, séparés par des lignes vides. Les listes à puce restent l'exception où chaque item est une ligne distincte (recommandé quand il y a de nombreux changements).
 - N'utilise jamais des séquences littérales `\n` dans les arguments `-m`.
 - Important : chaque option `-m` crée un paragraphe distinct. Ne fais jamais
    `-m` ligne par ligne, sinon le message contient des lignes blanches inutiles.
