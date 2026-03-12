@@ -7,6 +7,7 @@ const mockWebGLContext = () => {
     getParameter: vi.fn(),
     getExtension: vi.fn(),
     MAX_TEXTURE_SIZE: 0x0d33,
+    RENDERER: 0x1f01,
     UNMASKED_RENDERER_WEBGL: 0x9246,
   };
   return gl;
@@ -54,7 +55,6 @@ describe('gpuCapabilities', () => {
 
     it('detects high tier for NVIDIA GPUs', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x9246 });
       gl.getParameter.mockReturnValue('NVIDIA GeForce RTX 3080');
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -66,7 +66,6 @@ describe('gpuCapabilities', () => {
 
     it('detects high tier for AMD GPUs', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x9246 });
       gl.getParameter.mockReturnValue('AMD Radeon RX 6800 XT');
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -78,7 +77,6 @@ describe('gpuCapabilities', () => {
 
     it('detects low tier for Intel integrated GPUs', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x9246 });
       gl.getParameter.mockReturnValue('Intel HD Graphics 620');
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -90,7 +88,6 @@ describe('gpuCapabilities', () => {
 
     it('detects low tier for mobile GPUs', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue({ UNMASKED_RENDERER_WEBGL: 0x9246 });
       gl.getParameter.mockReturnValue('Mali-G76');
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
@@ -100,10 +97,13 @@ describe('gpuCapabilities', () => {
       expect(detectGpuTier()).toBe('low');
     });
 
-    it('returns medium tier when debug info is unavailable but texture size is large', () => {
+    it('returns medium tier when renderer is unavailable but texture size is large', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue(null);
-      gl.getParameter.mockReturnValue(8192);
+      gl.getParameter.mockImplementation((param: number) => {
+        if (param === gl.RENDERER) return '';
+        if (param === gl.MAX_TEXTURE_SIZE) return 8192;
+        return null;
+      });
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
         () => gl,
@@ -112,10 +112,13 @@ describe('gpuCapabilities', () => {
       expect(detectGpuTier()).toBe('medium');
     });
 
-    it('returns low tier when debug info is unavailable and texture size is small', () => {
+    it('returns low tier when renderer is unavailable and texture size is small', () => {
       const gl = mockWebGLContext();
-      gl.getExtension.mockReturnValue(null);
-      gl.getParameter.mockReturnValue(4096);
+      gl.getParameter.mockImplementation((param: number) => {
+        if (param === gl.RENDERER) return '';
+        if (param === gl.MAX_TEXTURE_SIZE) return 4096;
+        return null;
+      });
 
       HTMLCanvasElement.prototype.getContext = vi.fn(
         () => gl,

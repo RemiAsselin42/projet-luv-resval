@@ -25,18 +25,15 @@ export const detectGpuTier = (): GpuTier => {
 
     const webgl = gl as WebGLRenderingContext;
 
-    const debugInfo = webgl.getExtension('WEBGL_debug_renderer_info');
-    if (!debugInfo) {
-      // No debug info available, check other indicators
+    const renderer = (webgl.getParameter(webgl.RENDERER) as string).toLowerCase();
+
+    if (!renderer || renderer === 'unknown') {
+      // Renderer name unavailable, use texture size as conservative heuristic.
       const maxTextureSize = webgl.getParameter(
         webgl.MAX_TEXTURE_SIZE,
       ) as number;
       return maxTextureSize >= 8192 ? 'medium' : 'low';
     }
-
-    const renderer = (
-      webgl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string
-    ).toLowerCase();
 
     // Integrated/mobile GPUs (low tier)
     if (/intel|mali|adreno|powervr|videocore|sgx/i.test(renderer)) {
