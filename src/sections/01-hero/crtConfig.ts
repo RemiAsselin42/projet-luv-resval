@@ -1,6 +1,96 @@
 import { crtMenuItems } from '../definitions';
 
 /**
+ * Baseline viewport height (1080p desktop standard) used for all responsive calculations.
+ * 
+ * This constant ensures consistent animation speeds, text scaling, and responsive behavior
+ * across all screen sizes:
+ * - Without normalization: 4K displays (2160px) would show animations 2x slower
+ * - animation/scroll progress would differ per resolution
+ * - text scale would compound viewport differences
+ * 
+ * All viewport-dependent calculations should normalize by this constant to ensure
+ * universal responsive behavior:
+ * 
+ * @example
+ * // Title animation (consistent speed on all screens)
+ * const heroProgress = scrollY / BASELINE_VIEWPORT_HEIGHT; // 0–1 as user scrolls
+ * 
+ * // Text scaling (DPR-aware, relative to 1080p baseline)
+ * const textScale = window.innerHeight / BASELINE_VIEWPORT_HEIGHT * window.devicePixelRatio;
+ */
+export const BASELINE_VIEWPORT_HEIGHT = 1080;
+
+/**
+ * Responsive text scaling for CRT content.
+ * 
+ * Strategy:
+ * 1. Scale based on window.innerHeight relative to BASELINE_VIEWPORT_HEIGHT (1080p)
+ * 2. Apply device pixel ratio (DPR) to ensure sharp text on Retina/4K displays
+ * 3. Clamp to reasonable range to prevent extreme scaling on very large/small screens
+ * 4. Apply mobile-specific adjustments for screens < 768px
+ * 
+ * This function works in tandem with heroProgress normalization to ensure consistent
+ * layout: if animations are normalized by 1080p, text scaling should be too.
+ * 
+ * Example outputs:
+ * - 1080p desktop, DPR=1: scale ≈ 1.0
+ * - 1440p desktop, DPR=1: scale ≈ 1.33
+ * - MacBook Retina (1440p logical, DPR=2): scale ≈ 1.33 × 2 = 2.66 (but clamped)
+ * - iPhone 15 (430px, DPR=3): scale ≈ 0.4 × 3 = 1.2 (mobile adjusted)
+ * 
+ * @returns Computed text scale factor (1.0 = baseline 1080p display)
+ */
+export const getResponsiveTextScale = (): number => {
+  const viewportHeight = Math.max(window.innerHeight, 1);
+  const dpr = Math.max(window.devicePixelRatio || 1, 1);
+  
+  // Base scaling relative to 1080p baseline
+  let scale = viewportHeight / BASELINE_VIEWPORT_HEIGHT;
+  
+  // Apply DPR for sharp text on high-density screens
+  // But cap at reasonable max to avoid text being too large
+  scale *= dpr;
+  
+  // Mobile-specific adjustment: reduce max scale on small viewports
+  if (viewportHeight < 768) {
+    // Mobile: clamp more aggressively to keep text readable
+    // On a 430px phone with DPR=3: (430/1080) * 3 = 1.19 → clamp to [0.8, 1.4]
+    return Math.max(0.8, Math.min(scale, 1.4));
+  }
+  
+  // Tablet/Desktop: more generous range
+  // On a 2560px 4K display with DPR=1: (2560/1080) * 1 = 2.37 → clamp to [0.8, 2.5]
+  return Math.max(0.8, Math.min(scale, 2.5));
+};
+
+/**
+ * Mobile-first media query breakpoints for CRT responsive adjustments.
+ * Used to expose different font sizes and configurations based on screen size.
+ */
+export const RESPONSIVE_BREAKPOINTS = {
+  /** Mobile: ≤480px (phones) */
+  MOBILE: 480,
+  /** Tablet: 481–768px (small tablets, landscape phones) */
+  TABLET_SM: 768,
+  /** Tablet: 769–1024px (iPad, medium tablets) */
+  TABLET_MD: 1024,
+  /** Desktop: ≥1025px */
+  DESKTOP: 1025,
+} as const;
+
+/**
+ * Get current breakpoint category based on viewport width.
+ */
+export const getCurrentBreakpoint = (): keyof typeof RESPONSIVE_BREAKPOINTS => {
+  const width = window.innerWidth;
+  if (width <= RESPONSIVE_BREAKPOINTS.MOBILE) return 'MOBILE';
+  if (width <= RESPONSIVE_BREAKPOINTS.TABLET_SM) return 'TABLET_SM';
+  if (width <= RESPONSIVE_BREAKPOINTS.TABLET_MD) return 'TABLET_MD';
+  return 'DESKTOP';
+};
+
+/**
  * Configuration constants for the CRT screen UI layout.
  * Centralized to avoid duplication between hero.ts and crtShader.ts.
  */

@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { createCrtScreen } from './crtShader';
+import { applyCrtModelPreview } from './crtModelPreview';
 import { clamp01 } from '../../utils/math';
-import { CRT_MENU_CONFIG, getCrtMenuStartY } from './crtConfig';
+import { CRT_MENU_CONFIG, getCrtMenuStartY, BASELINE_VIEWPORT_HEIGHT } from './crtConfig';
 import { hasWebGLSupport, detectGpuTier, getShaderComplexity } from '../../core/gpuCapabilities';
 import initHeroFallback from './heroFallback';
 import { getSectionSelector, SECTION_IDS, crtMenuSectionIds } from '../definitions';
@@ -11,12 +12,38 @@ import { createMenuPreview3D, getMenuPreviewQualityOptions } from '../../compone
 import darthVaderHelmetUrl from '../../3d-models/darth_vader_helmet.glb?url';
 import cctvCameraUrl from '../../3d-models/low-poly_cctv_camera.glb?url';
 
-const HEIGHT_LOCK_MIN_ASPECT_RATIO = 1.6;
 const MENU_PREVIEW_TARGET_DIMENSIONS = {
   RELIQUES: 2.5,
   BIG_BROTHER: 1.8,
 } as const;
 
+/**
+ * Compute CRT mesh scale to fit the viewport responsively.
+ *
+ * Strategy: Lock to viewport height on widescreen displays (≥16:9 aspect ratio).
+ * On narrower screens (tablets, older monitors), scale down to "contain" fit
+ * to avoid cutting off left/right content.
+ *
+ * The aspect ratio breakpoint is dynamically computed from viewport width:
+ * - Desktop (>=1366px): Use 1.6 (accommodates 16:10, MacBook, common ultrawide monitors)
+ * - Mobile/Tablet (<1366px): Use 1.2 (responsive to portrait/landscape transitions)
+ *
+ * This ensures:
+ * 1. CRT height is stable (no vertical black bars)
+ * 2. CRT width scales naturally with viewport
+ * 3. Menu and content remain accessible on all aspect ratios
+ *
+ * @example
+ * - 1920×1080 (16:9): heightLockedScale
+ * - 1440×900 (16:10): min(heightLockedScale, containScale) → slight shrink
+ * - iPhone 15 (390×844, 9:19.6): strong contain fit → CRT much smaller
+ *
+ * @param visibleHeight - Visible world-space height from camera FOV
+ * @param viewportAspectRatio - window.innerWidth / window.innerHeight
+ * @param basePlaneWidth - Base CRT mesh width (constant 6.222)
+ * @param basePlaneHeight - Base CRT mesh height (constant 3.5)
+ * @returns Scale multiplier for the CRT mesh
+ */
 export const computeCrtScale = (
   visibleHeight: number,
   viewportAspectRatio: number,
@@ -26,12 +53,21 @@ export const computeCrtScale = (
   const safeVisibleHeight = Math.max(visibleHeight, 0.0001);
   const safeViewportAspect = Math.max(viewportAspectRatio, 0.0001);
 
+  // Calculate scale needed to fill viewport height
   const heightLockedScale = safeVisibleHeight / basePlaneHeight;
 
-  if (safeViewportAspect >= HEIGHT_LOCK_MIN_ASPECT_RATIO) {
+  // Determine aspect ratio breakpoint based on viewport
+  // Desktop/widescreen (≥1366px): use 1.6 (standard for 16:9 and 16:10)
+  // Mobile (< 1366px): use 1.2 (handles portrait/landscape phone transitions)
+  const heightLockBreakpoint = window.innerWidth >= 1366 ? 1.6 : 1.2;
+
+  if (safeViewportAspect >= heightLockBreakpoint) {
+    // Wide screen: lock CRT to visible height (stable, no vertical bars)
     return heightLockedScale;
   }
 
+  // Narrow screen: scale to fit both width and height (contain logic)
+  // This prevents cutting off left/right content on phones and tablets
   const visibleWidth = safeVisibleHeight * safeViewportAspect;
   const containScale = Math.min(heightLockedScale, visibleWidth / basePlaneWidth);
   return containScale;
@@ -393,13 +429,16 @@ const initHeroSection: SectionInitializer = async (context) => {
     update: (_deltaSeconds: number, elapsedSeconds: number) => {
       crt.update(elapsedSeconds);
 
-      const viewportHeight = Math.max(window.innerHeight, 1);
       const scrollY = context.scrollManager.getScrollY();
 
       // Titre : monte et sort du canvas pendant le scroll hero
-      const heroProgress = clamp01(scrollY / viewportHeight);
+      // Normalized by baseline 1080p for consistent animation speed across all screen sizes.
+      // Without normalization: 4K would show 50% slower animation, mobile 28% faster.
+      // This ensures the same scroll distance produces identical title progression universally.
+      const heroProgress = clamp01(scrollY / BASELINE_VIEWPORT_HEIGHT);
+
       // Menu opacité : préchargé à 50% du hero scroll → pleinement visible à l'entrée de la section menu
-      const menuOpacity = clamp01((scrollY / viewportHeight - 0.5) / 0.5);
+      const menuOpacity = clamp01((scrollY / BASELINE_VIEWPORT_HEIGHT - 0.5) / 0.5);
       currentMenuOpacity = menuOpacity;
       // elapsed = 0 tant que l'image CRT n'est pas visible (loaderStartTime null avant uPowerOn ≥ 0.3).
       const elapsed = loaderStartTime !== null ? (performance.now() - loaderStartTime) / 1000 : 0;
@@ -418,7 +457,11 @@ const initHeroSection: SectionInitializer = async (context) => {
       menuPreview.setHoveredIndex(isAtMenuSection() ? hoverMenuIndex : -1);
       menuPreview.update(_deltaSeconds);
       menuPreview.renderPreview();
-      crt.setModelPreview(menuPreview.getTexture(), menuPreview.getOpacity(), menuPreview.getTexelSize());
+      applyCrtModelPreview(crt, {
+        texture: menuPreview.getTexture(),
+        opacity: menuPreview.getOpacity(),
+        texelSize: menuPreview.getTexelSize(),
+      });
 
       // Afficher/masquer les boutons d'accessibilité en fonction de la visibilité du menu ET de la position du scroll
       if (menuOpacity > 0.3 && isAtMenuSection()) {

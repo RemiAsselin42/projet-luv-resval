@@ -1,5 +1,11 @@
 import * as THREE from 'three';
-import { CRT_MENU_CONFIG, CRT_TITLE_CONFIG, CRT_LOADER_CONFIG, getCrtMenuStartY } from './crtConfig';
+import {
+  CRT_MENU_CONFIG,
+  CRT_TITLE_CONFIG,
+  CRT_LOADER_CONFIG,
+  getCrtMenuStartY,
+  getResponsiveTextScale,
+} from './crtConfig';
 
 export interface CrtCanvasTexture {
   texture: THREE.CanvasTexture;
@@ -30,17 +36,11 @@ export const createTextCanvasTexture = (
   let lastTextScale = -1;
   let lastLoadingProgress = -1;
 
-  const clamp = (value: number, min: number, max: number): number => {
-    return Math.min(Math.max(value, min), max);
-  };
-
   const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number): void => {
     const clampedTitleProgress = Math.min(Math.max(titleProgress, 0), 1);
     const clampedMenuOpacity = Math.min(Math.max(menuOpacity, 0), 1);
     const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
-    // Échelle de texte basée sur la hauteur CSS du viewport.
-    // Objectif: éviter un texte visuellement trop petit sur les écrans 2K/Retina.
-    const textScale = clamp(window.innerHeight / 1080, 0.9, 1.3);
+    const textScale = getResponsiveTextScale();
 
     // Skip redraw if nothing changed significantly.
     // On compare loadingProgress brut (pas clampé) pour détecter la sentinelle > 1.
