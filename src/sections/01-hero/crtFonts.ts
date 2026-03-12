@@ -1,19 +1,24 @@
 // Ensures fonts are loaded before drawing on canvas to prevent fallback rendering.
 const preloadFonts = async (): Promise<void> => {
+  const silvermistItalicUrl = new URL('../../assets/fonts/Silvermist-Italic.otf', import.meta.url).href;
+  const silvermistRegularUrl = new URL('../../assets/fonts/Silvermist-Regular.otf', import.meta.url).href;
+  const futuraCondensedExtraBoldUrl = new URL('../../assets/fonts/Futura-CondensedExtraBold.otf', import.meta.url).href;
+  const futuraMediumUrl = new URL('../../assets/fonts/Futura-Medium.otf', import.meta.url).href;
+
   const fontsToLoad = [
-    new FontFace('Silvermist-Italic', 'url(/src/assets/fonts/Silvermist-Italic.otf)', {
+    new FontFace('Silvermist-Italic', `url(${silvermistItalicUrl})`, {
       weight: 'normal',
       style: 'italic',
     }),
-    new FontFace('Silvermist-Regular', 'url(/src/assets/fonts/Silvermist-Regular.otf)', {
+    new FontFace('Silvermist-Regular', `url(${silvermistRegularUrl})`, {
       weight: 'normal',
       style: 'normal',
     }),
-    new FontFace('Futura-CondensedExtraBold', 'url(/src/assets/fonts/Futura-CondensedExtraBold.otf)', {
+    new FontFace('Futura-CondensedExtraBold', `url(${futuraCondensedExtraBoldUrl})`, {
       weight: '800',
       style: 'normal',
     }),
-    new FontFace('Futura-Medium', 'url(/src/assets/fonts/Futura-Medium.otf)', {
+    new FontFace('Futura-Medium', `url(${futuraMediumUrl})`, {
       weight: '500',
       style: 'normal',
     }),
@@ -21,8 +26,6 @@ const preloadFonts = async (): Promise<void> => {
 
   const loadedFonts = await Promise.all(fontsToLoad.map((font) => font.load()));
   loadedFonts.forEach((font) => document.fonts.add(font));
-  // eslint-disable-next-line no-console
-  console.debug('CRT fonts preloaded successfully');
 };
 
 let fontsPreloaded = false;
