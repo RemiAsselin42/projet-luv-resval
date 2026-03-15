@@ -1,5 +1,7 @@
 node_modules
 dist
+# Fichiers tiers minifiés — non maintenus, génèrent des faux positifs d'analyse
+public/draco/
 dist-ssr
 *.local
 .vscode/*
