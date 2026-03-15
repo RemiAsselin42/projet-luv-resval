@@ -28,16 +28,16 @@ const preloadFonts = async (): Promise<void> => {
   loadedFonts.forEach((font) => document.fonts.add(font));
 };
 
-let fontsPreloaded = false;
+let isFontsPreloaded = false;
 let fontPreloadPromise: Promise<void> | null = null;
 
 export const ensureFontsLoaded = async (): Promise<void> => {
-  if (fontsPreloaded) return;
+  if (isFontsPreloaded) return;
 
   if (!fontPreloadPromise) {
     fontPreloadPromise = preloadFonts()
       .then(() => {
-        fontsPreloaded = true;
+        isFontsPreloaded = true;
       })
       .catch((error) => {
         // Allow retry on the next call if preload fails.

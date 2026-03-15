@@ -24,18 +24,22 @@ export const BASELINE_VIEWPORT_HEIGHT = 1080;
  *
  * @returns Computed text scale factor (1.0 on desktop/tablet)
  */
+const TEXT_SCALE_MOBILE = 0.9;
+const TEXT_SCALE_TABLET_SM = 0.95;
+const TEXT_SCALE_DEFAULT = 1;
+
 export const getResponsiveTextScale = (): number => {
   const viewportWidth = Math.max(window.innerWidth, 1);
 
   if (viewportWidth <= RESPONSIVE_BREAKPOINTS.MOBILE) {
-    return 0.9;
+    return TEXT_SCALE_MOBILE;
   }
 
   if (viewportWidth <= RESPONSIVE_BREAKPOINTS.TABLET_SM) {
-    return 0.95;
+    return TEXT_SCALE_TABLET_SM;
   }
 
-  return 1;
+  return TEXT_SCALE_DEFAULT;
 };
 
 /**
@@ -105,13 +109,13 @@ export const CRT_LOADER_CONFIG = {
   /** Panel width as a ratio of canvas width */
   PANEL_WIDTH_RATIO: 0.56,
   /** Panel height as a ratio of canvas height */
-  PANEL_HEIGHT_RATIO: 0.045,
+  PANEL_HEIGHT_RATIO: 0.065,
   /** Minimum panel height in pixels */
-  PANEL_HEIGHT_MIN_PX: 40,
+  PANEL_HEIGHT_MIN_PX: 60,
   /** Panel vertical position as a ratio of canvas height */
   PANEL_Y_RATIO: 0.53,
   /** Vertical offset of the label above the bar in pixels (before textScale) */
-  LABEL_OFFSET_PX: 26,
+  LABEL_OFFSET_PX: 52,
 } as const;
 
 export const CRT_TITLE_CONFIG = {
@@ -134,9 +138,9 @@ export const CRT_TITLE_CONFIG = {
   /** Font family for the date */
   DATE_FONT_FAMILY: 'Futura-Medium',
   /** Title font size in pixels */
-  TITLE_FONT_SIZE: 120,
+  TITLE_FONT_SIZE: 240,
   /** Subtitle font size in pixels */
-  SUBTITLE_FONT_SIZE: 25,
+  SUBTITLE_FONT_SIZE: 50,
   /** Date font size in pixels */
-  DATE_FONT_SIZE: 8,
+  DATE_FONT_SIZE: 16,
 } as const;
