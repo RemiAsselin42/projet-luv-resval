@@ -29,10 +29,11 @@ export const detectGpuTier = (): GpuTier => {
 
     if (!renderer || renderer === 'unknown') {
       // Renderer name unavailable, use texture size as conservative heuristic.
+      const MIN_TEXTURE_SIZE_FOR_MEDIUM = 8192;
       const maxTextureSize = webgl.getParameter(
         webgl.MAX_TEXTURE_SIZE,
       ) as number;
-      return maxTextureSize >= 8192 ? 'medium' : 'low';
+      return maxTextureSize >= MIN_TEXTURE_SIZE_FOR_MEDIUM ? 'medium' : 'low';
     }
 
     // Integrated/mobile GPUs (low tier)

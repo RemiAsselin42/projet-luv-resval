@@ -6,15 +6,23 @@ interface ThreeViewport {
   renderer: THREE.WebGLRenderer;
 }
 
+// Seuils matériels considérés comme "appareils à faible capacité"
+const LOW_DEVICE_MEMORY_GB = 4;
+const LOW_CPU_CORE_COUNT = 4;
+// DPR maximal sur appareils faibles (évite le surcoût de rendu)
+const PIXEL_RATIO_CAP_LOW = 1.25;
+// DPR maximal sur appareils performants
+const PIXEL_RATIO_CAP_DEFAULT = 2;
+
 const getAdaptivePixelRatioCap = (): number => {
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 0;
-  const cores = navigator.hardwareConcurrency ?? 4;
+  const cores = navigator.hardwareConcurrency ?? LOW_CPU_CORE_COUNT;
 
-  if ((memory > 0 && memory <= 4) || cores <= 4) {
-    return 1.25;
+  if ((memory > 0 && memory <= LOW_DEVICE_MEMORY_GB) || cores <= LOW_CPU_CORE_COUNT) {
+    return PIXEL_RATIO_CAP_LOW;
   }
 
-  return 2;
+  return PIXEL_RATIO_CAP_DEFAULT;
 };
 
 export const getRecommendedPixelRatio = (): number => {
