@@ -173,6 +173,10 @@ Pour chaque session de commit, fournis :
 - Vérification systématique avec `git diff --cached`
 - Messages au passé composé ("ajoute", "corrige", "modifie")
 - Corps du message qui explique le "pourquoi", pas le "comment"
+- Ne pas ajouter de mentions de type "Co-authored-by" dans les messages de commit que je te demande de rédiger. Je gère ça moi-même après coup si besoin.
+- Utiliser les types de commit appropriés (feat, fix, refactor, etc.)
+- Utiliser des scopes pertinents pour préciser les zones affectées
+- Utiliser des listes à puce dans le corps du message quand il y a de nombreux changements à énumérer
 
 ## Référence
 
