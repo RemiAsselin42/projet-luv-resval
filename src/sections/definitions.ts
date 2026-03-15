@@ -29,7 +29,7 @@ const sectionDefinitions = [
     screenReaderOnlyHeading: true,
     includeInCrtMenu: true,
     crtMenuLabel: "L'AMORCE",
-    load: async () => (await import('./01-hero/hero')).default,
+    load: async () => (await import('./01-hero/hero')).initHeroSection,
   },
   {
     id: 'hub-central',
@@ -52,15 +52,18 @@ const sectionDefinitions = [
   {
     id: 'oeil-big-brother',
     heading: "Section 2 - L'Oeil de Big Brother",
-    description: 'Transition dystopique, visage geant et parallax de levee de tete au scroll.',
+    description:
+      'Transition dystopique, visage geant et parallax de levee de tete au scroll.',
     includeInCrtMenu: true,
     crtMenuLabel: 'BIG BROTHER',
-    load: async () => (await import('./04-oeil-big-brother/bigBrother')).default,
+    load: async () =>
+      (await import('./04-oeil-big-brother/bigBrother')).default,
   },
   {
     id: 'mpc',
     heading: 'Section 3 - La MPC',
-    description: '9 pads interactifs pour reconstruire le morceau stems par stems.',
+    description:
+      '9 pads interactifs pour reconstruire le morceau stems par stems.',
     includeInCrtMenu: true,
     crtMenuLabel: 'MPC',
     load: async () => (await import('./05-mpc-3d/mpc3d')).default,
@@ -109,4 +112,5 @@ export const crtMenuSectionIds = sections
   .filter((section) => section.includeInCrtMenu)
   .map((section) => section.id);
 
-export const getSectionSelector = (id: SectionId): string => `[data-section="${id}"]`;
+export const getSectionSelector = (id: SectionId): string =>
+  `[data-section="${id}"]`;

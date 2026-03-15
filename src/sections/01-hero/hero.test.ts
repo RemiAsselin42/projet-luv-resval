@@ -19,69 +19,30 @@ describe('computeCrtScale', () => {
   });
 
   it('falls back to contain scaling on very narrow viewport', () => {
-    const originalWidth = window.innerWidth;
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 1920,
-    });
+    const narrowAspect = 4 / 3;
+    const scale = computeCrtScale(VISIBLE_HEIGHT, narrowAspect, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT, 1920);
 
-    try {
-      const narrowAspect = 4 / 3;
-      const scale = computeCrtScale(VISIBLE_HEIGHT, narrowAspect, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT);
+    const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
+    const containScale = Math.min(heightLockedScale, (VISIBLE_HEIGHT * narrowAspect) / BASE_PLANE_WIDTH);
 
-      const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
-      const containScale = Math.min(heightLockedScale, (VISIBLE_HEIGHT * narrowAspect) / BASE_PLANE_WIDTH);
-
-      expect(scale).toBeCloseTo(containScale, 6);
-      expect(scale).toBeLessThan(heightLockedScale);
-    } finally {
-      Object.defineProperty(window, 'innerWidth', {
-        configurable: true,
-        value: originalWidth,
-      });
-    }
+    expect(scale).toBeCloseTo(containScale, 6);
+    expect(scale).toBeLessThan(heightLockedScale);
   });
 
   it('uses the 1.2 breakpoint below 1366px width', () => {
-    const originalWidth = window.innerWidth;
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 1365,
-    });
+    const scale = computeCrtScale(VISIBLE_HEIGHT, 4 / 3, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT, 1365);
+    const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
 
-    try {
-      const scale = computeCrtScale(VISIBLE_HEIGHT, 4 / 3, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT);
-      const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
-
-      expect(scale).toBeCloseTo(heightLockedScale, 6);
-    } finally {
-      Object.defineProperty(window, 'innerWidth', {
-        configurable: true,
-        value: originalWidth,
-      });
-    }
+    expect(scale).toBeCloseTo(heightLockedScale, 6);
   });
 
   it('uses contain fallback at 1366px width with 4:3 aspect', () => {
-    const originalWidth = window.innerWidth;
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 1366,
-    });
+    const scale = computeCrtScale(VISIBLE_HEIGHT, 4 / 3, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT, 1366);
+    const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
+    const containScale = Math.min(heightLockedScale, (VISIBLE_HEIGHT * (4 / 3)) / BASE_PLANE_WIDTH);
 
-    try {
-      const scale = computeCrtScale(VISIBLE_HEIGHT, 4 / 3, BASE_PLANE_WIDTH, BASE_PLANE_HEIGHT);
-      const heightLockedScale = VISIBLE_HEIGHT / BASE_PLANE_HEIGHT;
-      const containScale = Math.min(heightLockedScale, (VISIBLE_HEIGHT * (4 / 3)) / BASE_PLANE_WIDTH);
-
-      expect(scale).toBeCloseTo(containScale, 6);
-      expect(scale).toBeLessThan(heightLockedScale);
-    } finally {
-      Object.defineProperty(window, 'innerWidth', {
-        configurable: true,
-        value: originalWidth,
-      });
-    }
+    expect(scale).toBeCloseTo(containScale, 6);
+    expect(scale).toBeLessThan(heightLockedScale);
   });
 
   it('guards against zero or negative values', () => {
