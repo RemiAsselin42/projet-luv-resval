@@ -231,6 +231,50 @@ const showEntry = (entry: ModelEntry): void => {
   });
 };
 
+/** Rend la mini-scène dans le render target en sauvegardant/restaurant l'état du renderer. */
+const renderMiniScene = (
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.PerspectiveCamera,
+  renderTarget: THREE.WebGLRenderTarget,
+): void => {
+  const prevTarget = renderer.getRenderTarget();
+  const prevClearColor = new THREE.Color();
+  const prevClearAlpha = renderer.getClearAlpha();
+  renderer.getClearColor(prevClearColor);
+
+  renderer.setRenderTarget(renderTarget);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  // Restaurer l'état précédent
+  renderer.setRenderTarget(prevTarget);
+  renderer.setClearColor(prevClearColor, prevClearAlpha);
+};
+
+/** Nettoie une entrée modèle : annule les tweens, dispose les géométries/matériaux, retire de la scène. */
+const disposeModelEntry = (entry: ModelEntry, scene: THREE.Scene): void => {
+  entry.loadVersion += 1;
+  entry.tween?.kill();
+  entry.group.traverse((node) => {
+    if (node instanceof LineSegments2) {
+      node.geometry?.dispose();
+      if (node.material instanceof THREE.Material) {
+        node.material.dispose();
+      }
+      return;
+    }
+    if (!(node instanceof THREE.Mesh)) return;
+    node.geometry?.dispose();
+    const mats: THREE.Material[] = Array.isArray(node.material)
+      ? node.material
+      : [node.material];
+    mats.forEach((m) => m.dispose());
+  });
+  scene.remove(entry.group);
+};
+
 interface MiniScene {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -420,49 +464,19 @@ export const createMenuPreview3D = (
 
   const getTexture = (): THREE.Texture => renderTarget.texture;
 
-  /** Rend la mini-scène dans le render target, en sauvegardant/restaurant l'état du renderer. */
   const renderPreview = (): void => {
     if (isDisposed) return;
     if (getOpacity() <= 0) return;
     frameCounter = (frameCounter + 1) % renderFrameInterval;
     if (frameCounter !== 0) return;
 
-    const prevTarget = renderer.getRenderTarget();
-    const prevClearColor = new THREE.Color();
-    const prevClearAlpha = renderer.getClearAlpha();
-    renderer.getClearColor(prevClearColor);
-
-    renderer.setRenderTarget(renderTarget);
-    renderer.setClearColor(0x000000, 0);
-    renderer.clear();
-    renderer.render(miniScene, miniCamera);
-
-    // Restaurer l'état précédent
-    renderer.setRenderTarget(prevTarget);
-    renderer.setClearColor(prevClearColor, prevClearAlpha);
+    renderMiniScene(renderer, miniScene, miniCamera, renderTarget);
   };
 
   const dispose = (): void => {
     isDisposed = true;
     for (const [, entry] of entries) {
-      entry.loadVersion += 1;
-      entry.tween?.kill();
-      entry.group.traverse((node) => {
-        if (node instanceof LineSegments2) {
-          node.geometry?.dispose();
-          if (node.material instanceof THREE.Material) {
-            node.material.dispose();
-          }
-          return;
-        }
-        if (!(node instanceof THREE.Mesh)) return;
-        node.geometry?.dispose();
-        const mats: THREE.Material[] = Array.isArray(node.material)
-          ? node.material
-          : [node.material];
-        mats.forEach((m) => m.dispose());
-      });
-      miniScene.remove(entry.group);
+      disposeModelEntry(entry, miniScene);
     }
     entries.clear();
     renderTarget.dispose();

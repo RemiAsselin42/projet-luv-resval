@@ -298,6 +298,190 @@ const createHeroScrollTimelines = (
   return { heroTimeline, faceVaderFadeTimeline };
 };
 
+// ── Contrôleur de chargement (power-on + skip + transition croisée) ────────────
+
+interface LoadingController {
+  /** Calcule le loadingProgress courant (0..2). Déclenche unlockAfterLoading au moment de la transition. */
+  getLoadingProgress: () => number;
+  /** Indique si le chargement est toujours en cours. */
+  isStillLoading: () => boolean;
+  /** Nettoie les listeners et débloque le scroll si nécessaire. */
+  dispose: () => void;
+}
+
+const createLoadingController = (
+  crt: { setPowerOn: (v: number) => void },
+  scrollManager: { stop: () => void; start: () => void },
+): LoadingController => {
+  const powerOnState = { value: 0 };
+  // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
+  let loaderStartTime: number | null = null;
+
+  // isLoading = true pendant toute la phase loader (barre 0→100% + hold).
+  let isLoading = true;
+  // Temps virtuel injecté dans le calcul d'elapsed quand l'utilisateur skip.
+  let forcedElapsed: number | null = null;
+  // Timestamp réel enregistré au moment où le hold court se termine après skip.
+  let forcedElapsedBase: number | null = null;
+
+  // Bloque le scroll dès maintenant, avant même l'allumage CRT.
+  scrollManager.stop();
+
+  // ── Skip loader ──────────────────────────────────────────────
+  const skipLoader = (): void => {
+    if (!isLoading) return;
+    if (loaderStartTime === null) {
+      loaderStartTime = performance.now();
+    }
+    const currentElapsed = (performance.now() - loaderStartTime) / 1000;
+    const proxy = { e: currentElapsed };
+    gsap.to(proxy, {
+      e: LOADER_TOTAL_DURATION_SECONDS,
+      duration: 0.4,
+      ease: 'power2.out',
+      onUpdate: () => {
+        forcedElapsed = proxy.e;
+      },
+      onComplete: () => {
+        forcedElapsed = LOADER_TOTAL_DURATION_SECONDS;
+        gsap.delayedCall(0.25, () => {
+          forcedElapsedBase = performance.now();
+        });
+      },
+    });
+  };
+
+  const onLoadingClick = (_event: MouseEvent): void => {
+    skipLoader();
+  };
+
+  window.addEventListener('click', onLoadingClick);
+
+  const unlockAfterLoading = (): void => {
+    window.removeEventListener('click', onLoadingClick);
+    scrollManager.start();
+    isLoading = false;
+  };
+
+  // ── Animation power-on CRT ───────────────────────────────────
+  gsap.to(powerOnState, {
+    value: 1,
+    duration: 2.5,
+    delay: 0.4,
+    ease: 'power2.inOut',
+    onUpdate: () => {
+      crt.setPowerOn(powerOnState.value);
+      if (loaderStartTime === null && powerOnState.value >= 0.3) {
+        loaderStartTime = performance.now();
+      }
+    },
+  });
+
+  return {
+    getLoadingProgress: () => {
+      let elapsed: number;
+      if (loaderStartTime === null) {
+        elapsed = 0;
+      } else if (forcedElapsedBase !== null) {
+        elapsed =
+          LOADER_TOTAL_DURATION_SECONDS +
+          LOADER_HOLD_SECONDS +
+          (performance.now() - forcedElapsedBase) / 1000;
+      } else if (forcedElapsed !== null) {
+        elapsed = forcedElapsed;
+      } else {
+        elapsed = (performance.now() - loaderStartTime) / 1000;
+      }
+
+      const barProgress = computeLoadingProgress(elapsed);
+
+      if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
+        return barProgress;
+      }
+      if (elapsed < LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS) {
+        return 1;
+      }
+
+      // 1..2 sur LOADER_TRANSITION_SECONDS : fondu croisé loader → héro
+      if (isLoading) unlockAfterLoading();
+      const transitionElapsed =
+        elapsed - LOADER_TOTAL_DURATION_SECONDS - LOADER_HOLD_SECONDS;
+      return 1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
+    },
+
+    isStillLoading: () => isLoading,
+
+    dispose: () => {
+      window.removeEventListener('click', onLoadingClick);
+      if (isLoading) {
+        scrollManager.start();
+        isLoading = false;
+      }
+    },
+  };
+};
+
+// ── Raycaster hero ─────────────────────────────────────────────────────────────
+
+interface HeroRaycaster {
+  /** Retourne l'index du menu survolé (-1 si aucun). */
+  getHoverMenuIndexFromPointer: (clientX: number, clientY: number, menuOpacity: number) => number;
+  /** Vérifie si un clic touche le mesh CRT. */
+  isClickOnCrt: (clientX: number, clientY: number) => boolean;
+  /** Indique si le scroll a atteint la section menu. */
+  isAtMenuSection: () => boolean;
+}
+
+const createHeroRaycaster = (
+  camera: THREE.PerspectiveCamera,
+  renderer: THREE.WebGLRenderer,
+  crtMesh: THREE.Mesh,
+  menuElement: Element | null,
+  scrollManager: { getScrollY: () => number },
+): HeroRaycaster => {
+  const raycaster = new THREE.Raycaster();
+  const mouseNDC = new THREE.Vector2();
+
+  const updateNDC = (clientX: number, clientY: number): void => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouseNDC, camera);
+  };
+
+  return {
+    getHoverMenuIndexFromPointer: (clientX, clientY, menuOpacity) => {
+      updateNDC(clientX, clientY);
+      const hits = raycaster.intersectObject(crtMesh);
+
+      if (hits.length === 0 || !hits[0]?.uv) {
+        return -1;
+      }
+
+      // UV.y=0 en bas, UV.y=1 en haut -> canvas Y inverse
+      const canvasRelY = 1 - hits[0].uv.y;
+      // Reproduit exactement la même logique verticale que le draw canvas.
+      const menuStartY = getCrtMenuStartY(menuOpacity);
+      const relativeY = canvasRelY - menuStartY;
+      const idx = Math.floor(relativeY / CRT_MENU_CONFIG.LINE_HEIGHT);
+
+      return idx >= 0 && idx < CRT_MENU_CONFIG.MENU_COUNT ? idx : -1;
+    },
+
+    isClickOnCrt: (clientX, clientY) => {
+      updateNDC(clientX, clientY);
+      return raycaster.intersectObject(crtMesh).length > 0;
+    },
+
+    isAtMenuSection: () => {
+      const currentScrollY = scrollManager.getScrollY();
+      const menuTop =
+        menuElement instanceof HTMLElement ? menuElement.offsetTop : Infinity;
+      return currentScrollY >= menuTop - Math.max(window.innerHeight, 1) * 0.2;
+    },
+  };
+};
+
 // ── Section initializer ────────────────────────────────────────────────────────
 
 export const initHeroSection: SectionInitializer = async (context) => {
@@ -382,83 +566,8 @@ export const initHeroSection: SectionInitializer = async (context) => {
 
   fitCrtToViewport();
 
-  // ── Animation d'allumage (power-on) ───────────────────────────
-  const powerOnState = { value: 0 };
-  // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
-  // Ancre le timer du loader à l'animation réelle, sans offset codé en dur.
-  let loaderStartTime: number | null = null;
-
-  // ── Contrôle du loading (skip au clic, lock scroll) ───────────
-  // isLoading = true pendant toute la phase loader (barre 0→100% + hold).
-  // Mis à false dès que la transition croisée démarre (loadingProgress > 1).
-  let isLoading = true;
-  // Temps virtuel injecté dans le calcul d'elapsed quand l'utilisateur skip.
-  let forcedElapsed: number | null = null;
-  // Timestamp réel enregistré au moment où le hold court se termine after skip.
-  // Après ce point, elapsed = LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS
-  //                           + (now - forcedElapsedBase) / 1000
-  // ce qui déclenche naturellement la transition croisée.
-  let forcedElapsedBase: number | null = null;
-
-  // Bloque le scroll dès maintenant, avant même l'allumage CRT.
-  context.scrollManager.stop();
-
-  // Skip : l'utilisateur clique n'importe où →
-  //   1) barre file jusqu'à 100% en 0.4s
-  //   2) hold visible 0.25s
-  //   3) le temps réel reprend depuis TOTAL + HOLD → déclenche la transition croisée
-  const skipLoader = (): void => {
-    if (!isLoading) return;
-    if (loaderStartTime === null) {
-      // CRT pas encore allumé : on amorce le timer immédiatement
-      loaderStartTime = performance.now();
-    }
-    const currentElapsed = (performance.now() - loaderStartTime) / 1000;
-    const proxy = { e: currentElapsed };
-    gsap.to(proxy, {
-      e: LOADER_TOTAL_DURATION_SECONDS,
-      duration: 0.4,
-      ease: 'power2.out',
-      onUpdate: () => {
-        forcedElapsed = proxy.e;
-      },
-      onComplete: () => {
-        forcedElapsed = LOADER_TOTAL_DURATION_SECONDS;
-        // Court hold (0.25s) pour montrer la barre à 100%,
-        // puis le temps réel reprend depuis TOTAL + HOLD pour démarrer la transition.
-        gsap.delayedCall(0.25, () => {
-          forcedElapsedBase = performance.now();
-        });
-      },
-    });
-  };
-
-  // Intercepte tous les clics pendant le chargement (clic n'importe où = skip).
-  const onLoadingClick = (_event: MouseEvent): void => {
-    skipLoader();
-  };
-
-  window.addEventListener('click', onLoadingClick);
-
-  // Retire le listener de skip et débloque le scroll dès que la transition démarre.
-  const unlockAfterLoading = (): void => {
-    window.removeEventListener('click', onLoadingClick);
-    context.scrollManager.start();
-    isLoading = false;
-  };
-
-  gsap.to(powerOnState, {
-    value: 1,
-    duration: 2.5,
-    delay: 0.4,
-    ease: 'power2.inOut',
-    onUpdate: () => {
-      crt.setPowerOn(powerOnState.value);
-      if (loaderStartTime === null && powerOnState.value >= 0.3) {
-        loaderStartTime = performance.now();
-      }
-    },
-  });
+  // ── Contrôleur de chargement (power-on, skip, transition croisée) ────────────
+  const loadingCtrl = createLoadingController(crt, context.scrollManager);
 
   // ── Parallax et fondu-sortie TV ───────────────────────────────────────
   const heroElement = document.querySelector(
@@ -480,8 +589,13 @@ export const initHeroSection: SectionInitializer = async (context) => {
 
   // ── Détection hover menu via raycaster ─────────────────────
 
-  const raycaster = new THREE.Raycaster();
-  const mouseNDC = new THREE.Vector2();
+  const heroRaycaster = createHeroRaycaster(
+    camera,
+    renderer,
+    crt.mesh,
+    menuElement,
+    context.scrollManager,
+  );
   let hoverMenuIndex = -1;
   let currentMenuOpacity = 0;
 
@@ -514,49 +628,17 @@ export const initHeroSection: SectionInitializer = async (context) => {
     },
   );
 
-  const getHoverMenuIndexFromPointer = (
-    clientX: number,
-    clientY: number,
-  ): number => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouseNDC, camera);
-    const hits = raycaster.intersectObject(crt.mesh);
-
-    if (hits.length === 0 || !hits[0]?.uv) {
-      return -1;
-    }
-
-    // UV.y=0 en bas, UV.y=1 en haut -> canvas Y inverse
-    const canvasRelY = 1 - hits[0].uv.y;
-    // Reproduit exactement la meme logique verticale que le draw canvas.
-    const menuStartY = getCrtMenuStartY(currentMenuOpacity);
-    const relativeY = canvasRelY - menuStartY;
-    const idx = Math.floor(relativeY / CRT_MENU_CONFIG.LINE_HEIGHT);
-
-    return idx >= 0 && idx < CRT_MENU_CONFIG.MENU_COUNT ? idx : -1;
-  };
-
-  // Indique si le scroll a atteint la section menu
-  const isAtMenuSection = (): boolean => {
-    const currentScrollY = context.scrollManager.getScrollY();
-    const menuTop =
-      menuElement instanceof HTMLElement ? menuElement.offsetTop : Infinity;
-    return currentScrollY >= menuTop - Math.max(window.innerHeight, 1) * 0.2;
-  };
-
   const onMouseMove = (event: MouseEvent): void => {
     // Hors section menu : pas de hover sur les items (évite les highlights fantômes)
-    if (!isAtMenuSection()) {
+    if (!heroRaycaster.isAtMenuSection()) {
       hoverMenuIndex = -1;
       return;
     }
     try {
-      hoverMenuIndex = getHoverMenuIndexFromPointer(
+      hoverMenuIndex = heroRaycaster.getHoverMenuIndexFromPointer(
         event.clientX,
         event.clientY,
+        currentMenuOpacity,
       );
     } catch (error) {
       console.warn('Raycasting hover detection failed:', error);
@@ -569,25 +651,23 @@ export const initHeroSection: SectionInitializer = async (context) => {
   const onClick = (event: MouseEvent): void => {
     // Pendant le chargement : le clic est capturé par onLoadingClick (skip loader).
     // On ne déclenche aucune navigation ici.
-    if (isLoading) return;
+    if (loadingCtrl.isStillLoading()) return;
 
     // Vérifier d'abord si le clic a touché le mesh CRT
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(mouseNDC, camera);
-    const hits = raycaster.intersectObject(crt.mesh);
+    if (!heroRaycaster.isClickOnCrt(event.clientX, event.clientY)) return;
 
-    if (hits.length === 0) return; // Clic hors du mesh CRT
-
-    if (!isAtMenuSection()) {
+    if (!heroRaycaster.isAtMenuSection()) {
       // Dans la section hero : tout clic sur la TV scroll vers le menu
       context.scrollManager.scrollToSection(SECTION_IDS.MENU);
       return;
     }
 
     // Dans la section menu : naviguer vers l'item cliqué
-    hoverMenuIndex = getHoverMenuIndexFromPointer(event.clientX, event.clientY);
+    hoverMenuIndex = heroRaycaster.getHoverMenuIndexFromPointer(
+      event.clientX,
+      event.clientY,
+      currentMenuOpacity,
+    );
     if (hoverMenuIndex >= 0 && hoverMenuIndex < crtMenuSectionIds.length) {
       const targetSectionId = crtMenuSectionIds[hoverMenuIndex];
       if (targetSectionId)
@@ -620,47 +700,14 @@ export const initHeroSection: SectionInitializer = async (context) => {
         (scrollY / BASELINE_VIEWPORT_HEIGHT - 0.5) / 0.5,
       );
       currentMenuOpacity = menuOpacity;
-      // elapsed = 0 tant que l'image CRT n'est pas visible (loaderStartTime null avant uPowerOn ≥ 0.3).
-      // Après un skip, forcedElapsedBase pilote la transition depuis TOTAL + HOLD.
-      let elapsed: number;
-      if (loaderStartTime === null) {
-        elapsed = 0;
-      } else if (forcedElapsedBase !== null) {
-        // Hold court écoulé : on reprend depuis LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS
-        elapsed =
-          LOADER_TOTAL_DURATION_SECONDS +
-          LOADER_HOLD_SECONDS +
-          (performance.now() - forcedElapsedBase) / 1000;
-      } else if (forcedElapsed !== null) {
-        // Pendant la phase de skip (barre qui file vers 100%) : temps virtuel gelé
-        elapsed = forcedElapsed;
-      } else {
-        elapsed = (performance.now() - loaderStartTime) / 1000;
-      }
-      const barProgress = computeLoadingProgress(elapsed);
-      let loadingProgress: number;
-      if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
-        loadingProgress = barProgress; // 0..1 pendant le chargement
-      } else if (
-        elapsed <
-        LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS
-      ) {
-        loadingProgress = 1; // hold à 100%
-      } else {
-        // 1..2 sur LOADER_TRANSITION_SECONDS : fondu croisé loader → héro
-        if (isLoading) unlockAfterLoading(); // débloque le scroll à la première frame de transition
-        const transitionElapsed =
-          elapsed - LOADER_TOTAL_DURATION_SECONDS - LOADER_HOLD_SECONDS;
-        loadingProgress =
-          1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
-      }
+      const loadingProgress = loadingCtrl.getLoadingProgress();
       crt.setUiProgress(
         heroProgress,
         menuOpacity,
         hoverMenuIndex,
         loadingProgress,
       );
-      menuPreview.setHoveredIndex(isAtMenuSection() ? hoverMenuIndex : -1);
+      menuPreview.setHoveredIndex(heroRaycaster.isAtMenuSection() ? hoverMenuIndex : -1);
       menuPreview.update(_deltaSeconds);
       menuPreview.renderPreview();
       applyCrtModelPreview(crt, {
@@ -669,18 +716,13 @@ export const initHeroSection: SectionInitializer = async (context) => {
         texelSize: menuPreview.getTexelSize(),
       });
 
-      accessibilityMenu.updateVisibility(menuOpacity, isAtMenuSection());
+      accessibilityMenu.updateVisibility(menuOpacity, heroRaycaster.isAtMenuSection());
     },
     dispose: () => {
       window.removeEventListener('resize', onViewportResize);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('click', onClick);
-      // Si on dispose pendant le chargement, on retire le skip-listener et on débloque le scroll
-      if (isLoading) {
-        window.removeEventListener('click', onLoadingClick);
-        context.scrollManager.start();
-        isLoading = false;
-      }
+      loadingCtrl.dispose();
       heroTimeline?.kill();
       faceVaderFadeTimeline?.kill();
       accessibilityMenu.dispose();

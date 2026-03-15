@@ -23,6 +23,79 @@ const isSectionNearViewport = (element: HTMLElement): boolean => {
   return rect.bottom >= preloadTop && rect.top <= preloadBottom;
 };
 
+// ── Helpers niveau module ──────────────────────────────────────────────────────
+
+interface DeferredEntry {
+  loader: SectionLoader;
+  element: HTMLElement;
+}
+
+interface CategorizedLoaders {
+  immediate: SectionLoader[];
+  deferred: DeferredEntry[];
+}
+
+/** Sépare les loaders en « immédiats » (pas d'élément DOM) et « différés » (élément trouvé). */
+const categorizeLoaders = (loaders: SectionLoader[]): CategorizedLoaders => {
+  const immediate: SectionLoader[] = [];
+  const deferred: DeferredEntry[] = [];
+
+  for (const loader of loaders) {
+    const element = document.querySelector<HTMLElement>(`[data-section="${loader.id}"]`);
+    if (element) {
+      deferred.push({ loader, element });
+    } else {
+      immediate.push(loader);
+    }
+  }
+
+  return { immediate, deferred };
+};
+
+/** Crée un IntersectionObserver qui init les sections différées lorsqu'elles entrent dans le viewport. */
+const createDeferredSectionObserver = (
+  remainingEntries: DeferredEntry[],
+  onIntersect: (loader: SectionLoader) => Promise<void>,
+): IntersectionObserver => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+
+      const target = entry.target as HTMLElement;
+      const sectionId = target.dataset.section;
+
+      if (!sectionId) {
+        observer.unobserve(target);
+        return;
+      }
+
+      const deferredEntry = remainingEntries.find(({ loader }) => loader.id === sectionId);
+
+      if (!deferredEntry) {
+        observer.unobserve(target);
+        return;
+      }
+
+      observer.unobserve(target);
+
+      void onIntersect(deferredEntry.loader).catch((error: unknown) => {
+        console.error(
+          `Échec de l'initialisation de la section ${deferredEntry.loader.id}.`,
+          error,
+        );
+      });
+    });
+  }, SECTION_OBSERVER_OPTIONS);
+
+  remainingEntries.forEach(({ element }) => {
+    observer.observe(element);
+  });
+
+  return observer;
+};
+
+// ── Factory ────────────────────────────────────────────────────────────────────
+
 export const createSectionManager = (context: SectionContext): SectionManager => {
   const lifecycles: SectionLifecycle[] = [];
   const initializedSectionIds = new Set<string>();
@@ -71,26 +144,19 @@ export const createSectionManager = (context: SectionContext): SectionManager =>
 
   return {
     initialize: async (loaders: SectionLoader[]): Promise<void> => {
-      const deferredEntries: Array<{ loader: SectionLoader; element: HTMLElement }> = [];
+      const { immediate, deferred } = categorizeLoaders(loaders);
 
-      for (const loader of loaders) {
-        const sectionElement = document.querySelector<HTMLElement>(`[data-section="${loader.id}"]`);
-
-        if (!sectionElement) {
-          await initializeSection(loader);
-          continue;
-        }
-
-        deferredEntries.push({ loader, element: sectionElement });
+      for (const loader of immediate) {
+        await initializeSection(loader);
       }
 
-      const eagerEntries = deferredEntries.filter(({ element }) => isSectionNearViewport(element));
+      const eagerEntries = deferred.filter(({ element }) => isSectionNearViewport(element));
 
       for (const { loader } of eagerEntries) {
         await initializeSection(loader);
       }
 
-      const remainingEntries = deferredEntries.filter(
+      const remainingEntries = deferred.filter(
         ({ loader }) => !initializedSectionIds.has(loader.id),
       );
 
@@ -106,39 +172,7 @@ export const createSectionManager = (context: SectionContext): SectionManager =>
         return;
       }
 
-      sectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-
-          const target = entry.target as HTMLElement;
-          const sectionId = target.dataset.section;
-
-          if (!sectionId) {
-            sectionObserver?.unobserve(target);
-            return;
-          }
-
-          const deferredEntry = remainingEntries.find(({ loader }) => loader.id === sectionId);
-
-          if (!deferredEntry) {
-            sectionObserver?.unobserve(target);
-            return;
-          }
-
-          sectionObserver?.unobserve(target);
-
-          void initializeSection(deferredEntry.loader).catch((error: unknown) => {
-            console.error(
-              `Échec de l'initialisation de la section ${deferredEntry.loader.id}.`,
-              error,
-            );
-          });
-        });
-      }, SECTION_OBSERVER_OPTIONS);
-
-      remainingEntries.forEach(({ element }) => {
-        sectionObserver?.observe(element);
-      });
+      sectionObserver = createDeferredSectionObserver(remainingEntries, initializeSection);
 
       emitTelemetry({
         category: 'section_init',
