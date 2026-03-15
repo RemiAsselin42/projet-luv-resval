@@ -7,6 +7,22 @@ export interface SectionManager {
   dispose: () => void;
 }
 
+// Marge de préchargement : déclenche l'init 120% de la hauteur viewport avant/après.
+const SECTION_OBSERVER_OPTIONS: IntersectionObserverInit = {
+  root: null,
+  rootMargin: '120% 0px 120% 0px',
+  threshold: 0.01,
+};
+
+const isSectionNearViewport = (element: HTMLElement): boolean => {
+  const rect = element.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const preloadTop = -viewportHeight * 0.5;
+  const preloadBottom = viewportHeight * 1.5;
+
+  return rect.bottom >= preloadTop && rect.top <= preloadBottom;
+};
+
 export const createSectionManager = (context: SectionContext): SectionManager => {
   const lifecycles: SectionLifecycle[] = [];
   const initializedSectionIds = new Set<string>();
@@ -53,15 +69,6 @@ export const createSectionManager = (context: SectionContext): SectionManager =>
     }
   };
 
-  const isSectionNearViewport = (element: HTMLElement): boolean => {
-    const rect = element.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const preloadTop = -viewportHeight * 0.5;
-    const preloadBottom = viewportHeight * 1.5;
-
-    return rect.bottom >= preloadTop && rect.top <= preloadBottom;
-  };
-
   return {
     initialize: async (loaders: SectionLoader[]): Promise<void> => {
       const deferredEntries: Array<{ loader: SectionLoader; element: HTMLElement }> = [];
@@ -99,44 +106,35 @@ export const createSectionManager = (context: SectionContext): SectionManager =>
         return;
       }
 
-      sectionObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) {
-              return;
-            }
+      sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
 
-            const target = entry.target as HTMLElement;
-            const sectionId = target.dataset.section;
+          const target = entry.target as HTMLElement;
+          const sectionId = target.dataset.section;
 
-            if (!sectionId) {
-              sectionObserver?.unobserve(target);
-              return;
-            }
-
-            const deferredEntry = remainingEntries.find(({ loader }) => loader.id === sectionId);
-
-            if (!deferredEntry) {
-              sectionObserver?.unobserve(target);
-              return;
-            }
-
+          if (!sectionId) {
             sectionObserver?.unobserve(target);
+            return;
+          }
 
-            void initializeSection(deferredEntry.loader).catch((error: unknown) => {
-              console.error(
-                `Échec de l'initialisation de la section ${deferredEntry.loader.id}.`,
-                error,
-              );
-            });
+          const deferredEntry = remainingEntries.find(({ loader }) => loader.id === sectionId);
+
+          if (!deferredEntry) {
+            sectionObserver?.unobserve(target);
+            return;
+          }
+
+          sectionObserver?.unobserve(target);
+
+          void initializeSection(deferredEntry.loader).catch((error: unknown) => {
+            console.error(
+              `Échec de l'initialisation de la section ${deferredEntry.loader.id}.`,
+              error,
+            );
           });
-        },
-        {
-          root: null,
-          rootMargin: '120% 0px 120% 0px',
-          threshold: 0.01,
-        },
-      );
+        });
+      }, SECTION_OBSERVER_OPTIONS);
 
       remainingEntries.forEach(({ element }) => {
         sectionObserver?.observe(element);

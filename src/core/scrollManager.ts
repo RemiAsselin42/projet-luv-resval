@@ -25,6 +25,8 @@ export interface ScrollManager {
   refresh: () => void;
   getScrollY: () => number;
   scrollToSection: (sectionId: string) => void;
+  stop: () => void;
+  start: () => void;
   dispose: () => void;
 }
 
@@ -33,6 +35,50 @@ gsap.registerPlugin(ScrollTrigger);
 const SNAP_COOLDOWN_MS = 450; // Durée minimale entre deux snaps consécutifs
 const SNAP_ANCHOR_RATIO_DOWN = 0.7; // Sensibilité de snap vers le bas - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
 const SNAP_ANCHOR_RATIO_UP = 0.7; // Sensibilité de snap vers le haut - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
+
+const getSectionIndexAtViewportAnchor = (
+  sectionElements: HTMLElement[],
+  currentScrollY: number,
+  isScrollingDown: boolean,
+): number => {
+  if (sectionElements.length === 0) return -1;
+
+  const anchorRatio = isScrollingDown ? SNAP_ANCHOR_RATIO_DOWN : SNAP_ANCHOR_RATIO_UP;
+  const viewportAnchor = currentScrollY + window.innerHeight * anchorRatio;
+
+  for (const [index, section] of sectionElements.entries()) {
+    const top = section.offsetTop;
+    const bottom = top + section.offsetHeight;
+
+    if (viewportAnchor >= top && viewportAnchor < bottom) {
+      return index;
+    }
+  }
+
+  return sectionElements.length - 1;
+};
+
+const createSectionTimeline = (options: SectionTimelineOptions): gsap.core.Timeline | null => {
+  const sectionElement = document.querySelector<HTMLElement>(
+    `[data-section="${options.sectionId}"]`,
+  );
+
+  if (!sectionElement) return null;
+
+  return gsap.timeline({
+    scrollTrigger: {
+      trigger: sectionElement,
+      start: options.start ?? 'top 80%',
+      end: options.end ?? 'bottom top',
+      scrub: options.scrub ?? true,
+      markers: options.markers ?? false,
+      once: options.once,
+    },
+  });
+};
+
+const createTrigger = (options: ScrollTrigger.Vars): ScrollTrigger =>
+  ScrollTrigger.create(options);
 
 export const createScrollManager = (): ScrollManager => {
   const listeners = new Set<ScrollListener>();
@@ -55,29 +101,6 @@ export const createScrollManager = (): ScrollManager => {
     listeners.forEach((listener) => listener(scrollY));
   };
 
-  const getSectionIndexAtViewportAnchor = (
-    currentScrollY: number,
-    isScrollingDown: boolean,
-  ): number => {
-    if (sectionElements.length === 0) {
-      return -1;
-    }
-
-    const anchorRatio = isScrollingDown ? SNAP_ANCHOR_RATIO_DOWN : SNAP_ANCHOR_RATIO_UP;
-    const viewportAnchor = currentScrollY + window.innerHeight * anchorRatio;
-
-    for (const [index, section] of sectionElements.entries()) {
-      const top = section.offsetTop;
-      const bottom = top + section.offsetHeight;
-
-      if (viewportAnchor >= top && viewportAnchor < bottom) {
-        return index;
-      }
-    }
-
-    return sectionElements.length - 1;
-  };
-
   let isManualScrolling = false;
 
   const snapToSectionIfNeeded = (currentScrollY: number, isScrollingDown: boolean): void => {
@@ -86,7 +109,7 @@ export const createScrollManager = (): ScrollManager => {
       return;
     }
 
-    const sectionIndex = getSectionIndexAtViewportAnchor(currentScrollY, isScrollingDown);
+    const sectionIndex = getSectionIndexAtViewportAnchor(sectionElements, currentScrollY, isScrollingDown);
 
     if (sectionIndex === -1) {
       return;
@@ -139,31 +162,6 @@ export const createScrollManager = (): ScrollManager => {
     ScrollTrigger.update();
   });
 
-  const createSectionTimeline = (options: SectionTimelineOptions): gsap.core.Timeline | null => {
-    const sectionElement = document.querySelector<HTMLElement>(
-      `[data-section="${options.sectionId}"]`,
-    );
-
-    if (!sectionElement) {
-      return null;
-    }
-
-    return gsap.timeline({
-      scrollTrigger: {
-        trigger: sectionElement,
-        start: options.start ?? 'top 80%',
-        end: options.end ?? 'bottom top',
-        scrub: options.scrub ?? true,
-        markers: options.markers ?? false,
-        once: options.once,
-      },
-    });
-  };
-
-  const createTrigger = (options: ScrollTrigger.Vars): ScrollTrigger => {
-    return ScrollTrigger.create(options);
-  };
-
   return {
     update: (time: number) => {
       lenis.raf(time);
@@ -182,6 +180,12 @@ export const createScrollManager = (): ScrollManager => {
       ScrollTrigger.refresh();
     },
     getScrollY: () => scrollY,
+    stop: () => {
+      lenis.stop();
+    },
+    start: () => {
+      lenis.start();
+    },
     scrollToSection: (sectionId: string) => {
       const targetElement = document.querySelector<HTMLElement>(
         `[data-section="${sectionId}"]`,

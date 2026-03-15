@@ -61,6 +61,8 @@ const createTestContext = () => {
       refresh,
       getScrollY: vi.fn(() => 0),
       scrollToSection: vi.fn(),
+      stop: vi.fn(),
+      start: vi.fn(),
       dispose: vi.fn(),
     },
     assetLoader: {
