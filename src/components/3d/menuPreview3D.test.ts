@@ -49,10 +49,14 @@ describe('getMenuPreviewQualityOptions', () => {
   });
 
   it('retries model loading on next hover after a previous failure', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     const loadMock = vi
       .fn<
-        (modelUrl: string) => Promise<{ scene: THREE.Object3D; decoderPath: string }>
+        (
+          modelUrl: string,
+        ) => Promise<{ scene: THREE.Object3D; decoderPath: string }>
       >()
       .mockRejectedValueOnce(new Error('first fail'))
       .mockRejectedValueOnce(new Error('second fail'));
@@ -86,14 +90,21 @@ describe('getMenuPreviewQualityOptions', () => {
   });
 
   it('ignores async loader completion after dispose', async () => {
-    let resolveLoad: ((value: { scene: THREE.Object3D; decoderPath: string }) => void) | undefined;
-    const loadPromise = new Promise<{ scene: THREE.Object3D; decoderPath: string }>((resolve) => {
+    let resolveLoad:
+      | ((value: { scene: THREE.Object3D; decoderPath: string }) => void)
+      | undefined;
+    const loadPromise = new Promise<{
+      scene: THREE.Object3D;
+      decoderPath: string;
+    }>((resolve) => {
       resolveLoad = resolve;
     });
 
     const loadMock = vi
       .fn<
-        (modelUrl: string) => Promise<{ scene: THREE.Object3D; decoderPath: string }>
+        (
+          modelUrl: string,
+        ) => Promise<{ scene: THREE.Object3D; decoderPath: string }>
       >()
       .mockReturnValue(loadPromise);
 

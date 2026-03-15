@@ -14,7 +14,7 @@ const DEFAULT_RENDER_TARGET_SIZE = 512;
 
 // Taille cible par défaut du modèle dans la mini-scène.
 // Caméra FOV 45° à z=3 → hauteur visible ≈ 2.49 u.
-const DEFAULT_TARGET_DIMENSION = 2.50;
+const DEFAULT_TARGET_DIMENSION = 2.5;
 
 // Durées des transitions
 const DURATION_IN = 0.35;
@@ -33,7 +33,9 @@ export interface MenuPreviewQualityOptions {
   renderFrameInterval: number;
 }
 
-export const getMenuPreviewQualityOptions = (gpuTier: GpuTier): MenuPreviewQualityOptions => {
+export const getMenuPreviewQualityOptions = (
+  gpuTier: GpuTier,
+): MenuPreviewQualityOptions => {
   if (gpuTier === 'low') {
     return {
       renderTargetSize: 256,
@@ -54,7 +56,10 @@ export const getMenuPreviewQualityOptions = (gpuTier: GpuTier): MenuPreviewQuali
 const INTERNAL_EDGE_THRESHOLD_DEGREES = 15;
 const INTERNAL_EDGE_LINE_WIDTH_PX = 2;
 
-const applyModelMask = (root: THREE.Object3D, renderTargetSize: number): void => {
+const applyModelMask = (
+  root: THREE.Object3D,
+  renderTargetSize: number,
+): void => {
   const meshesToProcess: THREE.Mesh[] = [];
 
   root.traverse((node) => {
@@ -79,11 +84,16 @@ const applyModelMask = (root: THREE.Object3D, renderTargetSize: number): void =>
     });
 
     // Ajouter les arêtes internes en blanc, visibles dans le render target.
-    const edgesGeo = new THREE.EdgesGeometry(mesh.geometry, INTERNAL_EDGE_THRESHOLD_DEGREES);
+    const edgesGeo = new THREE.EdgesGeometry(
+      mesh.geometry,
+      INTERNAL_EDGE_THRESHOLD_DEGREES,
+    );
     const positionAttr = edgesGeo.getAttribute('position');
     if (positionAttr) {
       const fatGeometry = new LineSegmentsGeometry();
-      fatGeometry.setPositions(Array.from(positionAttr.array as ArrayLike<number>));
+      fatGeometry.setPositions(
+        Array.from(positionAttr.array as ArrayLike<number>),
+      );
 
       const fatMaterial = new LineMaterial({
         color: 0xffffff,
@@ -109,7 +119,8 @@ const fitModel = (model: THREE.Object3D, targetDimension: number): void => {
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
-  const safeTargetDimension = targetDimension > 0 ? targetDimension : DEFAULT_TARGET_DIMENSION;
+  const safeTargetDimension =
+    targetDimension > 0 ? targetDimension : DEFAULT_TARGET_DIMENSION;
   const scale = maxDim > 0 ? safeTargetDimension / maxDim : 1;
   model.scale.setScalar(scale);
 
@@ -163,6 +174,8 @@ interface ModelEntry {
   loadVersion: number;
 }
 
+// ── Helpers niveau module ──────────────────────────────────────────────────────
+
 const disposeDetachedObject3D = (object: THREE.Object3D): void => {
   object.traverse((node) => {
     if (!(node instanceof THREE.Mesh)) return;
@@ -179,6 +192,79 @@ const disposeDetachedObject3D = (object: THREE.Object3D): void => {
   });
 };
 
+const groupCleanup = (group: THREE.Group): void => {
+  if (group.children.length === 0) return;
+
+  for (const child of [...group.children]) {
+    disposeDetachedObject3D(child);
+    group.remove(child);
+  }
+};
+
+const hideEntry = (entry: ModelEntry): void => {
+  entry.tween?.kill();
+  entry.tween = gsap.to(entry.proxy, {
+    opacity: 0,
+    scale: 0,
+    duration: DURATION_OUT,
+    ease: EASE_OUT,
+    onUpdate: () => {
+      entry.group.scale.setScalar(entry.proxy.scale);
+    },
+    onComplete: () => {
+      entry.group.visible = false;
+    },
+  });
+};
+
+const showEntry = (entry: ModelEntry): void => {
+  entry.group.visible = true;
+  entry.tween?.kill();
+  entry.tween = gsap.to(entry.proxy, {
+    opacity: 1,
+    scale: 1,
+    duration: DURATION_IN,
+    ease: EASE_IN,
+    onUpdate: () => {
+      entry.group.scale.setScalar(entry.proxy.scale);
+    },
+  });
+};
+
+interface MiniScene {
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  renderTarget: THREE.WebGLRenderTarget;
+  texelSize: THREE.Vector2;
+}
+
+const createMiniScene = (renderTargetSize: number): MiniScene => {
+  // Isolée de la scène principale ; rendue dans un WebGLRenderTarget carré.
+  // Pas de lumières nécessaires : le rendu est en arêtes seules (LineSegments).
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 20);
+  camera.position.set(0, 0.1, 3);
+  camera.lookAt(0, 0, 0);
+
+  // Render target carré avec canal alpha transparent (fond = 0,0,0,0)
+  const renderTarget = new THREE.WebGLRenderTarget(
+    renderTargetSize,
+    renderTargetSize,
+    {
+      format: THREE.RGBAFormat,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+    },
+  );
+
+  const texelSize = new THREE.Vector2(
+    1 / renderTargetSize,
+    1 / renderTargetSize,
+  );
+
+  return { scene, camera, renderTarget, texelSize };
+};
+
 // ── Factory principale ─────────────────────────────────────────────────────────
 
 export const createMenuPreview3D = (
@@ -186,24 +272,20 @@ export const createMenuPreview3D = (
   items: MenuPreviewItem[],
   quality: Partial<MenuPreviewQualityOptions> = {},
 ): MenuPreview3D => {
-  const renderTargetSize = quality.renderTargetSize ?? DEFAULT_RENDER_TARGET_SIZE;
+  const renderTargetSize =
+    quality.renderTargetSize ?? DEFAULT_RENDER_TARGET_SIZE;
   const rotationSpeed = quality.rotationSpeed ?? DEFAULT_ROTATION_SPEED;
-  const renderFrameInterval = Math.max(1, Math.floor(quality.renderFrameInterval ?? 1));
+  const renderFrameInterval = Math.max(
+    1,
+    Math.floor(quality.renderFrameInterval ?? 1),
+  );
 
-  // ── Mini-scène dédiée au rendu du modèle 3D ──────────────────────────────────
-  // Isolée de la scène principale ; rendue dans un WebGLRenderTarget carré.
-  // Pas de lumières nécessaires : le rendu est en arêtes seules (LineSegments).
-  const miniScene = new THREE.Scene();
-  const miniCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 20);
-  miniCamera.position.set(0, 0.1, 3);
-  miniCamera.lookAt(0, 0, 0);
-
-  // Render target carré avec canal alpha transparent (fond = 0,0,0,0)
-  const renderTarget = new THREE.WebGLRenderTarget(renderTargetSize, renderTargetSize, {
-    format: THREE.RGBAFormat,
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-  });
+  const {
+    scene: miniScene,
+    camera: miniCamera,
+    renderTarget,
+    texelSize,
+  } = createMiniScene(renderTargetSize);
 
   // Map menuIndex → entry
   const entries = new Map<number, ModelEntry>();
@@ -211,7 +293,6 @@ export const createMenuPreview3D = (
   let currentIndex = -1;
   let frameCounter = 0;
   let isDisposed = false;
-  const texelSize = new THREE.Vector2(1 / renderTargetSize, 1 / renderTargetSize);
 
   // ── Chargement à la demande ──────────────────────────────────────────────────
 
@@ -242,7 +323,10 @@ export const createMenuPreview3D = (
         }
         entry.failed = true;
         // eslint-disable-next-line no-console
-        console.error(`[MenuPreview3D] Échec du chargement : ${item.modelUrl}`, err);
+        console.error(
+          `[MenuPreview3D] Échec du chargement : ${item.modelUrl}`,
+          err,
+        );
       })
       .finally(() => {
         if (loadVersion === entry.loadVersion) {
@@ -276,51 +360,9 @@ export const createMenuPreview3D = (
       loadVersion: 0,
     };
     entries.set(item.menuIndex, entry);
-
     startLoading(entry, item);
 
     return entry;
-  };
-
-  const groupCleanup = (group: THREE.Group): void => {
-    if (group.children.length === 0) return;
-
-    for (const child of [...group.children]) {
-      disposeDetachedObject3D(child);
-      group.remove(child);
-    }
-  };
-
-  // ── Transitions ──────────────────────────────────────────────────────────────
-
-  const hideEntry = (entry: ModelEntry): void => {
-    entry.tween?.kill();
-    entry.tween = gsap.to(entry.proxy, {
-      opacity: 0,
-      scale: 0,
-      duration: DURATION_OUT,
-      ease: EASE_OUT,
-      onUpdate: () => {
-        entry.group.scale.setScalar(entry.proxy.scale);
-      },
-      onComplete: () => {
-        entry.group.visible = false;
-      },
-    });
-  };
-
-  const showEntry = (entry: ModelEntry): void => {
-    entry.group.visible = true;
-    entry.tween?.kill();
-    entry.tween = gsap.to(entry.proxy, {
-      opacity: 1,
-      scale: 1,
-      duration: DURATION_IN,
-      ease: EASE_IN,
-      onUpdate: () => {
-        entry.group.scale.setScalar(entry.proxy.scale);
-      },
-    });
   };
 
   // ── API publique ─────────────────────────────────────────────────────────────
@@ -366,9 +408,7 @@ export const createMenuPreview3D = (
     }
   };
 
-  const getTexelSize = (): THREE.Vector2 => {
-    return texelSize;
-  };
+  const getTexelSize = (): THREE.Vector2 => texelSize;
 
   const getOpacity = (): number => {
     let max = 0;
