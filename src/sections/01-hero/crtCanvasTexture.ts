@@ -51,15 +51,20 @@ const COLOR_SUBTITLE = '#d9d9d9';
 
 // ── Draw helpers ───────────────────────────────────────────────────────────────
 
+interface DrawCtx {
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  resScale: number;
+  textScale: number;
+}
+
 const drawLoaderScreen = (
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  resScale: number,
-  textScale: number,
+  dc: DrawCtx,
   clampedLoadingProgress: number,
   loaderOpacity: number,
 ): void => {
+  const { ctx, width, height, resScale, textScale } = dc;
   ctx.globalAlpha = loaderOpacity;
   const panelWidth = Math.round(width * CRT_LOADER_CONFIG.PANEL_WIDTH_RATIO);
   const panelHeight = Math.round(Math.max(CRT_LOADER_CONFIG.PANEL_HEIGHT_MIN_PX * resScale, height * CRT_LOADER_CONFIG.PANEL_HEIGHT_RATIO));
@@ -101,14 +106,11 @@ const drawLoaderScreen = (
 };
 
 const drawHeroContent = (
-  ctx: CanvasRenderingContext2D,
+  dc: DrawCtx,
   text: string,
-  width: number,
-  height: number,
-  resScale: number,
-  textScale: number,
   clampedTitleProgress: number,
 ): void => {
+  const { ctx, width, height, resScale, textScale } = dc;
   const fontSize = Math.round(CRT_TITLE_CONFIG.TITLE_FONT_SIZE * textScale * resScale);
   const titleY = height * (TITLE_VERTICAL_ANCHOR - clampedTitleProgress * TITLE_SCROLL_TRAVEL);
   ctx.font = `${CRT_TITLE_CONFIG.FONT_WEIGHT} ${fontSize}px ${CRT_TITLE_CONFIG.FONT_FAMILY}`;
@@ -131,14 +133,11 @@ const drawHeroContent = (
 };
 
 const drawMenu = (
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  resScale: number,
-  textScale: number,
+  dc: DrawCtx,
   clampedMenuOpacity: number,
   hoverIndex: number,
 ): void => {
+  const { ctx, width, height, resScale, textScale } = dc;
   const menuX = width * MENU_HORIZONTAL_MARGIN_RATIO;
   const menuY = height * getCrtMenuStartY(clampedMenuOpacity);
   const menuLineHeight = Math.round(height * CRT_MENU_CONFIG.LINE_HEIGHT);
@@ -243,19 +242,21 @@ export const createTextCanvasTexture = (
     const loaderOpacity = loadingProgress <= 1 ? 1 : 1 - easedBlend;
     const heroOpacity = loadingProgress <= 1 ? 0 : easedBlend;
 
+    const dc: DrawCtx = { ctx, width, height, resScale, textScale };
+
     if (loaderOpacity > 0.001) {
-      drawLoaderScreen(ctx, width, height, resScale, textScale, clampedLoadingProgress, loaderOpacity);
+      drawLoaderScreen(dc, clampedLoadingProgress, loaderOpacity);
     }
 
     ctx.globalAlpha = heroOpacity;
     if (heroOpacity > 0.001) {
-      drawHeroContent(ctx, text, width, height, resScale, textScale, clampedTitleProgress);
+      drawHeroContent(dc, text, clampedTitleProgress);
     }
 
     // Menu incruste dans l'ecran CRT (donc affecte par le shader)
     // ctx.globalAlpha est déjà heroOpacity, donc le menu se fond naturellement.
     if (heroOpacity > 0.02 && clampedMenuOpacity > 0.02) {
-      drawMenu(ctx, width, height, resScale, textScale, clampedMenuOpacity, hoverIndex);
+      drawMenu(dc, clampedMenuOpacity, hoverIndex);
     }
 
     ctx.globalAlpha = 1;
