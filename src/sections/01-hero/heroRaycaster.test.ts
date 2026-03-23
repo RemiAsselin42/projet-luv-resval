@@ -179,11 +179,11 @@ describe('createHeroRaycaster', () => {
       expect(raycaster.isAtMenuSection()).toBe(true);
     });
 
-    it('returns true when element top is within 120% of viewport height (early approach margin)', () => {
+    it('returns true when element top is within 20% of viewport height (early approach margin)', () => {
       const menuElement = document.createElement('div');
-      // top = 900, innerHeight = 768 → 900 <= 768 * 1.2 = 921.6 → true
+      // top = 150, innerHeight = 768 → 150 <= 768 * 0.2 = 153.6 → true
       vi.spyOn(menuElement, 'getBoundingClientRect').mockReturnValue({
-        top: 900, bottom: 1300, left: 0, right: 100, width: 100, height: 400,
+        top: 150, bottom: 550, left: 0, right: 100, width: 100, height: 400,
         toJSON: () => ({}),
       } as DOMRect);
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
@@ -191,6 +191,20 @@ describe('createHeroRaycaster', () => {
       const raycaster = createHeroRaycaster(camera, renderer, crtMesh, menuElement);
 
       expect(raycaster.isAtMenuSection()).toBe(true);
+    });
+
+    it('returns false when element top equals viewport height (menu just below hero section)', () => {
+      // Régression : à scrollY=0 le menu est à rect.top = 100vh, ne doit PAS être actif
+      const menuElement = document.createElement('div');
+      vi.spyOn(menuElement, 'getBoundingClientRect').mockReturnValue({
+        top: 768, bottom: 1168, left: 0, right: 100, width: 100, height: 400,
+        toJSON: () => ({}),
+      } as DOMRect);
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+
+      const raycaster = createHeroRaycaster(camera, renderer, crtMesh, menuElement);
+
+      expect(raycaster.isAtMenuSection()).toBe(false);
     });
 
     it('returns false when element is scrolled fully above viewport (rect.bottom <= 0)', () => {
@@ -205,7 +219,7 @@ describe('createHeroRaycaster', () => {
       expect(raycaster.isAtMenuSection()).toBe(false);
     });
 
-    it('returns false when element is far below viewport (rect.top > viewportHeight * 1.2)', () => {
+    it('returns false when element is far below viewport (rect.top > viewportHeight * 0.2)', () => {
       const menuElement = document.createElement('div');
       vi.spyOn(menuElement, 'getBoundingClientRect').mockReturnValue({
         top: 2000, bottom: 2400, left: 0, right: 100, width: 100, height: 400,

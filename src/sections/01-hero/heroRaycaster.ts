@@ -63,9 +63,9 @@ export const createHeroRaycaster = (
       if (!(menuElement instanceof HTMLElement)) return false;
       const rect = menuElement.getBoundingClientRect();
       const viewportHeight = Math.max(window.innerHeight, 1);
-      // Élément visible si son bord supérieur est dans le bas de l'écran (20 % de marge)
-      // ou si son bord inférieur n'a pas encore dépassé le haut de l'écran.
-      return rect.top <= viewportHeight * 1.2 && rect.bottom > 0;
+      // Élément actif si son bord supérieur est entré dans le viewport (avec 20 % de marge d'anticipation)
+      // et si son bord inférieur n'a pas encore dépassé le haut de l'écran.
+      return rect.top <= viewportHeight * 0.2 && rect.bottom > 0;
     },
   };
 };
