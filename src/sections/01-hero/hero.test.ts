@@ -130,27 +130,6 @@ const makeCrt = () => ({
   setPowerOn: vi.fn(),
 });
 
-/**
- * Simule un contrôleur dont la barre est déjà complète :
- * on fixe performance.now à un timestamp passé tel que getElapsed() >= LOADER_TOTAL_DURATION_SECONDS.
- */
-const makeCompleteController = () => {
-  const crt = makeCrt();
-  const scrollManager = makeScrollManager();
-  const now = performance.now();
-  // loaderStartTime sera initialisé à `now` lors du premier appel gsap onUpdate.
-  // On le simule en avançant performance.now de LOADER_TOTAL_DURATION_SECONDS + 1 s.
-  const pastStart = now - (LOADER_TOTAL_DURATION_SECONDS + 1) * 1000;
-  vi.spyOn(performance, 'now').mockReturnValue(pastStart + (LOADER_TOTAL_DURATION_SECONDS + 1) * 1000);
-
-  const ctrl = createLoadingController(crt, scrollManager);
-
-  // Déclenche manuellement le callback gsap onUpdate pour initialiser loaderStartTime
-  // en simulant powerOn ≥ 0.3 grâce au mock gsap existant.
-  // Le mock gsap (vi.mock('gsap')) appelle onUpdate synchroniquement avec value=1.
-  return { ctrl, crt, scrollManager };
-};
-
 describe('createLoadingController — isBarComplete()', () => {
   beforeEach(() => {
     vi.useFakeTimers();

@@ -492,10 +492,14 @@ const createHeroRaycaster = (
     },
 
     isAtMenuSection: () => {
+      if (!(menuElement instanceof HTMLElement)) return false;
       const currentScrollY = scrollManager.getScrollY();
-      const menuTop =
-        menuElement instanceof HTMLElement ? menuElement.offsetTop : Infinity;
-      return currentScrollY >= menuTop - Math.max(window.innerHeight, 1) * 0.2;
+      const menuTop = menuElement.offsetTop;
+      const menuBottom = menuTop + menuElement.offsetHeight;
+      return (
+        currentScrollY >= menuTop - Math.max(window.innerHeight, 1) * 0.2 &&
+        currentScrollY < menuBottom
+      );
     },
   };
 };
@@ -662,10 +666,16 @@ export const initHeroSection: SectionInitializer = async (context) => {
   };
 
   const onMouseMove = (event: MouseEvent): void => {
+    const prevPlayButtonHovered = playButtonHovered;
+    const prevHoverMenuIndex = hoverMenuIndex;
+
     // Hover du bouton PLAY pendant le chargement (barre complète, avant le play)
     if (loadingCtrl.isStillLoading() && loadingCtrl.isBarComplete()) {
       playButtonHovered = isPointerOnPlayButton(event.clientX, event.clientY);
       hoverMenuIndex = -1;
+      if (playButtonHovered && !prevPlayButtonHovered) {
+        context.audioManager.playUiFx();
+      }
       return;
     }
     playButtonHovered = false;
@@ -685,6 +695,10 @@ export const initHeroSection: SectionInitializer = async (context) => {
       console.warn('Raycasting hover detection failed:', error);
       hoverMenuIndex = -1;
     }
+
+    if (hoverMenuIndex !== prevHoverMenuIndex && hoverMenuIndex >= 0) {
+      context.audioManager.playUiFx();
+    }
   };
 
   // ── Gestion du clic sur le mesh CRT ───────────────────────────
@@ -694,6 +708,8 @@ export const initHeroSection: SectionInitializer = async (context) => {
       // Barre complète → détecter le clic sur le bouton PLAY via UV
       if (loadingCtrl.isBarComplete() && isPointerOnPlayButton(event.clientX, event.clientY)) {
         loadingCtrl.triggerPlay();
+        context.audioManager.startExperience();
+        context.audioManager.playUiFx();
       }
       return;
     }
