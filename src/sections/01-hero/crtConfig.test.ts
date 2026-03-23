@@ -11,8 +11,8 @@ import {
   PLAY_BUTTON_PULSE_BASE,
   PLAY_BUTTON_PULSE_AMP,
   PLAY_BUTTON_PULSE_PERIOD_MS,
-  isPlayButtonPulsing,
-} from './crtCanvasTexture';
+} from './crtConfig';
+import { isPlayButtonPulsing } from './crtCanvasTexture';
 
 describe('getCrtMenuStartY', () => {
   it('returns the fully visible menu start position when opacity is 1', () => {

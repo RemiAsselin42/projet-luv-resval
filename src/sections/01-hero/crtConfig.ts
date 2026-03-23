@@ -74,6 +74,12 @@ export const getCurrentBreakpoint = (): keyof typeof RESPONSIVE_BREAKPOINTS => {
  */
 
 export const CRT_MENU_CONFIG = {
+  /**
+   * Base height (world units) of the CRT plane mesh.
+   * Centralised here so hero.ts and any future consumer share the same value.
+   * CRT aspect 16:9 → planeWidth = PLANE_HEIGHT × (16/9) ≈ 6.222
+   */
+  PLANE_HEIGHT: 3.5,
   /** Vertical position where the menu starts (0-1, canvas space) */
   Y_START: 0.5,
   /** Height of each menu line (0-1, canvas space) */
@@ -115,6 +121,18 @@ export const CRT_LOADER_CONFIG = {
   /** Panel vertical position as a ratio of canvas height */
   PANEL_Y_RATIO: 0.48,
 } as const;
+
+/**
+ * Play button pulse animation constants.
+ * opacity = PLAY_BUTTON_PULSE_BASE + PLAY_BUTTON_PULSE_AMP * sin(t / PLAY_BUTTON_PULSE_PERIOD_MS)
+ * Range: [BASE - AMP, BASE + AMP] — must stay within (0, 1].
+ */
+/** Base opacity of the PLAY button pulse (idle state) */
+export const PLAY_BUTTON_PULSE_BASE = 0.72;
+/** Amplitude of the PLAY button pulse oscillation */
+export const PLAY_BUTTON_PULSE_AMP = 0.28;
+/** Period of the PLAY button pulse in milliseconds */
+export const PLAY_BUTTON_PULSE_PERIOD_MS = 380;
 
 /**
  * UV bounds of the PLAY button hit zone on the CRT mesh (UV space, y=0 at bottom).

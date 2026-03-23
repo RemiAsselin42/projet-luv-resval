@@ -3,6 +3,7 @@ import { ensureFontsLoaded } from './crtFonts';
 import { vertexShader, fragmentShader } from './crtShaders';
 import { createTextCanvasTexture } from './crtCanvasTexture';
 import type { CrtScreen, CrtUniforms } from './crtTypes';
+import { CRT_MENU_CONFIG } from './crtConfig';
 
 export type { CrtScreen, CrtUniforms } from './crtTypes';
 
@@ -45,7 +46,8 @@ export const createCrtScreen = async (
   });
 
   // Ecran CRT occupant la majorite du viewport.
-  const planeHeight = 3.5;
+  // La hauteur est centralisée dans CRT_MENU_CONFIG.PLANE_HEIGHT pour éviter la duplication.
+  const planeHeight = CRT_MENU_CONFIG.PLANE_HEIGHT;
   const planeWidth = planeHeight * aspectRatio;
   const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 1, 1);
   const mesh = new THREE.Mesh(geometry, material);

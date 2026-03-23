@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clamp01 } from '../../utils/math';
 
 export interface CrtModelPreviewPayload {
   texture: THREE.Texture | null;
@@ -37,10 +38,6 @@ const hasModelPreviewUniforms = (crt: unknown): crt is CrtModelPreviewUniforms =
     uniforms.uModelTextureOpacity !== undefined
     && uniforms.uModelTexture !== undefined
   );
-};
-
-const clamp01 = (value: number): number => {
-  return Math.min(Math.max(value, 0), 1);
 };
 
 /**

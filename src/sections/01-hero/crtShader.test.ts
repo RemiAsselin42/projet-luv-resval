@@ -14,8 +14,8 @@ describe('createCrtScreen', () => {
   it('creates a CRT screen with the correct aspect ratio', async () => {
     crtScreen = await createCrtScreen(16 / 9);
 
-    expect(crtScreen.mesh).toBeDefined();
     expect(crtScreen.mesh).toBeInstanceOf(THREE.Mesh);
+    expect(crtScreen.mesh.uuid).toMatch(/^[0-9a-f-]{36}$/);
     expect(crtScreen.mesh.geometry).toBeInstanceOf(THREE.PlaneGeometry);
     expect(crtScreen.mesh.material).toBeInstanceOf(THREE.ShaderMaterial);
   });
@@ -26,7 +26,7 @@ describe('createCrtScreen', () => {
     expect(crtScreen.uniforms.uTime.value).toBe(0);
     expect(crtScreen.uniforms.uPowerOn.value).toBe(0);
     expect(crtScreen.uniforms.uFade.value).toBe(1);
-    expect(crtScreen.uniforms.uTexture.value).toBeDefined();
+    expect(crtScreen.uniforms.uTexture.value).toBeInstanceOf(THREE.CanvasTexture);
     expect(crtScreen.uniforms.uResolution.value).toBeInstanceOf(THREE.Vector2);
   });
 

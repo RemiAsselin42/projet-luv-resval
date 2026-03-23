@@ -5,6 +5,9 @@ import {
   CRT_LOADER_CONFIG,
   getCrtMenuStartY,
   getResponsiveTextScale,
+  PLAY_BUTTON_PULSE_BASE,
+  PLAY_BUTTON_PULSE_AMP,
+  PLAY_BUTTON_PULSE_PERIOD_MS,
 } from './crtConfig';
 
 export interface CrtCanvasTexture {
@@ -47,10 +50,6 @@ const PLAY_BUTTON_PAD_X_PX = 14;
 // Vertical top/bottom padding for the hover background (px, before resScale)
 const PLAY_BUTTON_PAD_Y_TOP_PX = 12;
 const PLAY_BUTTON_PAD_Y_BOTTOM_PX = 6;
-// Pulse animation: base opacity and amplitude (base + amp * sin = range [base-amp, base+amp])
-export const PLAY_BUTTON_PULSE_BASE = 0.72;
-export const PLAY_BUTTON_PULSE_AMP = 0.28;
-export const PLAY_BUTTON_PULSE_PERIOD_MS = 380;
 
 /**
  * True when the PLAY button should be pulsing (bar complete, transition not yet started).
