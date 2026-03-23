@@ -8,6 +8,7 @@ import {
   CRT_MENU_CONFIG,
   getCrtMenuStartY,
   BASELINE_VIEWPORT_HEIGHT,
+  getPlayButtonUVBounds,
 } from './crtConfig';
 import {
   hasWebGLSupport,
@@ -300,16 +301,20 @@ const createHeroScrollTimelines = (
 
 // ── Contrôleur de chargement (power-on + skip + transition croisée) ────────────
 
-interface LoadingController {
+export interface LoadingController {
   /** Calcule le loadingProgress courant (0..2). Déclenche unlockAfterLoading au moment de la transition. */
   getLoadingProgress: () => number;
   /** Indique si le chargement est toujours en cours. */
   isStillLoading: () => boolean;
+  /** Indique si la barre a atteint 100% (bouton PLAY visible). */
+  isBarComplete: () => boolean;
+  /** Déclenche la transition loader → héro (appelé par le clic sur le bouton PLAY). */
+  triggerPlay: () => void;
   /** Nettoie les listeners et débloque le scroll si nécessaire. */
   dispose: () => void;
 }
 
-const createLoadingController = (
+export const createLoadingController = (
   crt: { setPowerOn: (v: number) => void },
   scrollManager: { stop: () => void; start: () => void },
 ): LoadingController => {
@@ -317,42 +322,47 @@ const createLoadingController = (
   // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
   let loaderStartTime: number | null = null;
 
-  // isLoading = true pendant toute la phase loader (barre 0→100% + hold).
+  // isLoading = true pendant toute la phase loader (barre 0→100% + attente PLAY).
   let isLoading = true;
-  // Temps virtuel injecté dans le calcul d'elapsed quand l'utilisateur skip.
+  // Temps virtuel injecté dans le calcul d'elapsed quand l'utilisateur skip la barre.
   let forcedElapsed: number | null = null;
-  // Timestamp réel enregistré au moment où le hold court se termine après skip.
-  let forcedElapsedBase: number | null = null;
+  // Déclenché par triggerPlay() : timestamp du moment où l'utilisateur clique PLAY.
+  let playTriggered = false;
+  let playTriggeredTime: number | null = null;
 
   // Bloque le scroll dès maintenant, avant même l'allumage CRT.
   scrollManager.stop();
 
-  // ── Skip loader ──────────────────────────────────────────────
-  const skipLoader = (): void => {
-    if (!isLoading) return;
-    if (loaderStartTime === null) {
-      loaderStartTime = performance.now();
-    }
-    const currentElapsed = (performance.now() - loaderStartTime) / 1000;
+  // ── Elapsed courant (hors transition) ────────────────────────
+  const getElapsed = (): number => {
+    if (loaderStartTime === null) return 0;
+    if (forcedElapsed !== null) return forcedElapsed;
+    return (performance.now() - loaderStartTime) / 1000;
+  };
+
+  // ── Skip de l'animation de barre uniquement ──────────────────
+  const skipBar = (): void => {
+    if (!isLoading || playTriggered) return;
+    if (loaderStartTime === null) loaderStartTime = performance.now();
+    const currentElapsed = getElapsed();
+    if (currentElapsed >= LOADER_TOTAL_DURATION_SECONDS) return;
     const proxy = { e: currentElapsed };
     gsap.to(proxy, {
       e: LOADER_TOTAL_DURATION_SECONDS,
       duration: 0.4,
       ease: 'power2.out',
-      onUpdate: () => {
-        forcedElapsed = proxy.e;
-      },
-      onComplete: () => {
-        forcedElapsed = LOADER_TOTAL_DURATION_SECONDS;
-        gsap.delayedCall(0.25, () => {
-          forcedElapsedBase = performance.now();
-        });
-      },
+      onUpdate: () => { forcedElapsed = proxy.e; },
+      onComplete: () => { forcedElapsed = LOADER_TOTAL_DURATION_SECONDS; },
     });
   };
 
+  // Pendant l'animation de barre, un clic anywhere accélère la barre.
+  // Une fois la barre complète, seul le clic sur le bouton PLAY déclenche la suite.
   const onLoadingClick = (_event: MouseEvent): void => {
-    skipLoader();
+    if (!isLoading || playTriggered) return;
+    if (getElapsed() < LOADER_TOTAL_DURATION_SECONDS) {
+      skipBar();
+    }
   };
 
   window.addEventListener('click', onLoadingClick);
@@ -377,39 +387,38 @@ const createLoadingController = (
     },
   });
 
+  const isBarComplete = (): boolean =>
+    getElapsed() >= LOADER_TOTAL_DURATION_SECONDS;
+
   return {
     getLoadingProgress: () => {
-      let elapsed: number;
-      if (loaderStartTime === null) {
-        elapsed = 0;
-      } else if (forcedElapsedBase !== null) {
-        elapsed =
-          LOADER_TOTAL_DURATION_SECONDS +
-          LOADER_HOLD_SECONDS +
-          (performance.now() - forcedElapsedBase) / 1000;
-      } else if (forcedElapsed !== null) {
-        elapsed = forcedElapsed;
-      } else {
-        elapsed = (performance.now() - loaderStartTime) / 1000;
-      }
-
+      const elapsed = getElapsed();
       const barProgress = computeLoadingProgress(elapsed);
 
       if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
         return barProgress;
       }
-      if (elapsed < LOADER_TOTAL_DURATION_SECONDS + LOADER_HOLD_SECONDS) {
+
+      // Barre complète : on attend le clic sur le bouton PLAY
+      if (!playTriggered || playTriggeredTime === null) {
         return 1;
       }
 
-      // 1..2 sur LOADER_TRANSITION_SECONDS : fondu croisé loader → héro
+      // PLAY cliqué : fondu croisé loader → héro sur LOADER_TRANSITION_SECONDS
       if (isLoading) unlockAfterLoading();
-      const transitionElapsed =
-        elapsed - LOADER_TOTAL_DURATION_SECONDS - LOADER_HOLD_SECONDS;
+      const transitionElapsed = (performance.now() - playTriggeredTime) / 1000;
       return 1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
     },
 
     isStillLoading: () => isLoading,
+
+    isBarComplete,
+
+    triggerPlay: () => {
+      if (!isLoading || playTriggered) return;
+      playTriggered = true;
+      playTriggeredTime = performance.now();
+    },
 
     dispose: () => {
       window.removeEventListener('click', onLoadingClick);
@@ -428,6 +437,8 @@ interface HeroRaycaster {
   getHoverMenuIndexFromPointer: (clientX: number, clientY: number, menuOpacity: number) => number;
   /** Vérifie si un clic touche le mesh CRT. */
   isClickOnCrt: (clientX: number, clientY: number) => boolean;
+  /** Retourne les coordonnées UV du clic sur le CRT (null si pas de hit). */
+  getClickUV: (clientX: number, clientY: number) => THREE.Vector2 | null;
   /** Indique si le scroll a atteint la section menu. */
   isAtMenuSection: () => boolean;
 }
@@ -471,6 +482,13 @@ const createHeroRaycaster = (
     isClickOnCrt: (clientX, clientY) => {
       updateNDC(clientX, clientY);
       return raycaster.intersectObject(crtMesh).length > 0;
+    },
+
+    getClickUV: (clientX, clientY) => {
+      updateNDC(clientX, clientY);
+      const hits = raycaster.intersectObject(crtMesh);
+      if (hits.length === 0 || !hits[0]?.uv) return null;
+      return hits[0].uv.clone();
     },
 
     isAtMenuSection: () => {
@@ -598,6 +616,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
   );
   let hoverMenuIndex = -1;
   let currentMenuOpacity = 0;
+  let playButtonHovered = false;
 
   // ── Élément invisible focusable pour la section hero ────
   const heroFocusElement = document.createElement('button');
@@ -628,7 +647,29 @@ export const initHeroSection: SectionInitializer = async (context) => {
     },
   );
 
+  // UV bounds du bouton PLAY, calculées depuis la config de layout du loader (crtConfig.ts).
+  // En centralisant ici, tout ajustement du layout (PANEL_Y_RATIO, taille police…)
+  // se répercute automatiquement sur la détection de clic et de hover.
+  const playButtonUVBounds = getPlayButtonUVBounds();
+
+  const isPointerOnPlayButton = (clientX: number, clientY: number): boolean => {
+    const uv = heroRaycaster.getClickUV(clientX, clientY);
+    return (
+      uv !== null &&
+      uv.x >= playButtonUVBounds.xMin && uv.x <= playButtonUVBounds.xMax &&
+      uv.y >= playButtonUVBounds.yMin && uv.y <= playButtonUVBounds.yMax
+    );
+  };
+
   const onMouseMove = (event: MouseEvent): void => {
+    // Hover du bouton PLAY pendant le chargement (barre complète, avant le play)
+    if (loadingCtrl.isStillLoading() && loadingCtrl.isBarComplete()) {
+      playButtonHovered = isPointerOnPlayButton(event.clientX, event.clientY);
+      hoverMenuIndex = -1;
+      return;
+    }
+    playButtonHovered = false;
+
     // Hors section menu : pas de hover sur les items (évite les highlights fantômes)
     if (!heroRaycaster.isAtMenuSection()) {
       hoverMenuIndex = -1;
@@ -649,9 +690,13 @@ export const initHeroSection: SectionInitializer = async (context) => {
   // ── Gestion du clic sur le mesh CRT ───────────────────────────
 
   const onClick = (event: MouseEvent): void => {
-    // Pendant le chargement : le clic est capturé par onLoadingClick (skip loader).
-    // On ne déclenche aucune navigation ici.
-    if (loadingCtrl.isStillLoading()) return;
+    if (loadingCtrl.isStillLoading()) {
+      // Barre complète → détecter le clic sur le bouton PLAY via UV
+      if (loadingCtrl.isBarComplete() && isPointerOnPlayButton(event.clientX, event.clientY)) {
+        loadingCtrl.triggerPlay();
+      }
+      return;
+    }
 
     // Vérifier d'abord si le clic a touché le mesh CRT
     if (!heroRaycaster.isClickOnCrt(event.clientX, event.clientY)) return;
@@ -706,6 +751,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
         menuOpacity,
         hoverMenuIndex,
         loadingProgress,
+        playButtonHovered,
       );
       menuPreview.setHoveredIndex(heroRaycaster.isAtMenuSection() ? hoverMenuIndex : -1);
       menuPreview.update(_deltaSeconds);

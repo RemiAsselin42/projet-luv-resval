@@ -107,16 +107,62 @@ export const getCrtMenuStartY = (menuOpacity: number): number => {
 
 export const CRT_LOADER_CONFIG = {
   /** Panel width as a ratio of canvas width */
-  PANEL_WIDTH_RATIO: 0.56,
+  PANEL_WIDTH_RATIO: 0.504,
   /** Panel height as a ratio of canvas height */
-  PANEL_HEIGHT_RATIO: 0.065,
+  PANEL_HEIGHT_RATIO: 0.0585,
   /** Minimum panel height in pixels */
-  PANEL_HEIGHT_MIN_PX: 60,
+  PANEL_HEIGHT_MIN_PX: 54,
   /** Panel vertical position as a ratio of canvas height */
-  PANEL_Y_RATIO: 0.53,
-  /** Vertical offset of the label above the bar in pixels (before textScale) */
-  LABEL_OFFSET_PX: 52,
+  PANEL_Y_RATIO: 0.48,
 } as const;
+
+/**
+ * UV bounds of the PLAY button hit zone on the CRT mesh (UV space, y=0 at bottom).
+ *
+ * These values are derived from the loader panel layout in crtCanvasTexture.ts:
+ *   - Panel top  ≈ PANEL_Y_RATIO (0.48) + PANEL_HEIGHT_RATIO (~0.058) + gap (~0.022) = ~0.56
+ *   - Button label height ≈ 0.07 (label ~30px / canvas height 576px at 1024×576)
+ *   - Button center canvas-Y ≈ 0.56 + 0.035 ≈ 0.595 → label bottom canvas-Y ≈ 0.63
+ *   - Canvas-Y → UV.y: uv.y = 1 - canvas-Y
+ *     → UV.y center ≈ 0.405, zone ± 0.09 → [0.315, 0.495] padded to [0.20, 0.38] for tolerance
+ *   - Horizontal zone is wide (centred text, tolerant hit area): [0.20, 0.80]
+ *
+ * If the loader panel layout is adjusted (PANEL_Y_RATIO, PANEL_HEIGHT_RATIO, gap, font size),
+ * update the constants below and the corresponding tests in crtConfig.test.ts.
+ *
+ * @returns Object with UV bounds { xMin, xMax, yMin, yMax } in UV space (y=0 at bottom).
+ */
+export const getPlayButtonUVBounds = (): {
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+} => {
+  // Approximate canvas-Y of the panel bottom edge (top + height)
+  const panelBottomCanvasY =
+    CRT_LOADER_CONFIG.PANEL_Y_RATIO + CRT_LOADER_CONFIG.PANEL_HEIGHT_RATIO;
+  // Gap between bar bottom and PLAY button text centre (matches PLAY_BUTTON_GAP_RATIO in crtCanvasTexture.ts)
+  const PLAY_BUTTON_GAP_RATIO = 0.022;
+  // Approximate label height as a ratio of canvas height (30px label / ~576px canvas at 1024-wide)
+  const PLAY_BUTTON_LABEL_HEIGHT_RATIO = 0.07;
+  // Canvas-Y of the PLAY button text centre
+  const btnCenterCanvasY =
+    panelBottomCanvasY + PLAY_BUTTON_GAP_RATIO + PLAY_BUTTON_LABEL_HEIGHT_RATIO;
+  // Convert canvas-Y → UV.y (UV.y = 1 - canvas-Y, y=0 at bottom in UV space)
+  const btnCenterUVy = 1 - btnCenterCanvasY;
+  // Vertical tolerance (±) around the button centre
+  const UV_Y_TOLERANCE = 0.09;
+  // Wide horizontal hit zone (centred text, tolerant)
+  const UV_X_MIN = 0.20;
+  const UV_X_MAX = 0.80;
+
+  return {
+    xMin: UV_X_MIN,
+    xMax: UV_X_MAX,
+    yMin: btnCenterUVy - UV_Y_TOLERANCE,
+    yMax: btnCenterUVy + UV_Y_TOLERANCE,
+  };
+};
 
 export const CRT_TITLE_CONFIG = {
   /** Title text to display */

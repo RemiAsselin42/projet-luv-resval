@@ -9,15 +9,15 @@ import {
 
 export interface CrtCanvasTexture {
   texture: THREE.CanvasTexture;
-  draw: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number) => void;
+  draw: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover?: boolean) => void;
   dispose: () => void;
 }
 
 // ── Layout constants ───────────────────────────────────────────────────────────
 
 // Loader label minimum and base sizes (px, before scale)
-const LOADER_LABEL_MIN_SIZE_PX = 32;
-const LOADER_LABEL_BASE_SIZE_PX = 40;
+const LOADER_LABEL_MIN_SIZE_PX = 25;
+const LOADER_LABEL_BASE_SIZE_PX = 30;
 // Gradient mid-stop position for the progress bar fill
 const BAR_GRADIENT_MID_STOP = 0.55;
 // Minimum bar fill width (px) before showing the highlight gleam
@@ -37,9 +37,35 @@ const MENU_FONT_MIN_SIZE_PX = 36;
 // Hover item text opacity multiplier
 const HOVER_ITEM_OPACITY = 0.9;
 
+// Play button font
+const PLAY_BUTTON_FONT_WEIGHT = '500';
+const PLAY_BUTTON_FONT_FAMILY = 'Futura-Medium';
+// Gap between the bottom of the loading bar and the play button text center (canvas ratio)
+const PLAY_BUTTON_GAP_RATIO = 0.022;
+// Horizontal padding for the hover background (px, before resScale)
+const PLAY_BUTTON_PAD_X_PX = 14;
+// Vertical top/bottom padding for the hover background (px, before resScale)
+const PLAY_BUTTON_PAD_Y_TOP_PX = 12;
+const PLAY_BUTTON_PAD_Y_BOTTOM_PX = 6;
+// Pulse animation: base opacity and amplitude (base + amp * sin = range [base-amp, base+amp])
+export const PLAY_BUTTON_PULSE_BASE = 0.72;
+export const PLAY_BUTTON_PULSE_AMP = 0.28;
+export const PLAY_BUTTON_PULSE_PERIOD_MS = 380;
+
+/**
+ * True when the PLAY button should be pulsing (bar complete, transition not yet started).
+ * Bypasses the dirty-flag optimisation so the button animates every frame.
+ * - loadingProgress = 1  → bar complete, waiting for PLAY click → pulse
+ * - loadingProgress > 1  → transition running (1→2)             → no pulse
+ * - loadingProgress < 1  → bar still filling                    → no pulse
+ */
+export const isPlayButtonPulsing = (loadingProgress: number): boolean => {
+  const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
+  return clampedLoadingProgress >= 1 && loadingProgress <= 1;
+};
+
 // ── Colour palette ─────────────────────────────────────────────────────────────
 
-const COLOR_LOADER_LABEL = 'rgba(255, 215, 251, 0.95)';
 const COLOR_PANEL_BORDER = 'rgba(206, 141, 255, 0.7)';
 const COLOR_PANEL_BG = 'rgba(44, 22, 70, 0.7)';
 const COLOR_BAR_START = '#7b2dff';
@@ -48,6 +74,9 @@ const COLOR_BAR_END = '#ff5fa8';
 const COLOR_BAR_HIGHLIGHT = 'rgba(255, 201, 241, 0.45)';
 const COLOR_TITLE = '#ffffff';
 const COLOR_SUBTITLE = '#d9d9d9';
+const COLOR_PLAY_TEXT = '#ffffff';
+const COLOR_PLAY_HOVER_BG = '#ffffff';
+const COLOR_PLAY_HOVER_TEXT = '#000000';
 
 // ── Draw helpers ───────────────────────────────────────────────────────────────
 
@@ -63,6 +92,7 @@ const drawLoaderScreen = (
   dc: DrawCtx,
   clampedLoadingProgress: number,
   loaderOpacity: number,
+  playHover: boolean,
 ): void => {
   const { ctx, width, height, resScale, textScale } = dc;
   ctx.globalAlpha = loaderOpacity;
@@ -71,13 +101,6 @@ const drawLoaderScreen = (
   const panelX = Math.round((width - panelWidth) * 0.5);
   const panelY = Math.round(height * CRT_LOADER_CONFIG.PANEL_Y_RATIO);
   const fillWidth = Math.round((panelWidth - 6) * clampedLoadingProgress);
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const loadingLabelSize = Math.max(LOADER_LABEL_MIN_SIZE_PX * resScale, Math.round(LOADER_LABEL_BASE_SIZE_PX * textScale * resScale));
-  ctx.font = `500 ${loadingLabelSize}px Futura-Medium`;
-  ctx.fillStyle = COLOR_LOADER_LABEL;
-  ctx.fillText('INITIALISATION SIGNAL', width / 2, panelY - Math.round(CRT_LOADER_CONFIG.LABEL_OFFSET_PX * textScale * resScale));
 
   ctx.fillStyle = COLOR_PANEL_BORDER;
   ctx.fillRect(panelX, panelY, panelWidth, 2);
@@ -102,6 +125,48 @@ const drawLoaderScreen = (
   if (fillWidth > BAR_HIGHLIGHT_MIN_WIDTH_PX) {
     ctx.fillStyle = COLOR_BAR_HIGHLIGHT;
     ctx.fillRect(panelX + 3 + fillWidth - 6, panelY + 3, 6, panelHeight - 6);
+  }
+
+  // Bouton PLAY — style menu : texte seul, hover = fond blanc fit-content + "> PLAY"
+  if (clampedLoadingProgress >= 1) {
+    const gap = Math.round(height * PLAY_BUTTON_GAP_RATIO);
+    const labelSize = Math.max(
+      LOADER_LABEL_MIN_SIZE_PX * resScale,
+      Math.round(LOADER_LABEL_BASE_SIZE_PX * textScale * resScale),
+    );
+    const btnTextCenterY = panelY + panelHeight + gap + labelSize;
+
+    ctx.font = `${PLAY_BUTTON_FONT_WEIGHT} ${labelSize}px ${PLAY_BUTTON_FONT_FAMILY}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const pulse = PLAY_BUTTON_PULSE_BASE + PLAY_BUTTON_PULSE_AMP * Math.sin(performance.now() / PLAY_BUTTON_PULSE_PERIOD_MS);
+    ctx.globalAlpha = loaderOpacity * pulse;
+
+    if (playHover) {
+      const displayText = '> PLAY';
+      const metrics = ctx.measureText(displayText);
+      const textW = metrics.width;
+      const textH =
+        metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent || labelSize;
+      const padX = Math.round(PLAY_BUTTON_PAD_X_PX * resScale);
+      const padYTop = Math.round(PLAY_BUTTON_PAD_Y_TOP_PX * resScale);
+      const padYBottom = Math.round(PLAY_BUTTON_PAD_Y_BOTTOM_PX * resScale);
+      ctx.fillStyle = COLOR_PLAY_HOVER_BG;
+      ctx.fillRect(
+        width / 2 - textW / 2 - padX,
+        btnTextCenterY - textH / 2 - padYTop,
+        textW + padX * 2,
+        textH + padYTop + padYBottom,
+      );
+      ctx.fillStyle = COLOR_PLAY_HOVER_TEXT;
+      ctx.fillText(displayText, width / 2, btnTextCenterY);
+    } else {
+      ctx.fillStyle = COLOR_PLAY_TEXT;
+      ctx.fillText('PLAY', width / 2, btnTextCenterY);
+    }
+
+    ctx.globalAlpha = loaderOpacity;
   }
 };
 
@@ -206,8 +271,9 @@ export const createTextCanvasTexture = (
   let lastHoverIndex = -2;
   let lastTextScale = -1;
   let lastLoadingProgress = -1;
+  let lastPlayHover = false;
 
-  const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number): void => {
+  const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover = false): void => {
     const clampedTitleProgress = Math.min(Math.max(titleProgress, 0), 1);
     const clampedMenuOpacity = Math.min(Math.max(menuOpacity, 0), 1);
     const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
@@ -216,12 +282,16 @@ export const createTextCanvasTexture = (
 
     // Skip redraw if nothing changed significantly.
     // On compare loadingProgress brut (pas clampé) pour détecter la sentinelle > 1.
+    // Le bouton PLAY pulse avec performance.now() → bypass dirty quand il est visible.
+    const playButtonPulsing = isPlayButtonPulsing(loadingProgress);
     if (
+      !playButtonPulsing &&
       Math.abs(clampedTitleProgress - lastTitleProgress) < 0.001 &&
       Math.abs(clampedMenuOpacity - lastMenuOpacity) < 0.001 &&
       hoverIndex === lastHoverIndex &&
       Math.abs(textScale - lastTextScale) < 0.001 &&
-      Math.abs(loadingProgress - lastLoadingProgress) < 0.001
+      Math.abs(loadingProgress - lastLoadingProgress) < 0.001 &&
+      playHover === lastPlayHover
     ) {
       return;
     }
@@ -231,6 +301,7 @@ export const createTextCanvasTexture = (
     lastHoverIndex = hoverIndex;
     lastTextScale = textScale;
     lastLoadingProgress = loadingProgress;
+    lastPlayHover = playHover;
 
     // Fond noir
     ctx.fillStyle = '#000000';
@@ -245,7 +316,7 @@ export const createTextCanvasTexture = (
     const dc: DrawCtx = { ctx, width, height, resScale, textScale };
 
     if (loaderOpacity > 0.001) {
-      drawLoaderScreen(dc, clampedLoadingProgress, loaderOpacity);
+      drawLoaderScreen(dc, clampedLoadingProgress, loaderOpacity, playHover);
     }
 
     ctx.globalAlpha = heroOpacity;

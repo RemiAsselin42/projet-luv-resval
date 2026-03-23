@@ -135,34 +135,35 @@ describe('createCrtScreen', () => {
     it('does not redraw if values have not changed significantly', () => {
       const texture = crtScreen.uniforms.uTexture.value;
 
-      // First call sets needsUpdate
-      crtScreen.setUiProgress(0.5, 0.5, 1);
+      // loadingProgress = 2 : transition terminée, contenu hero stable.
+      // loadingProgress = 1 bypasserait le dirty flag (playButtonPulsing = true).
+      crtScreen.setUiProgress(0.5, 0.5, 1, 2);
       const versionAfterFirstDraw = texture.version;
 
       // Second call with same values should not trigger a new texture upload.
-      crtScreen.setUiProgress(0.5, 0.5, 1);
+      crtScreen.setUiProgress(0.5, 0.5, 1, 2);
       expect(texture.version).toBe(versionAfterFirstDraw);
     });
 
     it('redraws if values change significantly', () => {
       const texture = crtScreen.uniforms.uTexture.value;
 
-      crtScreen.setUiProgress(0.5, 0.5, 1);
+      crtScreen.setUiProgress(0.5, 0.5, 1, 2);
       const versionAfterFirstDraw = texture.version;
 
       // Change titleProgress by more than threshold (0.001)
-      crtScreen.setUiProgress(0.6, 0.5, 1);
+      crtScreen.setUiProgress(0.6, 0.5, 1, 2);
       expect(texture.version).toBeGreaterThan(versionAfterFirstDraw);
     });
 
     it('redraws when hover index changes', () => {
       const texture = crtScreen.uniforms.uTexture.value;
 
-      crtScreen.setUiProgress(0.5, 0.5, 1);
+      crtScreen.setUiProgress(0.5, 0.5, 1, 2);
       const versionAfterFirstDraw = texture.version;
 
       // Change hover index
-      crtScreen.setUiProgress(0.5, 0.5, 2);
+      crtScreen.setUiProgress(0.5, 0.5, 2, 2);
       expect(texture.version).toBeGreaterThan(versionAfterFirstDraw);
     });
   });
