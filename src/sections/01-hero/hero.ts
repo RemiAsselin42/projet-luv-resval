@@ -1,12 +1,9 @@
-import * as THREE from 'three';
-import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { createCrtScreen } from './crtShader';
 import { applyCrtModelPreview } from './crtModelPreview';
 import { clamp01 } from '../../utils/math';
 import {
   CRT_MENU_CONFIG,
-  getCrtMenuStartY,
   BASELINE_VIEWPORT_HEIGHT,
   getPlayButtonUVBounds,
 } from './crtConfig';
@@ -27,6 +24,19 @@ import {
 } from '../../components/3d/menuPreview3D';
 import darthVaderHelmetUrl from '../../3d-models/darth_vader_helmet.glb?url';
 import cctvCameraUrl from '../../3d-models/low-poly_cctv_camera.glb?url';
+import { createAccessibilityMenu } from './heroAccessibility';
+import { createHeroRaycaster } from './heroRaycaster';
+import { createLoadingController } from './heroLoader';
+import { createHeroScrollTimelines } from './heroTimelines';
+
+// Réexports pour la compatibilité des tests existants (hero.test.ts)
+export {
+  computeLoadingProgress,
+  createLoadingController,
+  LOADER_TOTAL_DURATION_SECONDS,
+  LOADER_TRANSITION_SECONDS,
+} from './heroLoader';
+export type { LoadingController } from './heroLoader';
 
 const MENU_PREVIEW_TARGET_DIMENSIONS = {
   RELIQUES: 2.5,
@@ -66,7 +76,7 @@ const SAFE_MIN_VALUE = 0.0001;
  * @param visibleHeight - Visible world-space height from camera FOV
  * @param viewportAspectRatio - window.innerWidth / window.innerHeight
  * @param basePlaneWidth - Base CRT mesh width (constant 6.222)
- * @param basePlaneHeight - Base CRT mesh height (constant 3.5)
+ * @param basePlaneHeight - Base CRT mesh height (see CRT_PLANE_HEIGHT in crtConfig.ts)
  * @returns Scale multiplier for the CRT mesh
  */
 export const computeCrtScale = (
@@ -105,405 +115,6 @@ export const computeCrtScale = (
   return containScale;
 };
 
-export const LOADER_TOTAL_DURATION_SECONDS = 3.8;
-export const LOADER_HOLD_SECONDS = 2.0;
-// Durée du fondu croisé entre l'écran de chargement et le contenu héro.
-export const LOADER_TRANSITION_SECONDS = 0.6;
-
-const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
-const easeInOutSine = (t: number): number => -(Math.cos(Math.PI * t) - 1) / 2;
-const easeOutQuad = (t: number): number => 1 - (1 - t) * (1 - t);
-const easeInOutQuad = (t: number): number =>
-  t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-const easeOutExpo = (t: number): number => (t === 1 ? 1 : 1 - 2 ** (-10 * t));
-
-export const computeLoadingProgress = (elapsedSeconds: number): number => {
-  const t = Math.max(elapsedSeconds, 0);
-
-  if (t >= LOADER_TOTAL_DURATION_SECONDS) {
-    return 1;
-  }
-
-  if (t < 0.6) {
-    const localT = t / 0.6;
-    return 0.18 * easeOutCubic(localT);
-  }
-
-  if (t < 1.45) {
-    const localT = (t - 0.6) / 0.85;
-    return 0.18 + (0.47 - 0.18) * easeInOutSine(localT);
-  }
-
-  if (t < 2.3) {
-    const localT = (t - 1.45) / 0.85;
-    return 0.47 + (0.76 - 0.47) * easeOutQuad(localT);
-  }
-
-  if (t < 3.05) {
-    const localT = (t - 2.3) / 0.75;
-    return 0.76 + (0.93 - 0.76) * easeInOutQuad(localT);
-  }
-
-  const localT = (t - 3.05) / (LOADER_TOTAL_DURATION_SECONDS - 3.05);
-  return 0.93 + (1 - 0.93) * easeOutExpo(localT);
-};
-
-// ── Helpers niveau module ──────────────────────────────────────────────────────
-
-interface AccessibilityMenu {
-  container: HTMLElement;
-  buttons: HTMLButtonElement[];
-  updateVisibility: (menuOpacity: number, isAtMenu: boolean) => void;
-  dispose: () => void;
-}
-
-const createAccessibilityMenu = (
-  onItemClick: (index: number) => void,
-  onHoverChange: (index: number) => void,
-): AccessibilityMenu => {
-  const container = document.createElement('nav');
-  container.setAttribute('aria-label', 'Menu de navigation CRT');
-  container.className = 'crt-menu-accessibility';
-
-  Object.assign(container.style, {
-    position: 'fixed',
-    top: '50%',
-    left: '8%',
-    transform: 'translateY(-50%)',
-    zIndex: '10',
-    pointerEvents: 'none',
-    display: 'none',
-    flexDirection: 'column',
-    gap: '0',
-  });
-
-  const buttons: HTMLButtonElement[] = [];
-
-  for (const [index, item] of CRT_MENU_CONFIG.ITEMS.entries()) {
-    const button = document.createElement('button');
-    button.textContent = item;
-    button.className = 'crt-menu-button';
-    button.setAttribute('aria-label', `Naviguer vers ${item}`);
-
-    Object.assign(button.style, {
-      opacity: '0',
-      background: 'transparent',
-      border: 'none',
-      color: 'transparent',
-      padding: '0.5em 1em',
-      cursor: 'pointer',
-      fontSize: '1.2em',
-      textAlign: 'left',
-      pointerEvents: 'none',
-      outline: 'none',
-      transition: 'all 0.2s ease',
-    });
-
-    button.tabIndex = -1;
-
-    button.addEventListener('focus', () => {
-      onHoverChange(index);
-      button.style.outline = '2px solid rgba(255, 255, 255, 0.8)';
-      button.style.outlineOffset = '4px';
-      button.style.color = 'rgba(255, 255, 255, 0.9)';
-    });
-
-    button.addEventListener('blur', () => {
-      onHoverChange(-1);
-      button.style.outline = 'none';
-      button.style.color = 'transparent';
-    });
-
-    button.addEventListener('click', () => onItemClick(index));
-
-    buttons.push(button);
-    container.appendChild(button);
-  }
-
-  document.body.appendChild(container);
-
-  return {
-    container,
-    buttons,
-    updateVisibility: (menuOpacity: number, isAtMenu: boolean) => {
-      if (menuOpacity > 0.3 && isAtMenu) {
-        container.style.display = 'flex';
-        container.style.opacity = String(menuOpacity);
-        buttons.forEach((btn) => {
-          btn.style.pointerEvents = 'auto';
-          btn.tabIndex = 0;
-        });
-      } else {
-        container.style.display = 'none';
-        buttons.forEach((btn) => {
-          btn.style.pointerEvents = 'none';
-          btn.tabIndex = -1;
-          if (document.activeElement === btn) btn.blur();
-        });
-      }
-    },
-    dispose: () => {
-      if (container.parentNode) container.parentNode.removeChild(container);
-    },
-  };
-};
-
-interface HeroScrollTimelines {
-  heroTimeline: gsap.core.Timeline | null;
-  faceVaderFadeTimeline: gsap.core.Timeline | null;
-}
-
-const createHeroScrollTimelines = (
-  heroElement: Element | null,
-  menuElement: Element | null,
-  faceVaderElement: Element | null,
-  crt: { mesh: { position: THREE.Vector3 }; setFade: (v: number) => void },
-): HeroScrollTimelines => {
-  const heroTimeline =
-    heroElement && menuElement
-      ? gsap.timeline({
-        scrollTrigger: {
-          trigger: heroElement,
-          start: 'top top',
-          endTrigger: menuElement,
-          end: 'bottom top',
-          scrub: true,
-        },
-      })
-      : null;
-
-  if (heroTimeline) {
-    heroTimeline.to(crt.mesh.position, { z: -2.5, ease: 'none' });
-  }
-
-  const fadeTvState = { fade: 1 };
-  const faceVaderFadeTimeline = faceVaderElement
-    ? gsap.timeline({
-      scrollTrigger: {
-        trigger: faceVaderElement,
-        start: 'top 80%',
-        end: 'top top',
-        scrub: true,
-      },
-    })
-    : null;
-
-  if (faceVaderFadeTimeline) {
-    faceVaderFadeTimeline.to(fadeTvState, {
-      fade: 0,
-      ease: 'none',
-      onUpdate: () => crt.setFade(fadeTvState.fade),
-    });
-  }
-
-  return { heroTimeline, faceVaderFadeTimeline };
-};
-
-// ── Contrôleur de chargement (power-on + skip + transition croisée) ────────────
-
-export interface LoadingController {
-  /** Calcule le loadingProgress courant (0..2). Déclenche unlockAfterLoading au moment de la transition. */
-  getLoadingProgress: () => number;
-  /** Indique si le chargement est toujours en cours. */
-  isStillLoading: () => boolean;
-  /** Indique si la barre a atteint 100% (bouton PLAY visible). */
-  isBarComplete: () => boolean;
-  /** Déclenche la transition loader → héro (appelé par le clic sur le bouton PLAY). */
-  triggerPlay: () => void;
-  /** Nettoie les listeners et débloque le scroll si nécessaire. */
-  dispose: () => void;
-}
-
-export const createLoadingController = (
-  crt: { setPowerOn: (v: number) => void },
-  scrollManager: { stop: () => void; start: () => void },
-): LoadingController => {
-  const powerOnState = { value: 0 };
-  // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
-  let loaderStartTime: number | null = null;
-
-  // isLoading = true pendant toute la phase loader (barre 0→100% + attente PLAY).
-  let isLoading = true;
-  // Temps virtuel injecté dans le calcul d'elapsed quand l'utilisateur skip la barre.
-  let forcedElapsed: number | null = null;
-  // Déclenché par triggerPlay() : timestamp du moment où l'utilisateur clique PLAY.
-  let playTriggered = false;
-  let playTriggeredTime: number | null = null;
-
-  // Bloque le scroll dès maintenant, avant même l'allumage CRT.
-  scrollManager.stop();
-
-  // ── Elapsed courant (hors transition) ────────────────────────
-  const getElapsed = (): number => {
-    if (loaderStartTime === null) return 0;
-    if (forcedElapsed !== null) return forcedElapsed;
-    return (performance.now() - loaderStartTime) / 1000;
-  };
-
-  // ── Skip de l'animation de barre uniquement ──────────────────
-  const skipBar = (): void => {
-    if (!isLoading || playTriggered) return;
-    if (loaderStartTime === null) loaderStartTime = performance.now();
-    const currentElapsed = getElapsed();
-    if (currentElapsed >= LOADER_TOTAL_DURATION_SECONDS) return;
-    const proxy = { e: currentElapsed };
-    gsap.to(proxy, {
-      e: LOADER_TOTAL_DURATION_SECONDS,
-      duration: 0.4,
-      ease: 'power2.out',
-      onUpdate: () => { forcedElapsed = proxy.e; },
-      onComplete: () => { forcedElapsed = LOADER_TOTAL_DURATION_SECONDS; },
-    });
-  };
-
-  // Pendant l'animation de barre, un clic anywhere accélère la barre.
-  // Une fois la barre complète, seul le clic sur le bouton PLAY déclenche la suite.
-  const onLoadingClick = (_event: MouseEvent): void => {
-    if (!isLoading || playTriggered) return;
-    if (getElapsed() < LOADER_TOTAL_DURATION_SECONDS) {
-      skipBar();
-    }
-  };
-
-  window.addEventListener('click', onLoadingClick);
-
-  const unlockAfterLoading = (): void => {
-    window.removeEventListener('click', onLoadingClick);
-    scrollManager.start();
-    isLoading = false;
-  };
-
-  // ── Animation power-on CRT ───────────────────────────────────
-  gsap.to(powerOnState, {
-    value: 1,
-    duration: 2.5,
-    delay: 0.4,
-    ease: 'power2.inOut',
-    onUpdate: () => {
-      crt.setPowerOn(powerOnState.value);
-      if (loaderStartTime === null && powerOnState.value >= 0.3) {
-        loaderStartTime = performance.now();
-      }
-    },
-  });
-
-  const isBarComplete = (): boolean =>
-    getElapsed() >= LOADER_TOTAL_DURATION_SECONDS;
-
-  return {
-    getLoadingProgress: () => {
-      const elapsed = getElapsed();
-      const barProgress = computeLoadingProgress(elapsed);
-
-      if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
-        return barProgress;
-      }
-
-      // Barre complète : on attend le clic sur le bouton PLAY
-      if (!playTriggered || playTriggeredTime === null) {
-        return 1;
-      }
-
-      // PLAY cliqué : fondu croisé loader → héro sur LOADER_TRANSITION_SECONDS
-      if (isLoading) unlockAfterLoading();
-      const transitionElapsed = (performance.now() - playTriggeredTime) / 1000;
-      return 1 + Math.min(transitionElapsed / LOADER_TRANSITION_SECONDS, 1);
-    },
-
-    isStillLoading: () => isLoading,
-
-    isBarComplete,
-
-    triggerPlay: () => {
-      if (!isLoading || playTriggered) return;
-      playTriggered = true;
-      playTriggeredTime = performance.now();
-    },
-
-    dispose: () => {
-      window.removeEventListener('click', onLoadingClick);
-      if (isLoading) {
-        scrollManager.start();
-        isLoading = false;
-      }
-    },
-  };
-};
-
-// ── Raycaster hero ─────────────────────────────────────────────────────────────
-
-interface HeroRaycaster {
-  /** Retourne l'index du menu survolé (-1 si aucun). */
-  getHoverMenuIndexFromPointer: (clientX: number, clientY: number, menuOpacity: number) => number;
-  /** Vérifie si un clic touche le mesh CRT. */
-  isClickOnCrt: (clientX: number, clientY: number) => boolean;
-  /** Retourne les coordonnées UV du clic sur le CRT (null si pas de hit). */
-  getClickUV: (clientX: number, clientY: number) => THREE.Vector2 | null;
-  /** Indique si le scroll a atteint la section menu. */
-  isAtMenuSection: () => boolean;
-}
-
-const createHeroRaycaster = (
-  camera: THREE.PerspectiveCamera,
-  renderer: THREE.WebGLRenderer,
-  crtMesh: THREE.Mesh,
-  menuElement: Element | null,
-  scrollManager: { getScrollY: () => number },
-): HeroRaycaster => {
-  const raycaster = new THREE.Raycaster();
-  const mouseNDC = new THREE.Vector2();
-
-  const updateNDC = (clientX: number, clientY: number): void => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouseNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(mouseNDC, camera);
-  };
-
-  return {
-    getHoverMenuIndexFromPointer: (clientX, clientY, menuOpacity) => {
-      updateNDC(clientX, clientY);
-      const hits = raycaster.intersectObject(crtMesh);
-
-      if (hits.length === 0 || !hits[0]?.uv) {
-        return -1;
-      }
-
-      // UV.y=0 en bas, UV.y=1 en haut -> canvas Y inverse
-      const canvasRelY = 1 - hits[0].uv.y;
-      // Reproduit exactement la même logique verticale que le draw canvas.
-      const menuStartY = getCrtMenuStartY(menuOpacity);
-      const relativeY = canvasRelY - menuStartY;
-      const idx = Math.floor(relativeY / CRT_MENU_CONFIG.LINE_HEIGHT);
-
-      return idx >= 0 && idx < CRT_MENU_CONFIG.MENU_COUNT ? idx : -1;
-    },
-
-    isClickOnCrt: (clientX, clientY) => {
-      updateNDC(clientX, clientY);
-      return raycaster.intersectObject(crtMesh).length > 0;
-    },
-
-    getClickUV: (clientX, clientY) => {
-      updateNDC(clientX, clientY);
-      const hits = raycaster.intersectObject(crtMesh);
-      if (hits.length === 0 || !hits[0]?.uv) return null;
-      return hits[0].uv.clone();
-    },
-
-    isAtMenuSection: () => {
-      if (!(menuElement instanceof HTMLElement)) return false;
-      const currentScrollY = scrollManager.getScrollY();
-      const menuTop = menuElement.offsetTop;
-      const menuBottom = menuTop + menuElement.offsetHeight;
-      return (
-        currentScrollY >= menuTop - Math.max(window.innerHeight, 1) * 0.2 &&
-        currentScrollY < menuBottom
-      );
-    },
-  };
-};
-
 // ── Section initializer ────────────────────────────────────────────────────────
 
 export const initHeroSection: SectionInitializer = async (context) => {
@@ -530,7 +141,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
   // ── Écran CRT 3D ──────────────────────────────────────────────
   // Await font loading for crisp text rendering on the CRT screen
   const CRT_ASPECT = 16 / 9;
-  const BASE_PLANE_HEIGHT = 3.5;
+  const BASE_PLANE_HEIGHT = CRT_MENU_CONFIG.PLANE_HEIGHT;
   const BASE_PLANE_WIDTH = BASE_PLANE_HEIGHT * CRT_ASPECT;
 
   const crt = await createCrtScreen(
@@ -616,7 +227,6 @@ export const initHeroSection: SectionInitializer = async (context) => {
     renderer,
     crt.mesh,
     menuElement,
-    context.scrollManager,
   );
   let hoverMenuIndex = -1;
   let currentMenuOpacity = 0;
