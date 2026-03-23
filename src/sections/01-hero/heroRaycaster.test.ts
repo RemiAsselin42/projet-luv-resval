@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MockInstance } from 'vitest';
 import * as THREE from 'three';
 import { createHeroRaycaster } from './heroRaycaster';
 import { CRT_MENU_CONFIG, getCrtMenuStartY } from './crtConfig';
@@ -12,7 +13,8 @@ const renderer = { domElement: mockDomElement } as unknown as THREE.WebGLRendere
 const crtMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1));
 
 describe('createHeroRaycaster', () => {
-  let intersectSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let intersectSpy: MockInstance<any>;
 
   beforeEach(() => {
     intersectSpy = vi.spyOn(THREE.Raycaster.prototype, 'intersectObject');

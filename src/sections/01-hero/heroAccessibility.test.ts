@@ -128,7 +128,7 @@ describe('createAccessibilityMenu', () => {
 
     it('calls onItemClick with the correct index for each button', () => {
       const menu = createAccessibilityMenu(onItemClick, onHoverChange);
-      menu.buttons.forEach((btn, i) => btn.dispatchEvent(new MouseEvent('click')));
+      menu.buttons.forEach((btn) => btn.dispatchEvent(new MouseEvent('click')));
 
       menu.buttons.forEach((_, i) => {
         expect(onItemClick).toHaveBeenCalledWith(i);

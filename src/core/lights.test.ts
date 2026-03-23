@@ -42,9 +42,9 @@ describe('addDefaultLights', () => {
       (c) => c instanceof THREE.DirectionalLight,
     ) as THREE.DirectionalLight[];
 
-    expect(keyLight.position.x).toBe(5);
-    expect(keyLight.position.y).toBe(6);
-    expect(keyLight.position.z).toBe(5);
+    expect(keyLight!.position.x).toBe(5);
+    expect(keyLight!.position.y).toBe(6);
+    expect(keyLight!.position.z).toBe(5);
   });
 
   it('positions the fill light at (-4, 2, -4)', () => {
@@ -55,9 +55,9 @@ describe('addDefaultLights', () => {
       (c) => c instanceof THREE.DirectionalLight,
     ) as THREE.DirectionalLight[];
 
-    expect(fillLight.position.x).toBe(-4);
-    expect(fillLight.position.y).toBe(2);
-    expect(fillLight.position.z).toBe(-4);
+    expect(fillLight!.position.x).toBe(-4);
+    expect(fillLight!.position.y).toBe(2);
+    expect(fillLight!.position.z).toBe(-4);
   });
 
   it('can be called on an already-populated scene without removing existing children', () => {

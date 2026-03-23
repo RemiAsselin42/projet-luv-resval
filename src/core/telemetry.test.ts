@@ -13,7 +13,7 @@ describe('emitTelemetry', () => {
     emitTelemetry({ category: 'test', name: 'event', status: 'success' });
 
     expect(dispatchSpy).toHaveBeenCalledTimes(1);
-    const event = dispatchSpy.mock.calls[0][0];
+    const event = dispatchSpy.mock.calls[0]![0];
     expect(event).toBeInstanceOf(CustomEvent);
   });
 
@@ -22,7 +22,7 @@ describe('emitTelemetry', () => {
 
     emitTelemetry({ category: 'test', name: 'event', status: 'success' });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.type).toBe('luvresval:telemetry');
   });
 
@@ -31,7 +31,7 @@ describe('emitTelemetry', () => {
 
     emitTelemetry({ category: 'audio', name: 'startExperience', status: 'success' });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.category).toBe('audio');
     expect(event.detail.name).toBe('startExperience');
     expect(event.detail.status).toBe('success');
@@ -42,7 +42,7 @@ describe('emitTelemetry', () => {
 
     emitTelemetry({ category: 'load', name: 'assets', status: 'info', durationMs: 1500 });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.durationMs).toBe(1500);
   });
 
@@ -56,7 +56,7 @@ describe('emitTelemetry', () => {
       meta: { section: 'hero', attempt: 1 },
     });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.meta).toEqual({ section: 'hero', attempt: 1 });
   });
 
@@ -67,7 +67,7 @@ describe('emitTelemetry', () => {
       emitTelemetry({ category: 'test', name: 'noop', status: 'error' });
     }).not.toThrow();
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.meta).toBeUndefined();
     expect(event.detail.durationMs).toBeUndefined();
   });
@@ -77,7 +77,7 @@ describe('emitTelemetry', () => {
 
     emitTelemetry({ category: 'gpu', name: 'init', status: 'error' });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.status).toBe('error');
   });
 
@@ -86,7 +86,7 @@ describe('emitTelemetry', () => {
 
     emitTelemetry({ category: 'perf', name: 'fps', status: 'info' });
 
-    const event = dispatchSpy.mock.calls[0][0] as CustomEvent<TelemetryEvent>;
+    const event = dispatchSpy.mock.calls[0]![0] as CustomEvent<TelemetryEvent>;
     expect(event.detail.status).toBe('info');
   });
 });

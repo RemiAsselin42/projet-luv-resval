@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { SectionLifecycle } from '../types';
 
 vi.mock('gsap', () => ({
   default: {
@@ -28,20 +29,20 @@ describe('initHeroFallback', () => {
 
   describe('when hero section element is missing', () => {
     it('returns update and dispose without throwing', () => {
-      const result = initHeroFallback({} as never);
+      const result = initHeroFallback({} as never) as SectionLifecycle;
 
       expect(typeof result.update).toBe('function');
       expect(typeof result.dispose).toBe('function');
     });
 
     it('update() is a no-op and does not throw', () => {
-      const { update } = initHeroFallback({} as never);
+      const { update } = initHeroFallback({} as never) as SectionLifecycle;
 
-      expect(() => update(0)).not.toThrow();
+      expect(() => update(0, 0)).not.toThrow();
     });
 
     it('dispose() is a no-op and does not throw', () => {
-      const { dispose } = initHeroFallback({} as never);
+      const { dispose } = initHeroFallback({} as never) as SectionLifecycle;
 
       expect(() => dispose()).not.toThrow();
     });
@@ -50,14 +51,14 @@ describe('initHeroFallback', () => {
   describe('when hero section element is found', () => {
     it('creates a .hero-fallback-title element', () => {
       buildHeroDom();
-      initHeroFallback({} as never);
+      initHeroFallback({} as never) as SectionLifecycle;
 
       expect(document.querySelector('.hero-fallback-title')).not.toBeNull();
     });
 
     it('sets title text to "LUV RESVAL"', () => {
       buildHeroDom();
-      initHeroFallback({} as never);
+      initHeroFallback({} as never) as SectionLifecycle;
 
       const title = document.querySelector('.hero-fallback-title');
       expect(title?.textContent).toBe('LUV RESVAL');
@@ -65,14 +66,14 @@ describe('initHeroFallback', () => {
 
     it('appends titleContainer inside .section-content', () => {
       const { content } = buildHeroDom();
-      initHeroFallback({} as never);
+      initHeroFallback({} as never) as SectionLifecycle;
 
       expect(content.querySelector('.hero-fallback-title')).not.toBeNull();
     });
 
     it('returns update and dispose methods', () => {
       buildHeroDom();
-      const result = initHeroFallback({} as never);
+      const result = initHeroFallback({} as never) as SectionLifecycle;
 
       expect(typeof result.update).toBe('function');
       expect(typeof result.dispose).toBe('function');
@@ -80,14 +81,14 @@ describe('initHeroFallback', () => {
 
     it('update() is a no-op and does not throw', () => {
       buildHeroDom();
-      const { update } = initHeroFallback({} as never);
+      const { update } = initHeroFallback({} as never) as SectionLifecycle;
 
-      expect(() => update(0)).not.toThrow();
+      expect(() => update(0, 0)).not.toThrow();
     });
 
     it('dispose() removes titleContainer from DOM', () => {
       buildHeroDom();
-      const { dispose } = initHeroFallback({} as never);
+      const { dispose } = initHeroFallback({} as never) as SectionLifecycle;
 
       dispose();
 
@@ -103,7 +104,7 @@ describe('initHeroFallback', () => {
       });
 
       buildHeroDom();
-      const { dispose } = initHeroFallback({} as never);
+      const { dispose } = initHeroFallback({} as never) as SectionLifecycle;
 
       dispose();
 
