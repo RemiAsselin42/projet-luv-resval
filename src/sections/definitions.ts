@@ -81,21 +81,48 @@ const sectionDefinitions = [
 
 export const sections: SectionDefinition[] = [...sectionDefinitions];
 
+/**
+ * Canonical section identifiers used for DOM queries, scroll navigation, and scroll manager.
+ *
+ * Canonical keys (single, preferred name per section):
+ *   HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, OUTRO_ECLIPSE
+ *
+ * Legacy aliases (kept for backwards-compat, do not use in new code):
+ *   MENU          → HUB_CENTRAL  (ancien nom utilisé dans hero.ts)
+ *   FACE_VADER    → RELIQUES     (ancien nom de la section reliques)
+ *   THEMATIC_OBJECTS → RELIQUES  (idem, nom de travail)
+ *   OEIL_BIG_BROTHER → BIG_BROTHER
+ *   MPC_BEATMAKER → MPC
+ *   MPC_3D        → MPC
+ *   STAR_WARS_CRAWL → OUTRO_ECLIPSE
+ *   GRUNT         → OUTRO_ECLIPSE
+ */
 export const SECTION_IDS = {
+  // ── Canonical names ──────────────────────────────────────────────────────────
   HERO: 'hero',
-  MENU: 'hub-central',
   HUB_CENTRAL: 'hub-central',
-  FACE_VADER: 'reliques',
-  THEMATIC_OBJECTS: 'reliques',
   RELIQUES: 'reliques',
   BIG_BROTHER: 'oeil-big-brother',
-  OEIL_BIG_BROTHER: 'oeil-big-brother',
-  MPC_BEATMAKER: 'mpc',
-  MPC_3D: 'mpc',
   MPC: 'mpc',
-  STAR_WARS_CRAWL: 'outro-eclipse',
-  GRUNT: 'outro-eclipse',
   OUTRO_ECLIPSE: 'outro-eclipse',
+
+  // ── Legacy aliases — do not use in new code ──────────────────────────────────
+  /** @deprecated Use HUB_CENTRAL */
+  MENU: 'hub-central',
+  /** @deprecated Use RELIQUES */
+  FACE_VADER: 'reliques',
+  /** @deprecated Use RELIQUES */
+  THEMATIC_OBJECTS: 'reliques',
+  /** @deprecated Use BIG_BROTHER */
+  OEIL_BIG_BROTHER: 'oeil-big-brother',
+  /** @deprecated Use MPC */
+  MPC_BEATMAKER: 'mpc',
+  /** @deprecated Use MPC */
+  MPC_3D: 'mpc',
+  /** @deprecated Use OUTRO_ECLIPSE */
+  STAR_WARS_CRAWL: 'outro-eclipse',
+  /** @deprecated Use OUTRO_ECLIPSE */
+  GRUNT: 'outro-eclipse',
 } as const;
 
 export const sectionLoaders: SectionLoader[] = sections.map(({ id, load }) => ({

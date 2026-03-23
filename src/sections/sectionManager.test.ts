@@ -193,7 +193,7 @@ describe('sectionManager integration', () => {
     await sectionManager.initialize([createLoader('face-vader', events)]);
 
     const observer = IntersectionObserverMock.instances[0];
-    expect(observer).toBeDefined();
+    expect(observer).toBeInstanceOf(IntersectionObserverMock);
 
     observer?.trigger(face, true);
     observer?.trigger(face, true);
