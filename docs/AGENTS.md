@@ -100,6 +100,8 @@ Inspiration for design and interactivity:
 - Naming remains consistent with existing codebase conventions.
 - Keep modules focused and small: one feature/section per file group.
 - Distinguish clearly between current implementation and target architecture in docs.
+- Use canonical `SECTION_IDS` keys (HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, OUTRO_ECLIPSE). Do not use deprecated aliases (MENU, FACE_VADER, MPC_3D, etc.) in new code.
+- Use `querySectionElement(id)` from `src/utils/dom.ts` for DOM queries on sections instead of inline `document.querySelector`.
 
 ## TypeScript development checklist:
 
@@ -107,7 +109,7 @@ Inspiration for design and interactivity:
 - No explicit any usage without justification
 - 100% type coverage for public APIs
 - ESLint configured and enforced
-- Test coverage exceeding 90%
+- Test coverage: thresholds 80% lines/functions, 70% branches (configured in `vitest.config.ts`)
 - Source maps properly configured
 - Declaration files generated
 - Bundle size optimization applied
@@ -124,7 +126,8 @@ Inspiration for design and interactivity:
 - `npm run lint:style` : run Stylelint checks for CSS/SCSS
 - `npm run lint:style:fix` : run Stylelint with auto-fix for CSS/SCSS
 - `npm run typecheck` : run TypeScript type checks
-- `npm run test` : run unit tests
+- `npm run test` : run unit tests (Vitest, jsdom environment)
+- `npm run test:coverage` : run unit tests with v8 coverage report
 - `npm run validate` : run `lf:check`, lint, stylelint, typecheck, and build
 
 ## Response Format for Agent Work
