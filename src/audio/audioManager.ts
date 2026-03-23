@@ -37,10 +37,9 @@ export const createAudioManager = (): AudioManager => {
     preload: true,
   });
 
-  // TODO(autoplay): cette méthode DOIT être appelée depuis un gestionnaire d'événement
+  // TODO: cette méthode DOIT être appelée depuis un gestionnaire d'événement
   // utilisateur (clic, touche) pour satisfaire la politique autoplay des navigateurs.
   // Sans interaction préalable, Howler ne peut pas démarrer la lecture audio.
-  // commentaire à supprimer une fois implémenté correctement
   const startExperience = (): void => {
     if (_experienceStarted) return;
     _experienceStarted = true;
@@ -55,10 +54,9 @@ export const createAudioManager = (): AudioManager => {
     if (!layer) return;
     // Si le mute global est actif, on mémorise seulement le fade à travers le volume
     // Howler.volume(0) coupe tout globalement, le fade Howl reste cohérent
-    // TODO(mpc-volume): lors de l'implémentation MPC, remplacer MUSIC_LAYER_VOLUME par le
+    // TODO: lors de l'implémentation MPC, remplacer MUSIC_LAYER_VOLUME par le
     // volume courant issu du potard (setMusicVolume). Actuellement le fade cible toujours 1,
     // ce qui ignore le volume global réglé par l'utilisateur.
-    // commentaire à supprimer une fois implémenté correctement
     layer.fade(layer.volume(), MUSIC_LAYER_VOLUME, LAYER_FADE_DURATION_MS);
   };
 
