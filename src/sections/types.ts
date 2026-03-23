@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ScrollManager } from '../core/scrollManager';
 import type { AssetLoader } from '../core/assetLoader';
+import type { AudioManager } from '../audio/types';
 
 export interface SectionContext {
   scene: THREE.Scene;
@@ -9,6 +10,7 @@ export interface SectionContext {
   canvasContainer: HTMLElement;
   scrollManager: ScrollManager;
   assetLoader: AssetLoader;
+  audioManager: AudioManager;
 }
 
 export interface SectionLifecycle {

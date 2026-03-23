@@ -4,6 +4,7 @@ import { createThreeViewport, getRecommendedPixelRatio } from './core/scene';
 import { createRenderPipeline } from './core/postprocessing';
 import { createScrollManager } from './core/scrollManager';
 import { createAssetLoader } from './core/assetLoader';
+import { createAudioManager } from './audio/audioManager';
 import { createSectionManager } from './sections/sectionManager';
 import { sectionLoaders } from './sections/registry';
 import { renderSectionsLayout } from './sections/dom';
@@ -26,6 +27,7 @@ addDefaultLights(scene);
 const renderPipeline = createRenderPipeline(renderer, scene, camera);
 const scrollManager = createScrollManager();
 const assetLoader = createAssetLoader();
+const audioManager = createAudioManager();
 const sectionManager = createSectionManager({
   scene,
   camera,
@@ -33,7 +35,14 @@ const sectionManager = createSectionManager({
   canvasContainer,
   scrollManager,
   assetLoader,
+  audioManager,
 });
+
+const onKeydown = (e: KeyboardEvent): void => {
+  if (e.key === 'm' || e.key === 'M') audioManager.toggleMute();
+};
+
+window.addEventListener('keydown', onKeydown);
 
 void sectionManager
   .initialize(sectionLoaders)
@@ -81,7 +90,9 @@ if (import.meta.hot) {
     sectionManager.dispose();
     scrollManager.dispose();
     assetLoader.dispose();
+    audioManager.dispose();
     window.removeEventListener('resize', onResize);
+    window.removeEventListener('keydown', onKeydown);
 
     renderPipeline.dispose();
     renderer.dispose();

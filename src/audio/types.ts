@@ -1,0 +1,14 @@
+export interface AudioManager {
+  /** Lance les 4 layers musicaux synchronisés. Idempotent. */
+  startExperience(): void;
+  /** Débloque une layer musicale (index 0-3) avec un fade-in. Appelé par la MPC. */
+  unlockMusicLayer(index: number): void;
+  /** Joue le FX sonore universel (hover/clic sur tout bouton interactif). */
+  playUiFx(): void;
+  /** Modifie le volume global de la musique (0-1). Utilisé par le potard MPC. */
+  setMusicVolume(volume: number): void;
+  /** Toggle le mute global. Retourne le nouvel état isMuted. */
+  toggleMute(): boolean;
+  isMuted(): boolean;
+  dispose(): void;
+}

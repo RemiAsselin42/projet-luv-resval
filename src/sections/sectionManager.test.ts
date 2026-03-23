@@ -69,6 +69,15 @@ const createTestContext = () => {
       preloadSectionOnce,
       dispose: vi.fn(),
     },
+    audioManager: {
+      startExperience: vi.fn(),
+      unlockMusicLayer: vi.fn(),
+      playUiFx: vi.fn(),
+      setMusicVolume: vi.fn(),
+      toggleMute: vi.fn(),
+      isMuted: vi.fn(() => false),
+      dispose: vi.fn(),
+    },
   };
 
   return {
