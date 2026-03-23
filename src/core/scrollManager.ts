@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
+import { querySectionElement } from '../utils/dom';
 
 type ScrollListener = (scrollY: number) => void;
 
@@ -59,9 +60,7 @@ const getSectionIndexAtViewportAnchor = (
 };
 
 const createSectionTimeline = (options: SectionTimelineOptions): gsap.core.Timeline | null => {
-  const sectionElement = document.querySelector<HTMLElement>(
-    `[data-section="${options.sectionId}"]`,
-  );
+  const sectionElement = querySectionElement(options.sectionId);
 
   if (!sectionElement) return null;
 
@@ -187,9 +186,7 @@ export const createScrollManager = (): ScrollManager => {
       lenis.start();
     },
     scrollToSection: (sectionId: string) => {
-      const targetElement = document.querySelector<HTMLElement>(
-        `[data-section="${sectionId}"]`,
-      );
+      const targetElement = querySectionElement(sectionId);
 
       if (!targetElement) {
         console.warn(`Section not found: ${sectionId}`);

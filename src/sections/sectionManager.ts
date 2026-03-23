@@ -1,5 +1,6 @@
 import type { SectionContext, SectionLifecycle, SectionLoader } from './types';
 import { emitTelemetry } from '../core/telemetry';
+import { querySectionElement } from '../utils/dom';
 
 export interface SectionManager {
   initialize: (loaders: SectionLoader[]) => Promise<void>;
@@ -41,7 +42,7 @@ const categorizeLoaders = (loaders: SectionLoader[]): CategorizedLoaders => {
   const deferred: DeferredEntry[] = [];
 
   for (const loader of loaders) {
-    const element = document.querySelector<HTMLElement>(`[data-section="${loader.id}"]`);
+    const element = querySectionElement(loader.id);
     if (element) {
       deferred.push({ loader, element });
     } else {
