@@ -1,9 +1,14 @@
 ---
-name: verifier-documentation
-description: 'Vérifie la cohérence entre documentation et code, identifie les écarts et suggère corrections. Use when: vérifier doc, audit documentation, check docs, doc code mismatch, documentation outdated, validate docs, documentation alignment.'
-argument-hint: Dois-je vérifier toute la documentation ou des sections spécifiques ?
+description: 'Vérifie la cohérence entre documentation et code.'
+argument-hint: '[sections ou fichiers spécifiques à vérifier, ou vide pour tout auditer]'
+allowed-tools: Read, Bash, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Périmètre de vérification
+
+"$ARGUMENTS"
 
 ## Objectif
 
@@ -215,9 +220,9 @@ Après corrections, vérifie :
 
 ## Outils
 
-- `semantic_search` : Trouver mentions dans le code
-- `grep_search` : Chercher patterns spécifiques
-- `read_file` : Examiner docs et code
-- `run_in_terminal` : Tester commandes documentées
+- `Grep` : Trouver mentions et patterns dans le code
+- `Read` : Examiner docs et code
+- `Glob` : Lister les fichiers de documentation
+- `Bash` : Tester commandes documentées
 
 Fournis un audit complet et actionnable qui facilite la mise en conformité de la documentation avec le code réel.

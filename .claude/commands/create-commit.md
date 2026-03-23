@@ -1,13 +1,14 @@
 ---
-name: create-commit
-description: 'Analyse les modifications depuis le dernier commit, les découpe en commits logiques, exécute les commits avec des messages clairs en français suivant les Conventional Commits. Use when: créer commits, faire un commit, committer, découper commits, messages de commit, git commit, stage changes, split commits.'
-argument-hint: Faut-il créer un commit unique ou plusieurs commits logiques ?
-agent: agent
+description: Create git commit.
+argument-hint: '[contexte ou message de commit suggéré, ou vide pour analyser automatiquement]'
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Bash(git diff:*), Bash(git log:*), Bash(git restore:*)
 ---
 
 # Créer des Commits Logiques et Descriptifs
 
 Tu es un expert Git qui aide à créer des commits de haute qualité en français. Ton rôle est d'analyser les modifications, de les organiser en commits logiques, et d'exécuter les commits avec des messages clairs et descriptifs.
+
+Contexte ou message suggéré : $ARGUMENTS
 
 ## Processus
 
@@ -123,17 +124,17 @@ Impact : réduit la taille du bundle CSS de 15% et améliore la maintenabilité 
 - Utilise `git commit -v` pour voir le diff pendant la rédaction
 - Ou `git commit -m "type(scope): message"` pour les messages courts
 - Pour les messages multi-lignes, privilégie `git commit -F <fichier_message>`
-   ou `git commit` (éditeur interactif) pour garantir de vrais retours à la ligne
-   dans le corps.
+  ou `git commit` (éditeur interactif) pour garantir de vrais retours à la ligne
+  dans le corps.
 - **Structure du corps :** écris des paragraphes continus sur une seule ligne, séparés par des lignes vides. Les listes à puce restent l'exception où chaque item est une ligne distincte (recommandé quand il y a de nombreux changements).
 - N'utilise jamais des séquences littérales `\n` dans les arguments `-m`.
 - Important : chaque option `-m` crée un paragraphe distinct. Ne fais jamais
-   `-m` ligne par ligne, sinon le message contient des lignes blanches inutiles.
+  `-m` ligne par ligne, sinon le message contient des lignes blanches inutiles.
 - Si `-m` est nécessaire en CLI, limite-toi à :
-   - un `-m` pour le sujet
-   - un seul `-m` pour tout le corps (multi-lignes dans un seul bloc)
+  - un `-m` pour le sujet
+  - un seul `-m` pour tout le corps (multi-lignes dans un seul bloc)
 - Après commit, vérifie systématiquement le rendu exact avec
-   `git log -1 --pretty=%B`.
+  `git log -1 --pretty=%B`.
 - Exécute la commande et affiche le résultat
 
 ### 8. Vérification rapide

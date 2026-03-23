@@ -1,9 +1,22 @@
 ---
-name: evaluer-modifications
-description: 'Analyse les modifications depuis le dernier commit, évalue leur qualité, identifie les risques et propose des améliorations. Use when: évaluer changements, review modifications, analyser commits, code review, évaluation qualité, audit modifications, analyse diff, review changes, assess code quality.'
-argument-hint: Dois-je analyser tous les changements ou uniquement certains fichiers/features ?
+description: 'Analyse et évalue les modifications depuis le dernier commit.'
+argument-hint: '[fichiers ou features spécifiques à analyser, ou vide pour tout analyser]'
+allowed-tools: Bash(git diff:*), Bash(git status:*), Bash(git log:*), Read, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Périmètre d'analyse
+
+"$ARGUMENTS"
+
+## État actuel du dépôt
+
+!`git status`
+
+## Résumé des modifications
+
+!`git diff --stat`
 
 ## Objectif
 
@@ -16,17 +29,15 @@ Fournir une analyse critique et constructive des modifications récentes pour as
 **a. Inspection de l'état Git**
 
 ```bash
-git status                    # Fichiers modifiés
 git diff                      # Différences détaillées
-git diff --stat               # Résumé des changements
 git log -1 --stat            # Dernier commit (si déjà commité)
 ```
 
 **b. Lecture du contexte**
 
-- Utilise `read_file` pour examiner les fichiers modifiés
-- Utilise `grep_search` pour comprendre l'usage des fonctions ajoutées
-- Analyse l'architecture globale du projet avec `semantic_search`
+- Utilise `Read` pour examiner les fichiers modifiés
+- Utilise `Grep` pour comprendre l'usage des fonctions ajoutées
+- Utilise `Glob` pour explorer la structure du projet
 
 **c. Catégorisation des changements**
 
@@ -254,7 +265,11 @@ Génère un rapport structuré et actionnable :
 
    ```typescript
    // Dans scrollManager.ts
-   function updateSection(section: SectionLifecycle, deltaTime: number, maxDelta: number = 0.1) {
+   function updateSection(
+     section: SectionLifecycle,
+     deltaTime: number,
+     maxDelta: number = 0.1
+   ) {
      if (deltaTime > maxDelta) {
        console.warn('Delta trop élevé, limitation à', maxDelta);
        deltaTime = maxDelta;

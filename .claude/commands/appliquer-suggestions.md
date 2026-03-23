@@ -1,13 +1,16 @@
 ---
-name: appliquer-suggestions
 description: 'Applique les recommandations de modifications au code, valide l`intégration et exécute les tests. Use when: appliquer suggestions, implémenter recommandations, corriger problèmes identifiés, apply changes, fix issues, implement suggestions, mettre en œuvre corrections.'
-argument-hint: Quelles recommandations dois-je appliquer ? (référence à une conversation précédente)
+argument-hint: '[recommandations à appliquer ou référence à une analyse précédente]'
+allowed-tools: Read, Edit, Bash, Grep, Glob, TodoWrite
+context: fork
 agent: agent
 ---
 
 ## Contexte
 
-Ce prompt s'utilise **après** une phase d'analyse ou de revue de code qui a identifié des problèmes ou des améliorations à apporter. Tu dois prendre les recommandations faites précédemment et les implémenter de manière rigoureuse.
+Ce prompt s'utilise **après** une phase d'analyse ou de revue de code qui a identifié des problèmes, du code mort, des problèmes de commentaires, des problèmes de performance, d'architecture, de qualité ou des améliorations à apporter. Tu dois prendre les recommandations faites précédemment et les implémenter de manière rigoureuse.
+
+$ARGUMENTS
 
 ## Cas d'usage typiques
 
@@ -16,6 +19,11 @@ Ce prompt s'utilise **après** une phase d'analyse ou de revue de code qui a ide
 3. **Après une recommandation d'architecture** : Refactorer selon les best practices
 4. **Après une analyse de sécurité** : Corriger les vulnérabilités
 5. **Après une optimisation** : Appliquer les améliorations de performance
+6. **Après une analyse de dépendances** : Mettre à jour les versions et corriger les problèmes liés
+7. **Après une analyse de couverture** : Ajouter les tests manquants
+8. **Après une analyse de style** : Corriger les problèmes de linting
+9. **Après une analyse de documentation** : Mettre à jour les commentaires et la documentation
+10. **Après une analyse de performance** : Optimiser les parties identifiées comme lentes
 
 ## Processus
 
@@ -49,7 +57,7 @@ Organise les changements par ordre logique :
 4. Ajout/mise à jour des tests
 5. Mise à jour de la documentation
 
-**Utilise `manage_todo_list` pour suivre l'avancement.**
+**Utilise `TodoWrite` pour suivre l'avancement.**
 
 ### 4. Application des modifications
 
@@ -57,20 +65,20 @@ Pour chaque changement :
 
 **a. Lire le contexte existant**
 
-- Utilise `read_file` pour comprendre le code actuel
+- Utilise `Read` pour comprendre le code actuel
 - Identifie les patterns et conventions utilisés
 - Note les imports, types, et dépendances existants
 
 **b. Implémenter la modification**
 
-- Utilise `replace_string_in_file` ou `multi_replace_string_in_file`
+- Utilise `Edit` pour appliquer les changements
 - Respecte le style de code existant (indentation, nommage, structure)
 - Ajoute des commentaires si la logique est complexe
 - Assure la cohérence avec les conventions TypeScript/React du projet
 
 **c. Vérifier les erreurs**
 
-- Utilise `get_errors` pour détecter les erreurs TypeScript/lint
+- Utilise `Bash` pour exécuter `npm run lint` et détecter les erreurs
 - Corrige immédiatement les problèmes détectés
 - Continue jusqu'à avoir zéro erreur
 
@@ -202,7 +210,7 @@ Fournis un résumé structuré :
 
 ### Si une modification échoue
 
-1. Analyse l'erreur avec `get_errors`
+1. Analyse l'erreur avec `Bash` (lint/type-check)
 2. Reviens sur le changement si nécessaire
 3. Propose une solution alternative
 4. Documente pourquoi la recommandation initiale n'a pas pu être appliquée
@@ -222,12 +230,12 @@ Fournis un résumé structuré :
 
 ## Outils recommandés
 
-- `read_file` : Lire le code existant
-- `multi_replace_string_in_file` : Appliquer plusieurs modifications efficacement
-- `get_errors` : Vérifier les erreurs en temps réel
-- `run_in_terminal` : Exécuter tests et commandes de validation
-- `manage_todo_list` : Suivre l'avancement des modifications
-- `grep_search` : Trouver les occurrences d'un pattern dans le code
+- `Read` : Lire le code existant
+- `Edit` : Appliquer les modifications
+- `Bash` : Exécuter tests et commandes de validation
+- `TodoWrite` : Suivre l'avancement des modifications
+- `Grep` : Trouver les occurrences d'un pattern dans le code
+- `Glob` : Explorer la structure du projet
 
 ## Exemple de flux
 

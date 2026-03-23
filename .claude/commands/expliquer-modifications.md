@@ -1,9 +1,22 @@
 ---
-name: expliquer-modifications
-description: 'Analyse et explique les modifications depuis le dernier commit avec une synthèse claire et un résumé par fichier. Use when: expliquer changements, résumer modifications, comprendre diff, explain changes, summarize commits, what changed, diff summary.'
-argument-hint: Dois-je expliquer tous les changements ou certains fichiers spécifiques ?
+description: 'Analyse et explique les modifications depuis le dernier commit.'
+argument-hint: '[fichiers spécifiques à expliquer, ou vide pour tout expliquer]'
+allowed-tools: Bash(git diff:*), Bash(git status:*), Bash(git log:*), Read, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Périmètre
+
+"$ARGUMENTS"
+
+## État actuel du dépôt
+
+!`git status`
+
+## Résumé des modifications
+
+!`git diff --stat`
 
 ## Objectif
 
@@ -16,17 +29,14 @@ Fournir une explication claire et structurée des changements récents pour faci
 **a. Inspection de l'état Git**
 
 ```bash
-git status                    # Fichiers modifiés
 git diff                      # Différences détaillées
-git diff --stat               # Résumé des changements
 git log -1 --stat            # Dernier commit (si déjà commité)
 ```
 
 **b. Lecture du contexte**
 
-- Utilise `read_file` pour examiner les fichiers modifiés
-- Utilise `grep_search` pour comprendre l'usage des fonctions ajoutées
-- Analyse l'architecture globale du projet avec `semantic_search`
+- Utilise `Read` pour examiner les fichiers modifiés
+- Utilise `Grep` pour comprendre l'usage des fonctions ajoutées
 
 **c. Catégorisation des changements**
 
@@ -154,9 +164,9 @@ Enregistre la nouvelle section hero avec ses animations dans le registre des sec
 
 ## Outils
 
-- `run_in_terminal` : Exécuter les commandes git
-- `read_file` : Examiner les fichiers modifiés si nécessaire
-- `grep_search` : Comprendre le contexte d'un changement
+- `Bash` : Exécuter les commandes git
+- `Read` : Examiner les fichiers modifiés si nécessaire
+- `Grep` : Comprendre le contexte d'un changement
 
 ## Cas d'usage
 

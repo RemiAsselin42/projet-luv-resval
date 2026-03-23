@@ -1,9 +1,14 @@
 ---
-name: mettre-a-jour-documentation
-description: 'Analyse les modifications récentes et met à jour la documentation en conséquence. Use when: mettre à jour doc, update documentation, documenter changements, refresh docs, synchroniser documentation, update README, documentation outdated.'
-argument-hint: Quels fichiers de documentation dois-je mettre à jour ?
+description: 'Analyse les modifications récentes et met à jour la documentation en conséquence.'
+argument-hint: '[fichiers de documentation à mettre à jour, ou vide pour tout analyser]'
+allowed-tools: Read, Edit, Bash, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Fichiers ciblés
+
+"$ARGUMENTS"
 
 ## Objectif
 
@@ -165,9 +170,9 @@ Fournis un résumé :
 
 ## Outils
 
-- `read_file` : Lire la doc existante
-- `grep_search` : Trouver références à mettre à jour
-- `replace_string_in_file` : Modifier la documentation
-- `run_in_terminal` : Tester les exemples
+- `Read` : Lire la doc existante
+- `Grep` : Trouver références à mettre à jour
+- `Edit` : Modifier la documentation
+- `Bash` : Tester les exemples
 
 Produis une documentation claire, précise et à jour qui aide les utilisateurs à comprendre et utiliser efficacement le projet.

@@ -1,9 +1,14 @@
 ---
-name: mettre-a-jour-prompts
-description: 'Adapte les exemples des prompts au projet actuel en remplaçant les références génériques par des exemples réels du codebase. Use when: adapter prompts, update prompt examples, contextualiser prompts, mettre à jour exemples prompts, personnaliser prompts.'
-argument-hint: Dois-je mettre à jour tous les prompts ou seulement certains ?
+description: 'Adapte les exemples des prompts au projet actuel en remplaçant les références génériques par des exemples réels du codebase.'
+argument-hint: '[nom(s) de prompts spécifiques à adapter, ou vide pour tous les adapter]'
+allowed-tools: Read, Edit, Bash, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Prompts ciblés
+
+"$ARGUMENTS"
 
 ## Objectif
 
@@ -167,9 +172,9 @@ Pour chaque exemple :
 
 ## Outils
 
-- `list_dir` : Explorer `src/features/`, `tests/`
-- `read_file` : Lire package.json, types, exemples
-- `grep_search` : Trouver patterns dans le code
-- `replace_string_in_file` : Remplacer les exemples
+- `Glob` : Explorer `src/features/`, `tests/`
+- `Read` : Lire package.json, types, exemples
+- `Grep` : Trouver patterns dans le code
+- `Edit` : Remplacer les exemples
 
 Adapte les prompts avec précision pour qu'ils reflètent parfaitement le projet actuel, rendant les exemples immédiatement applicables et pertinents.

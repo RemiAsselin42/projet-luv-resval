@@ -1,9 +1,14 @@
 ---
-name: mettre-a-jour-agents
-description: 'Met à jour le fichier AGENTS.md avec les directives critiques du projet. Use when: update AGENTS.md, mettre à jour agents, refresh agent instructions, update project guidelines, agent configuration, conventions projet.'
-argument-hint: Y a-t-il des standards ou conventions spécifiques à ajouter ?
+description: 'Met à jour le fichier AGENTS.md avec les directives critiques du projet.'
+argument-hint: '[standards ou conventions spécifiques à ajouter, ou vide pour une mise à jour complète]'
+allowed-tools: Read, Edit, Bash, Grep, Glob
+context: fork
 agent: agent
 ---
+
+## Directives spécifiques
+
+"$ARGUMENTS"
 
 ## Objectif
 
@@ -110,11 +115,10 @@ npm run lint # ESLint + fix
 
 Lors de modifications de code :
 
-1. Lire contexte avec `read_file`
-2. Utiliser `multi_replace_string_in_file` pour efficacité
-3. Vérifier erreurs avec `get_errors`
-4. Lancer tests impactés
-5. Résumer changements brièvement
+1. Lire contexte avec `Read`
+2. Utiliser `Edit` pour les modifications
+3. Utiliser `Bash` pour lancer lint et tests
+4. Résumer changements brièvement
 
 ## Références
 
