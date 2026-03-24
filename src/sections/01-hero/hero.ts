@@ -279,13 +279,19 @@ export const initHeroSection: SectionInitializer = async (context) => {
     const prevPlayButtonHovered = playButtonHovered;
     const prevHoverMenuIndex = hoverMenuIndex;
 
-    // Hover du bouton PLAY pendant le chargement (barre complète, avant le play)
-    if (loadingCtrl.isStillLoading() && loadingCtrl.isBarComplete()) {
-      playButtonHovered = isPointerOnPlayButton(event.clientX, event.clientY);
-      hoverMenuIndex = -1;
-      if (playButtonHovered && !prevPlayButtonHovered) {
-        context.audioManager.playUiFx();
+    // Pendant le chargement : seul le hover du bouton PLAY est actif (barre complète uniquement).
+    // Toute autre interaction (hover menu, raycasting) est désactivée pour éviter les highlights
+    // fantômes si la page est rechargée avec un scroll non nul.
+    if (loadingCtrl.isStillLoading()) {
+      if (loadingCtrl.isBarComplete()) {
+        playButtonHovered = isPointerOnPlayButton(event.clientX, event.clientY);
+        if (playButtonHovered && !prevPlayButtonHovered) {
+          context.audioManager.playUiFx();
+        }
+      } else {
+        playButtonHovered = false;
       }
+      hoverMenuIndex = -1;
       return;
     }
     playButtonHovered = false;
