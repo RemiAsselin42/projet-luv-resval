@@ -1,5 +1,5 @@
 import type { SectionInitializer } from '../types';
-import { createCrtScreen } from './crtShader';
+import { createCrtScreen, CRT_MODEL_PREVIEW_ASPECT } from './crtShader';
 import { applyCrtModelPreview } from './crtModelPreview';
 import { clamp01 } from '../../utils/math';
 import {
@@ -24,6 +24,8 @@ import {
 } from '../../components/3d/menuPreview3D';
 import darthVaderHelmetUrl from '../../3d-models/darth_vader_helmet.glb?url';
 import cctvCameraUrl from '../../3d-models/low-poly_cctv_camera.glb?url';
+import mpcUrl from '../../3d-models/mpc.glb?url';
+import tapeUrl from '../../3d-models/tape.glb?url';
 import { createAccessibilityMenu } from './heroAccessibility';
 import { createHeroRaycaster } from './heroRaycaster';
 import { createLoadingController } from './heroLoader';
@@ -40,7 +42,9 @@ export type { LoadingController } from './heroLoader';
 
 const MENU_PREVIEW_TARGET_DIMENSIONS = {
   RELIQUES: 2.5,
-  BIG_BROTHER: 1.8,
+  BIG_BROTHER: 1.62,
+  MPC: 1.6,
+  ECLIPSE: 1.5,
 } as const;
 
 // Seuil de largeur viewport (px) séparant desktop et mobile pour le calcul du CRT scale
@@ -150,26 +154,39 @@ export const initHeroSection: SectionInitializer = async (context) => {
   );
   crt.mesh.position.set(0, 0, 0);
   scene.add(crt.mesh);
-  const menuPreviewQuality = getMenuPreviewQualityOptions(gpuTier);
+  const menuPreviewQuality = getMenuPreviewQualityOptions(gpuTier, CRT_MODEL_PREVIEW_ASPECT);
 
   // ── Preview 3D au survol des items du menu ────────────────────────────────
   // Le modèle est rendu dans un WebGLRenderTarget dédié et compacté dans
   // le fragment shader CRT avant les effets, pour apparaître à l'intérieur de l'écran.
   // Mapping modulaire : menuIndex → modèle GLB
-  // Index 1 = 'LES RELIQUES'
-  // Index 2 = 'BIG BROTHER'
+  // Index 0 = 'LES RELIQUES'
+  // Index 1 = 'BIG BROTHER'
+  // Index 2 = 'MPC'
+  // Index 3 = "L'ECLIPSE"
   const menuPreview = createMenuPreview3D(
     renderer,
     [
       {
-        menuIndex: 1,
+        menuIndex: 0,
         modelUrl: darthVaderHelmetUrl,
         targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.RELIQUES,
       },
       {
-        menuIndex: 2,
+        menuIndex: 1,
         modelUrl: cctvCameraUrl,
         targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.BIG_BROTHER,
+      },
+      {
+        menuIndex: 2,
+        modelUrl: mpcUrl,
+        targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.MPC,
+        initialRotation: { x: Math.PI / 5 },
+      },
+      {
+        menuIndex: 3,
+        modelUrl: tapeUrl,
+        targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.ECLIPSE,
       },
     ],
     menuPreviewQuality,

@@ -27,8 +27,7 @@ const sectionDefinitions = [
     heading: 'Luv Resval',
     headingTag: 'h1',
     screenReaderOnlyHeading: true,
-    includeInCrtMenu: true,
-    crtMenuLabel: "L'AMORCE",
+    includeInCrtMenu: false,
     load: async () => (await import('./01-hero/hero')).initHeroSection,
   },
   {
@@ -44,7 +43,7 @@ const sectionDefinitions = [
     id: 'reliques',
     heading: 'Section 1 - Les Reliques',
     description:
-      'Masque de Dark Vador, cartouche Zelda DS, grillz argent et tete de Cerbere avec modales lore.',
+      'Objets 3D : death_star.glb, zelda.glb, minautor.glb, rose.glb',
     includeInCrtMenu: true,
     crtMenuLabel: 'LES RELIQUES',
     load: async () => (await import('./03-les-reliques/reliques')).default,
