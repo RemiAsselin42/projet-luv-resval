@@ -39,7 +39,7 @@ import { Howler } from 'howler';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TRACKS_COUNT = 4; // track-01 à track-04
+const TRACKS_COUNT = 5; // SAMPLE + DRUMS kick/snare/hihat + EVIL_SAMPLE
 
 // Réinitialise les instances Howl avant chaque test
 beforeEach(() => {
@@ -49,9 +49,9 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('createAudioManager — initialisation', () => {
-  it('crée exactement 5 instances Howl (4 tracks + 1 fx)', () => {
+  it('crée exactement 6 instances Howl (5 tracks + 1 fx)', () => {
     createAudioManager();
-    // 4 music layers + 1 uiFx
+    // 5 music layers + 1 uiFx
     expect(howlInstances).toHaveLength(TRACKS_COUNT + 1);
   });
 
@@ -62,11 +62,11 @@ describe('createAudioManager — initialisation', () => {
 });
 
 describe('createAudioManager — startExperience()', () => {
-  it('appelle play() sur les 4 layers musicaux', () => {
+  it('appelle play() sur les 5 layers musicaux', () => {
     const manager = createAudioManager();
     manager.startExperience();
 
-    // Les 4 premières instances sont les music layers
+    // Les 5 premières instances sont les music layers
     for (let i = 0; i < TRACKS_COUNT; i++) {
       expect(howlInstances[i]?.play).toHaveBeenCalledOnce();
     }
@@ -80,6 +80,7 @@ describe('createAudioManager — startExperience()', () => {
     expect(howlInstances[1]?.fade).not.toHaveBeenCalled();
     expect(howlInstances[2]?.fade).not.toHaveBeenCalled();
     expect(howlInstances[3]?.fade).not.toHaveBeenCalled();
+    expect(howlInstances[4]?.fade).not.toHaveBeenCalled();
   });
 
   it('est idempotent : un second appel n\'a aucun effet', () => {
@@ -125,12 +126,12 @@ describe('createAudioManager — unlockMusicLayer()', () => {
 });
 
 describe('createAudioManager — playUiFx()', () => {
-  it('appelle play() sur le Howl fx (5e instance)', () => {
+  it('appelle play() sur le Howl fx (6e instance)', () => {
     const manager = createAudioManager();
     manager.playUiFx();
 
-    // La 5e instance (index 4) est le son fx
-    expect(howlInstances[4]?.play).toHaveBeenCalledOnce();
+    // La 6e instance (index 5) est le son fx
+    expect(howlInstances[5]?.play).toHaveBeenCalledOnce();
   });
 
   it('peut être appelé plusieurs fois (pooled)', () => {
@@ -139,7 +140,7 @@ describe('createAudioManager — playUiFx()', () => {
     manager.playUiFx();
     manager.playUiFx();
 
-    expect(howlInstances[4]?.play).toHaveBeenCalledTimes(3);
+    expect(howlInstances[5]?.play).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -242,7 +243,7 @@ describe('createAudioManager — isMuted()', () => {
 });
 
 describe('createAudioManager — dispose()', () => {
-  it('appelle unload() sur les 5 instances Howl', () => {
+  it('appelle unload() sur les 6 instances Howl', () => {
     const manager = createAudioManager();
     manager.dispose();
 

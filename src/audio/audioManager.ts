@@ -11,10 +11,11 @@ const MUSIC_LAYER_VOLUME = 1;
 const LAYER_FADE_DURATION_MS = 1200;
 
 const MUSIC_TRACKS = [
-  `${MUSIC_BASE_PATH}track-01.wav`,
-  `${MUSIC_BASE_PATH}track-02.wav`,
-  `${MUSIC_BASE_PATH}track-03.wav`,
-  `${MUSIC_BASE_PATH}track-04.wav`,
+  `${MUSIC_BASE_PATH}SAMPLE.wav`,
+  `${MUSIC_BASE_PATH}DRUMS-loop-kick.wav`,
+  `${MUSIC_BASE_PATH}DRUMS-loop-snare.wav`,
+  `${MUSIC_BASE_PATH}DRUMS-loop-hihat.wav`,
+  `${MUSIC_BASE_PATH}EVIL_SAMPLE.wav`,
 ] as const;
 
 export const createAudioManager = (): AudioManager => {
@@ -31,7 +32,7 @@ export const createAudioManager = (): AudioManager => {
   );
 
   const _uiFx = new Howl({
-    src: [`${FX_BASE_PATH}ui-hover.wav`],
+    src: [`${FX_BASE_PATH}SFX-hover-link.wav`],
     volume: 0.5,
     pool: 4,
     preload: true,
