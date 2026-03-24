@@ -27,24 +27,27 @@ afterEach(() => {
 
 describe('getMenuPreviewQualityOptions', () => {
   it('degrades quality but keeps feature active on low tier', () => {
-    const options = getMenuPreviewQualityOptions('low');
+    const options = getMenuPreviewQualityOptions('low', 1.5);
 
     expect(options.renderTargetSize).toBe(256);
     expect(options.renderFrameInterval).toBe(2);
     expect(options.rotationSpeed).toBeGreaterThan(0);
+    expect(options.cameraAspect).toBe(1.5);
   });
 
   it('uses default high-quality settings for medium and high tiers', () => {
-    expect(getMenuPreviewQualityOptions('medium')).toEqual({
+    expect(getMenuPreviewQualityOptions('medium', 1.0)).toEqual({
       renderTargetSize: 512,
       rotationSpeed: 0.9,
       renderFrameInterval: 1,
+      cameraAspect: 1.0,
     });
 
-    expect(getMenuPreviewQualityOptions('high')).toEqual({
+    expect(getMenuPreviewQualityOptions('high', 2.0)).toEqual({
       renderTargetSize: 512,
       rotationSpeed: 0.9,
       renderFrameInterval: 1,
+      cameraAspect: 2.0,
     });
   });
 

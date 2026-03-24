@@ -7,6 +7,10 @@ import { CRT_MENU_CONFIG } from './crtConfig';
 
 export type { CrtScreen, CrtUniforms } from './crtTypes';
 
+// Aspect ratio physique de la zone d'affichage du modèle 3D (uModelRect × aspect CRT 16:9).
+// uModelRect = (0.47, 0.20, 0.87, 0.80) → width UV = 0.40, height UV = 0.60
+export const CRT_MODEL_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.80 - 0.20);
+
 export const createCrtScreen = async (
   aspectRatio: number = 16 / 9,
   textureResolution: number = 1024,

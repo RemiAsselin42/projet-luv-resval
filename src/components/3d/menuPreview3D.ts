@@ -31,16 +31,20 @@ export interface MenuPreviewQualityOptions {
   renderTargetSize: number;
   rotationSpeed: number;
   renderFrameInterval: number;
+  /** Aspect ratio de la caméra mini-scène (largeur/hauteur du rect d'affichage sur le CRT). */
+  cameraAspect: number;
 }
 
 export const getMenuPreviewQualityOptions = (
   gpuTier: GpuTier,
+  cameraAspect: number,
 ): MenuPreviewQualityOptions => {
   if (gpuTier === 'low') {
     return {
       renderTargetSize: 256,
       rotationSpeed: 0.72,
       renderFrameInterval: 2,
+      cameraAspect,
     };
   }
 
@@ -48,6 +52,7 @@ export const getMenuPreviewQualityOptions = (
     renderTargetSize: 512,
     rotationSpeed: 0.9,
     renderFrameInterval: 1,
+    cameraAspect,
   };
 };
 
@@ -139,6 +144,8 @@ export interface MenuPreviewItem {
   modelUrl: string;
   /** Taille cible propre à ce modèle (unités monde) */
   targetDimension: number;
+  /** Rotation initiale statique appliquée au modèle (radians) */
+  initialRotation?: { x?: number; y?: number; z?: number };
 }
 
 export interface MenuPreview3D {
@@ -282,11 +289,11 @@ interface MiniScene {
   texelSize: THREE.Vector2;
 }
 
-const createMiniScene = (renderTargetSize: number): MiniScene => {
+const createMiniScene = (renderTargetSize: number, cameraAspect: number): MiniScene => {
   // Isolée de la scène principale ; rendue dans un WebGLRenderTarget carré.
   // Pas de lumières nécessaires : le rendu est en arêtes seules (LineSegments).
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 20);
+  const camera = new THREE.PerspectiveCamera(45, cameraAspect, 0.1, 20);
   camera.position.set(0, 0.1, 3);
   camera.lookAt(0, 0, 0);
 
@@ -323,13 +330,14 @@ export const createMenuPreview3D = (
     1,
     Math.floor(quality.renderFrameInterval ?? 1),
   );
+  const cameraAspect = quality.cameraAspect ?? 1;
 
   const {
     scene: miniScene,
     camera: miniCamera,
     renderTarget,
     texelSize,
-  } = createMiniScene(renderTargetSize);
+  } = createMiniScene(renderTargetSize, cameraAspect);
 
   // Map menuIndex → entry
   const entries = new Map<number, ModelEntry>();
@@ -355,6 +363,11 @@ export const createMenuPreview3D = (
         }
 
         fitModel(gltf.scene, item.targetDimension);
+        if (item.initialRotation) {
+          gltf.scene.rotation.x = item.initialRotation.x ?? 0;
+          gltf.scene.rotation.y = item.initialRotation.y ?? 0;
+          gltf.scene.rotation.z = item.initialRotation.z ?? 0;
+        }
         groupCleanup(entry.group);
         entry.group.add(gltf.scene);
         applyModelMask(entry.group, renderTargetSize);
