@@ -14,7 +14,7 @@ The website is in french only, and will include (in this specific order) :
 
 - Le Hub Central (Menu TV): menu navigation style TV 90s, centered on left after first scroll, navigable via mouse, arrows and Tab, with associated visual preview on the right.
 
-- Section 1 - Les Reliques: four interactive 3D objects (Darth Vader mask, Zelda DS cartridge, silver grillz, Cerberus head) with hover modals (title + short lore).
+- Section 1 - Les Reliques: four interactive 3D objects (death_star.glb, zelda.glb, minautor.glb, rose.glb) with hover modals (title + short lore).
 
 - Section 2 - L'Oeil de Big Brother: dystopian transition with giant face behind wall, lifting head toward the user with scroll-based parallax.
 
