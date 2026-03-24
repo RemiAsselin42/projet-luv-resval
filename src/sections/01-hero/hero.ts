@@ -23,7 +23,7 @@ import {
   getMenuPreviewQualityOptions,
 } from '../../components/3d/menuPreview3D';
 import darthVaderHelmetUrl from '../../3d-models/darth_vader_helmet.glb?url';
-import cctvCameraUrl from '../../3d-models/low-poly_cctv_camera.glb?url';
+import cctvCameraUrl from '../../3d-models/cctv_camera.glb?url';
 import mpcUrl from '../../3d-models/mpc.glb?url';
 import tapeUrl from '../../3d-models/tape.glb?url';
 import { createAccessibilityMenu } from './heroAccessibility';
