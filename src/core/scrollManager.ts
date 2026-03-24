@@ -180,7 +180,13 @@ export const createScrollManager = (): ScrollManager => {
     },
     getScrollY: () => scrollY,
     stop: () => {
+      // Bloque Lenis en premier pour qu'il n'intercepte pas le scrollTo suivant.
       lenis.stop();
+      // Remet la page en haut : évite que le CRT du loader soit invisible au reload
+      // quand la page était scrollée (ScrollTrigger applique setFade(0) si scroll > reliques).
+      window.scrollTo(0, 0);
+      scrollY = 0;
+      ScrollTrigger.update();
     },
     start: () => {
       lenis.start();
