@@ -25,7 +25,7 @@ export interface ScrollManager {
   createTrigger: (options: ScrollTrigger.Vars) => ScrollTrigger;
   refresh: () => void;
   getScrollY: () => number;
-  scrollToSection: (sectionId: string) => void;
+  scrollToSection: (sectionId: string, minScrollY?: number) => void;
   stop: () => void;
   start: () => void;
   dispose: () => void;
@@ -191,7 +191,7 @@ export const createScrollManager = (): ScrollManager => {
     start: () => {
       lenis.start();
     },
-    scrollToSection: (sectionId: string) => {
+    scrollToSection: (sectionId: string, minScrollY?: number) => {
       const targetElement = querySectionElement(sectionId);
 
       if (!targetElement) {
@@ -199,7 +199,7 @@ export const createScrollManager = (): ScrollManager => {
         return;
       }
 
-      const targetTop = targetElement.offsetTop;
+      const targetTop = Math.max(targetElement.offsetTop, minScrollY ?? 0);
       const targetIndex = sectionElements.findIndex((el) => el === targetElement);
 
       // Bypass temporairement le système de snap

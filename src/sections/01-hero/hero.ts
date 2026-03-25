@@ -351,8 +351,10 @@ export const initHeroSection: SectionInitializer = async (context) => {
     if (!heroRaycaster.isClickOnCrt(event.clientX, event.clientY)) return;
 
     if (!heroRaycaster.isAtMenuSection()) {
-      // Dans la section hero : tout clic sur la TV scroll vers le menu
-      context.scrollManager.scrollToSection(SECTION_IDS.MENU);
+      // Dans la section hero : tout clic sur la TV scroll vers le menu.
+      // minScrollY = BASELINE_VIEWPORT_HEIGHT garantit que menuOpacity atteint 1
+      // sur tous les écrans (< 1080px de hauteur viewport).
+      context.scrollManager.scrollToSection(SECTION_IDS.MENU, BASELINE_VIEWPORT_HEIGHT);
       return;
     }
 
