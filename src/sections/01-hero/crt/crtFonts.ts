@@ -1,9 +1,9 @@
 // Ensures fonts are loaded before drawing on canvas to prevent fallback rendering.
 const preloadFonts = async (): Promise<void> => {
-  const silvermistItalicUrl = new URL('../../assets/fonts/Silvermist-Italic.otf', import.meta.url).href;
-  const silvermistRegularUrl = new URL('../../assets/fonts/Silvermist-Regular.otf', import.meta.url).href;
-  const futuraCondensedExtraBoldUrl = new URL('../../assets/fonts/Futura-CondensedExtraBold.otf', import.meta.url).href;
-  const futuraMediumUrl = new URL('../../assets/fonts/Futura-Medium.otf', import.meta.url).href;
+  const silvermistItalicUrl = new URL('../../../assets/fonts/Silvermist-Italic.otf', import.meta.url).href;
+  const silvermistRegularUrl = new URL('../../../assets/fonts/Silvermist-Regular.otf', import.meta.url).href;
+  const futuraCondensedExtraBoldUrl = new URL('../../../assets/fonts/Futura-CondensedExtraBold.otf', import.meta.url).href;
+  const futuraMediumUrl = new URL('../../../assets/fonts/Futura-Medium.otf', import.meta.url).href;
 
   const fontsToLoad = [
     new FontFace('Silvermist-Italic', `url(${silvermistItalicUrl})`, {
