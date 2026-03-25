@@ -251,7 +251,7 @@ describe('sectionManager integration', () => {
     expect(events).toEqual(['init:reliques', 'init:hero']);
   });
 
-  it(‘dispose les sections dans l’ordre inverse et nettoie l’observer’, async () => {
+  it('dispose les sections dans l’ordre inverse et nettoie l’observer', async () => {
     const events: string[] = [];
     const { context } = createTestContext();
 
