@@ -64,7 +64,7 @@ const sectionDefinitions = [
     description:
       '9 pads interactifs pour reconstruire le morceau stems par stems.',
     includeInCrtMenu: true,
-    crtMenuLabel: 'LA MPC',
+    crtMenuLabel: 'SECTION MPC',
     load: async () => (await import('./05-mpc-3d/mpc3d')).default,
   },
   {
