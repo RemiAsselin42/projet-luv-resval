@@ -202,7 +202,56 @@ describe('sectionManager integration', () => {
     expect(events.filter((event) => event === 'init:face-vader')).toHaveLength(1);
   });
 
-  it('dispose les sections dans l’ordre inverse et nettoie l’observer', async () => {
+  it('initialise hero uniquement lors de la seconde passe (sequencement deux passes)', async () => {
+    const events: string[] = [];
+    const { context } = createTestContext();
+
+    // Deux sections proches du viewport
+    const hero = document.createElement('section');
+    hero.dataset.section = 'hero';
+    hero.getBoundingClientRect = () => ({
+      top: 0,
+      bottom: 400,
+      left: 0,
+      right: 0,
+      width: 100,
+      height: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    const reliques = document.createElement('section');
+    reliques.dataset.section = 'reliques';
+    reliques.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 500,
+      left: 0,
+      right: 0,
+      width: 100,
+      height: 400,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    });
+
+    document.body.append(hero, reliques);
+
+    const heroLoader = createLoader('hero', events);
+    const reliquesLoader = createLoader('reliques', events);
+
+    const sectionManager = createSectionManager(context);
+
+    // Première passe : hero exclu, comme dans main.ts avant le clic PLAY
+    await sectionManager.initialize([reliquesLoader]);
+    expect(events).toEqual(['init:reliques']);
+
+    // Seconde passe : tous les loaders, hero doit être initialisé maintenant
+    await sectionManager.initialize([heroLoader, reliquesLoader]);
+    expect(events).toEqual(['init:reliques', 'init:hero']);
+  });
+
+  it(‘dispose les sections dans l’ordre inverse et nettoie l’observer’, async () => {
     const events: string[] = [];
     const { context } = createTestContext();
 

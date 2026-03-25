@@ -34,6 +34,7 @@ const audioManager = createAudioManager();
 let animationFrameId: number | null = null;
 let lastFrameTime = window.performance.now();
 let sectionManager: SectionManager | null = null;
+let sectionManagerActive = false;
 
 const init = async (): Promise<void> => {
   // ── Phase loading indépendante ─────────────────────────────────────────────
@@ -47,27 +48,14 @@ const init = async (): Promise<void> => {
     audioManager,
   );
 
-  // ── Render loop (démarre dès que le CRT est prêt) ──────────────────────────
-  const renderLoop = (time: number): void => {
-    // Limité à 100 ms pour éviter les sauts de physique/animation après un onglet inactif.
-    const deltaSeconds = Math.min((time - lastFrameTime) / 1000, 0.1);
-    lastFrameTime = time;
+  // ── Pré-initialiser les sections pendant le loading ────────────────────────
+  // Les ressources CRT/menuPreview sont disponibles dès maintenant.
+  // On crée le sectionManager tout de suite mais on n'appellera sectionManager.update()
+  // qu'après le clic PLAY (flag sectionManagerActive) pour éviter que hero.update()
+  // n'écrase l'animation de loading dans le CRT.
+  const { crt, menuPreview } = loadingScreen.getResources();
+  sectionsRoot.style.visibility = 'hidden';
 
-    loadingScreen.update(deltaSeconds, time / 1000);
-    scrollManager.update(time);
-    sectionManager?.update(deltaSeconds, time / 1000);
-
-    renderPipeline.render();
-    animationFrameId = window.requestAnimationFrame(renderLoop);
-  };
-
-  animationFrameId = window.requestAnimationFrame(renderLoop);
-
-  // ── Attendre le clic PLAY ──────────────────────────────────────────────────
-  const { crt, menuPreview } = await loadingScreen.waitForPlay();
-  loadingScreen.dispose();
-
-  // ── Initialiser les sections avec les objets pré-créés ─────────────────────
   sectionManager = createSectionManager({
     scene,
     camera,
@@ -79,7 +67,43 @@ const init = async (): Promise<void> => {
     extras: { crt, menuPreview },
   });
 
+  // Hero est exclu du pre-init : son onClick (scroll vers menu, resize TV) et ses
+  // timelines GSAP ne doivent pas être actifs pendant le loading. Il sera initialisé
+  // juste après le clic PLAY — c'est rapide, aucun asset lourd à charger.
+  const initPromise = sectionManager.initialize(sectionLoaders.filter((l) => l.id !== 'hero'));
+
+  // ── Render loop (démarre dès que le CRT est prêt) ──────────────────────────
+  const renderLoop = (time: number): void => {
+    // Limité à 100 ms pour éviter les sauts de physique/animation après un onglet inactif.
+    const deltaSeconds = Math.min((time - lastFrameTime) / 1000, 0.1);
+    lastFrameTime = time;
+
+    loadingScreen.update(deltaSeconds, time / 1000);
+    scrollManager.update(time);
+    if (sectionManagerActive) sectionManager?.update(deltaSeconds, time / 1000);
+
+    renderPipeline.render();
+    animationFrameId = window.requestAnimationFrame(renderLoop);
+  };
+
+  animationFrameId = window.requestAnimationFrame(renderLoop);
+
+  // ── Attendre le clic PLAY + fin d'initialisation des sections ─────────────
+  try {
+    await Promise.all([loadingScreen.waitForPlay(), initPromise]);
+  } finally {
+    // Garantit le nettoyage du loading screen et la restauration de la visibilité
+    // même si waitForPlay() ou initPromise rejette (ex. : erreur réseau sur un GLB).
+    loadingScreen.dispose();
+    sectionsRoot.style.visibility = '';
+  }
+
+  // ── Initialiser hero puis activer le sectionManager ───────────────────────
+  // Hero est initialisé ici (après PLAY) pour que ses listeners/timelines ne soient
+  // actifs que lorsque le site est réellement visible. sectionManager.initialize()
+  // est idempotent : les sections déjà initialisées sont silencieusement ignorées.
   await sectionManager.initialize(sectionLoaders);
+  sectionManagerActive = true;
   scrollManager.refresh();
 
   // ── Resize global ──────────────────────────────────────────────────────────
@@ -103,6 +127,7 @@ const init = async (): Promise<void> => {
       if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);
       }
+      sectionManagerActive = false;
       sectionManager?.dispose();
       scrollManager.dispose();
       assetLoader.dispose();

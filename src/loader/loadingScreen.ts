@@ -42,6 +42,15 @@ export interface LoadingScreen {
   /** Appeler chaque frame pendant la phase loading. */
   update: (deltaSeconds: number, elapsedSeconds: number) => void;
   /**
+   * Retourne `crt` et `menuPreview` immédiatement après la création du loading screen,
+   * sans attendre le clic PLAY. Permet de pré-initialiser le sectionManager en parallèle
+   * de l'animation de loading.
+   *
+   * **Attention** : ces ressources sont toujours sous le contrôle du loading screen.
+   * Ne pas les disposer avant d'avoir appelé `dispose()` sur ce loading screen.
+   */
+  getResources: () => LoadingScreenResources;
+  /**
    * Résout quand PLAY est cliqué et la transition de fondu terminée (loadingProgress >= 2).
    *
    * **Transfert de propriété** : les ressources {@link LoadingScreenResources} retournées
@@ -198,6 +207,8 @@ export const createLoadingScreen = async (
   let isDisposed = false;
 
   return {
+    getResources: (): LoadingScreenResources => ({ crt, menuPreview }),
+
     update: (deltaSeconds: number, elapsedSeconds: number): void => {
       if (isDisposed) return;
 
