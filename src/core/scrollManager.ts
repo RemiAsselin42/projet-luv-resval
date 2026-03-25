@@ -180,7 +180,9 @@ export const createScrollManager = (): ScrollManager => {
     },
     getScrollY: () => scrollY,
     stop: () => {
-      // Bloque Lenis en premier pour qu'il n'intercepte pas le scrollTo suivant.
+      // scrollManager est le seul acteur autorisé à modifier document.body.style.overflow.
+      // Bloque le scroll natif (overflow both axes) + Lenis pour qu'aucun scroll ne soit possible.
+      document.body.style.overflow = 'hidden';
       lenis.stop();
       // Remet la page en haut : évite que le CRT du loader soit invisible au reload
       // quand la page était scrollée (ScrollTrigger applique setFade(0) si scroll > reliques).
@@ -189,6 +191,9 @@ export const createScrollManager = (): ScrollManager => {
       ScrollTrigger.update();
     },
     start: () => {
+      // Supprime l'override inline pour laisser le CSS statique (overflow-x: hidden sur body)
+      // reprendre le dessus, puis relance Lenis pour le scroll vertical.
+      document.body.style.overflow = '';
       lenis.start();
     },
     scrollToSection: (sectionId: string, minScrollY?: number) => {

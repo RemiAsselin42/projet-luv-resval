@@ -43,6 +43,13 @@
   box-sizing: border-box;
 }
 
+html {
+  // Firefox attache la scrollbar au document root (<html>) et non au <body>.
+  // scrollbar-width doit donc être posé ici pour masquer la scrollbar en Firefox ;
+  // la règle &::-webkit-scrollbar { display: none } sur body suffit pour Chrome/Safari/Edge.
+  scrollbar-width: none;
+}
+
 body {
   background-color: $color-bg-primary;
   color: $color-text-primary;
@@ -50,6 +57,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome / Safari / Edge
+  }
 }
 
 // Canvas container for Three.js (fixed viewport overlay, behind sections)
