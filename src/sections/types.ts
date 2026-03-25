@@ -11,6 +11,8 @@ export interface SectionContext {
   scrollManager: ScrollManager;
   assetLoader: AssetLoader;
   audioManager: AudioManager;
+  /** Données additionnelles passées par le bloc loading (ex : crt, menuPreview). */
+  extras?: Record<string, unknown>;
 }
 
 export interface SectionLifecycle {

@@ -162,6 +162,10 @@ export interface MenuPreview3D {
   /** Opacité courante (0-1) pour le shader CRT. */
   getOpacity: () => number;
   dispose: () => void;
+  /** Démarre le chargement de tous les modèles immédiatement (sans attendre le survol). */
+  preloadAll: () => void;
+  /** Proportion de modèles settled (ready ou failed) sur total items. 0..1 */
+  getPreloadProgress: () => number;
 }
 
 interface ModelEntry {
@@ -422,6 +426,25 @@ export const createMenuPreview3D = (
     return entry;
   };
 
+  // ── Préchargement immédiat ────────────────────────────────────────────────────
+
+  const preloadAll = (): void => {
+    if (isDisposed) return;
+    for (const item of items) {
+      ensureLoaded(item);
+    }
+  };
+
+  const getPreloadProgress = (): number => {
+    if (items.length === 0) return 1;
+    let settled = 0;
+    for (const item of items) {
+      const entry = entries.get(item.menuIndex);
+      if (entry && (entry.ready || entry.failed)) settled += 1;
+    }
+    return settled / items.length;
+  };
+
   // ── API publique ─────────────────────────────────────────────────────────────
 
   const setHoveredIndex = (index: number): void => {
@@ -503,5 +526,7 @@ export const createMenuPreview3D = (
     getOpacity,
     getTexelSize,
     dispose,
+    preloadAll,
+    getPreloadProgress,
   };
 };

@@ -1,4 +1,4 @@
-import { crtMenuItems } from '../definitions';
+import { crtMenuItems } from '../../definitions';
 
 /**
  * Baseline viewport height used for scroll-driven hero/menu timing.

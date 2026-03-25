@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createAccessibilityMenu } from './heroAccessibility';
-import { CRT_MENU_CONFIG } from './crtConfig';
+import { CRT_MENU_CONFIG } from './crt/crtConfig';
 
 describe('createAccessibilityMenu', () => {
   let onItemClick: ReturnType<typeof vi.fn>;

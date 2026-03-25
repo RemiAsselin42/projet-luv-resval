@@ -3,13 +3,6 @@ import gsap from 'gsap';
 // ── Constantes du loader (réexportées par hero.ts pour la compatibilité des tests) ──
 
 export const LOADER_TOTAL_DURATION_SECONDS = 3.8;
-/**
- * Durée de maintien avant que la barre atteigne 100 % (phase d'attente intentionnelle).
- * Non utilisée directement dans le calcul de progression — la courbe multi-segment de
- * computeLoadingProgress() intègre déjà ce délai implicitement.
- * @deprecated Conserver pour référence de conception ; supprimer si la courbe est refactorisée.
- */
-export const LOADER_HOLD_SECONDS = 2.0;
 /** Durée du fondu croisé entre l'écran de chargement et le contenu héro. */
 export const LOADER_TRANSITION_SECONDS = 0.6;
 
@@ -69,6 +62,7 @@ export interface LoadingController {
 export const createLoadingController = (
   crt: { setPowerOn: (v: number) => void },
   scrollManager: { stop: () => void; start: () => void },
+  getExternalProgress?: () => number,
 ): LoadingController => {
   const powerOnState = { value: 0 };
   // Timestamp déclenché une seule fois quand l'image CRT devient visible (uPowerOn ≥ 0.3).
@@ -139,16 +133,23 @@ export const createLoadingController = (
     },
   });
 
-  const isBarComplete = (): boolean =>
-    getElapsed() >= LOADER_TOTAL_DURATION_SECONDS;
+  const isBarComplete = (): boolean => {
+    if (getElapsed() < LOADER_TOTAL_DURATION_SECONDS) return false;
+    if (getExternalProgress && getExternalProgress() < 1) return false;
+    return true;
+  };
 
   return {
     getLoadingProgress: () => {
       const elapsed = getElapsed();
-      const barProgress = computeLoadingProgress(elapsed);
+      const animationProgress = computeLoadingProgress(elapsed);
 
-      if (elapsed < LOADER_TOTAL_DURATION_SECONDS) {
-        return barProgress;
+      if (!isBarComplete()) {
+        // Cas nominal : realProgress = 1 avant 3.8s → cap = 1 → comportement identique à l'actuel.
+        // Filet de sécurité : si connexion très lente, cap à 0.99 jusqu'à la fin du chargement.
+        const realProgress = getExternalProgress ? getExternalProgress() : 1;
+        const cap = realProgress < 1 ? 0.99 : 1;
+        return Math.min(animationProgress, cap);
       }
 
       // Barre complète : on attend le clic sur le bouton PLAY

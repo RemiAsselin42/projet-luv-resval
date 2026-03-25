@@ -1,4 +1,4 @@
-import { CRT_MENU_CONFIG } from './crtConfig';
+import { CRT_MENU_CONFIG } from './crt/crtConfig';
 
 export interface AccessibilityMenu {
   container: HTMLElement;
