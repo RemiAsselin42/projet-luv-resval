@@ -562,12 +562,10 @@ $_mpc-btn-shadow:
   padding: 0;
   outline: none;
   gap: $mpc-gap-xs;
-  width: $pad-size;
 }
 
 // Pad outer — bg #525459, inner shadows x2, radius 2 (pas de noise)
 .mpc-pad {
-  width: $pad-size;
   height: $pad-size;
   background: $mpc-pad-border;
   border-radius: $mpc-border-radius-lg;
@@ -659,23 +657,16 @@ $_mpc-btn-shadow:
 }
 
 // Record button — inner shadows (blanc + noir), noise 20%, radius 4
-.mpc-record-btn, .mpc-copyright {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: $mpc-gap-md;
-  background: $mpc-btn-bg;
-  border-radius: $mpc-border-radius;
-  box-shadow: $_mpc-btn-shadow;
-  height: $btn-size;
-  width: calc($pad-size);
-  max-height: $btn-size;
+button.mpc-record-btn {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+      transition: filter $transition-speed-fast $transition-easing;
 
-  &::after {
-    @extend %mpc-noise-layer;
 
-    opacity: 0.12;
+    &:hover {
+    filter: brightness(1.2);
+    transition: filter $transition-speed-fast $transition-easing;
   }
 }
 
@@ -683,17 +674,6 @@ $_mpc-btn-shadow:
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $mpc-btn-bg;
-  border-radius: $mpc-border-radius;
-  box-shadow: $_mpc-btn-shadow;
-  width: calc($pad-size);
-  height: $btn-size;
-
-  &::after {
-    @extend %mpc-noise-layer;
-
-    opacity: 0.12;
-  }
 
   >.mpc-logo-awa-img {
   max-height: calc($btn-size / 2);
@@ -706,6 +686,26 @@ $_mpc-btn-shadow:
   opacity: 1;
   transition: opacity $transition-speed-fast $transition-easing;
 }
+}
+
+.mpc-record-btn, .mpc-copyright,.awa-tag {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: $mpc-gap-md;
+  background: $mpc-btn-bg;
+  border-radius: $mpc-border-radius;
+  box-shadow: $_mpc-btn-shadow;
+  height: $btn-size;
+  width: calc($pad-size + $mpc-gap-xs);
+  max-height: $btn-size;
+
+  &::after {
+    @extend %mpc-noise-layer;
+
+    opacity: 0.06;
+  }
 }
 
 .mpc-rec-dot {
@@ -727,6 +727,16 @@ $_mpc-btn-shadow:
   letter-spacing: 0.08em;
   line-height: 1;
   transform: translateY(0.2px);
+}
+
+.mpc-record-btn.is-recording .mpc-rec-dot {
+  background: $mpc-purple;
+  animation: rec-blink 1s ease-in-out infinite;
+}
+
+@keyframes rec-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
 }
 
 .mpc-play-dot {
