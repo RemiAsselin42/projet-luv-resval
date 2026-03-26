@@ -72,6 +72,7 @@ const createTestContext = () => {
     audioManager: {
       startExperience: vi.fn(),
       unlockMusicLayer: vi.fn(),
+      lockMusicLayer: vi.fn(),
       playUiFx: vi.fn(),
       setMusicVolume: vi.fn(),
       toggleMute: vi.fn(),
