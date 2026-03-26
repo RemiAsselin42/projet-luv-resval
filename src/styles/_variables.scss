@@ -49,7 +49,7 @@ $mpc-btn-bg: $mpc-body-bg;
 $mpc-pad-border: #3c3d3f;
 $mpc-pad-bg: #19191b;
 $btn-size: 46px;
-$pad-size: 100px;
+$pad-size: 110px;
 $mpc-gap-xs: 2px;
 $mpc-gap-sm: 4px;
 $mpc-gap-md: 8px;
@@ -57,3 +57,9 @@ $mpc-gap-lg: 12px;
 $mpc-border-radius: 2px;
 $mpc-border-radius-lg: 4px;
 $mpc-indicator-size: 5px;
+
+// Potard (knob) — design Figma node 82:3590 "Big Knob 3" (scalé 114px → 36px)
+$_mpc-knob-size: 36px;
+$_mpc-knob-wheel: 22px;
+$_mpc-knob-cap: 15px;
+$_mpc-knob-dot: 2.5px;

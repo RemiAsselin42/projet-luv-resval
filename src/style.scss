@@ -168,6 +168,7 @@ $_mpc-btn-shadow:
   display: flex;
   flex-direction: column;
   gap: $mpc-gap-xs;
+  max-width: calc($pad-size * 3 + $mpc-gap-xs * 3);
 }
 
 // --- Top Zone ---
@@ -176,6 +177,7 @@ $_mpc-btn-shadow:
   display: flex;
   height: calc($btn-size + $btn-size + $mpc-gap-xs);
   gap: $mpc-gap-xs;
+  width: 100%;
 }
 
 .mpc-table {
@@ -315,16 +317,221 @@ $_mpc-btn-shadow:
 }
 
 // Panneau waveform — fond très sombre, hauteur calée sur mpc-table
-.mpc-screen {
-  flex: 1;
-  background: $mpc-btn-bg;
-  box-shadow: $_mpc-btn-shadow;
-  border-radius: $mpc-border-radius;
-  overflow: hidden;
-  min-height: calc($btn-size + $mpc-gap-xs + $btn-size);
+
+.mpc-screen-container {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
+  gap: $mpc-gap-xs;
+}
+
+.mpc-screen {
+  background: $mpc-btn-bg;
+  box-shadow: $_mpc-btn-shadow;
+  border-radius: $mpc-border-radius;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// --- Options Bar (potard volume + mute + stop) ---
+.mpc-options-btns {
+  position: relative;
+  box-shadow: $_mpc-btn-shadow;
+  border-radius: $mpc-border-radius;
+  height: $btn-size + $mpc-gap-xs;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: $mpc-gap-xs;
+}
+
+.mpc-options-volume,
+.mpc-options-mute,
+.mpc-options-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex: 1;
+}
+
+.mpc-knob {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: $_mpc-knob-size;
+  background: $mpc-btn-bg;
+  border: none;
+  border-radius: $mpc-border-radius;
+  box-shadow: $_mpc-btn-shadow;
+  cursor: ns-resize;
+  user-select: none;
+
+  &::after {
+    @extend %mpc-noise-layer;
+
+    opacity: 0.07;
+  }
+}
+
+.mpc-knob-wheel {
+  position: relative;
+  flex-shrink: 0;
+  width: $_mpc-knob-wheel;
+  height: $_mpc-knob-wheel;
+  border-radius: 50%;
+  background: $mpc-btn-bg;
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 0 3px rgb(255 255 255 / 8%),
+    2px 2px 4px rgb(0 0 0 / 70%),
+    1px 1px 2px rgb(0 0 0 / 55%),
+    inset -1px -1px 1px rgb(0 0 0 / 55%),
+    inset 1px 1px 2px rgb(255 255 255 / 25%);
+  transition: filter $transition-speed-fast $transition-easing;
+
+  // Cap métallique centré — Bombay #B6B6B8 (Figma "Rams Button" 28px)
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: $_mpc-knob-cap;
+    height: $_mpc-knob-cap;
+    border-radius: 50%;
+    background: rgb(182 182 184);
+    box-shadow:
+      inset -1px -1px 1px rgb(0 0 0 / 55%),
+      inset 1px 1px 1px rgb(255 255 255 / 25%);
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+.mpc-knob:hover .mpc-knob-wheel {
+  filter: brightness(1.12);
+}
+
+// Anneau indicateur — tourne via CSS var(--knob-angle) définie en JS
+.mpc-knob-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: rotate(var(--knob-angle, 135deg));
+}
+
+// Dot orange — couleur Figma "Orange" #FF6119 ≈ $color-toggle-btn
+.mpc-knob-dot {
+  position: absolute;
+  width: $_mpc-knob-dot;
+  height: $_mpc-knob-dot;
+  border-radius: 50%;
+  background: $color-toggle-btn;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 2px rgba($color-toggle-btn, 80%);
+}
+
+.mpc-knob-label {
+  position: relative;
+  z-index: 1;
+  color: $color-text-primary;
+  font-family: $font-family-base;
+  font-size: 0.33rem;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  line-height: 1;
+  display: none;
+}
+
+// Boutons toggle Mute / Stop
+.mpc-mute-btn,
+.mpc-stop-btn {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: $mpc-btn-bg;
+  border: none;
+  border-radius: $mpc-border-radius;
+  box-shadow: $_mpc-btn-shadow;
+  color: #aaa;
+  font-family: $font-family-base;
+  font-size: 0.38rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all $transition-speed-fast $transition-easing;
+
+  &::after {
+    @extend %mpc-noise-layer;
+
+    opacity: 0.06;
+  }
+
+  &:hover {
+    filter: brightness(1.2);
+    color: $color-text-primary;
+    transition: all $transition-speed-fast $transition-easing;
+  }
+
+  &.mpc-mute-btn--active,
+  &.mpc-stop-btn--active {
+    color: $color-text-primary;
+  }
+}
+
+.mpc-toggle-indicator {
+  width: $mpc-indicator-size;
+  height: $mpc-indicator-size;
+  border-radius: 50%;
+  background: $mpc-pad-bg;
+  flex-shrink: 0;
+}
+
+.mpc-mute-btn--active .mpc-toggle-indicator,
+.mpc-stop-btn--active .mpc-toggle-indicator {
+  background: $color-toggle-btn;
+  box-shadow: 0 0 5px 0 rgba($color-toggle-btn, 50%);
+}
+
+// État "stop actif" — tous les contrôles sauf le bouton stop lui-même sont gelés
+.mpc-root[data-stopped="true"] {
+  .mpc-loop-btn,
+  .mpc-play-btn,
+  .mpc-mute-btn,
+  .mpc-knob {
+    pointer-events: none;
+    opacity: 0.35;
+    transition: opacity $transition-speed-fast $transition-easing;
+  }
+}
+
+.mpc-toggle-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.mpc-toggle-top {
+  font-size: 0.36rem;
+  letter-spacing: 0.08em;
 }
 
 .mpc-waveform-canvas {
@@ -343,6 +550,7 @@ $_mpc-btn-shadow:
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: $mpc-gap-xs;
+  width: 100%;
 }
 
 .mpc-pad-wrapper {
@@ -354,11 +562,13 @@ $_mpc-btn-shadow:
   padding: 0;
   outline: none;
   gap: $mpc-gap-xs;
+  width: $pad-size;
 }
 
 // Pad outer — bg #525459, inner shadows x2, radius 2 (pas de noise)
 .mpc-pad {
-  aspect-ratio: 1;
+  width: $pad-size;
+  height: $pad-size;
   background: $mpc-pad-border;
   border-radius: $mpc-border-radius-lg;
   box-shadow: $_mpc-btn-shadow;
@@ -389,11 +599,6 @@ $_mpc-btn-shadow:
   }
 }
 
-.mpc-pad-wrapper--active .mpc-pad {
-  transform: translateY(1px);
-  transition: transform 0 $transition-easing;
-}
-
 .mpc-pad-wrapper--active .mpc-pad-bg {
   box-shadow: inset 0 3px 5px 0 rgb(26 26 26 / 70%);
   border: $mpc-gap-xs solid rgba($mpc-purple-dim, 50%);
@@ -405,7 +610,7 @@ $_mpc-btn-shadow:
   justify-content: space-between;
   align-items: center;
   padding: $mpc-gap-sm;
-    background: $mpc-btn-bg;
+  background: $mpc-btn-bg;
   border-radius: $mpc-border-radius;
   box-shadow: $_mpc-btn-shadow;
 }
@@ -427,8 +632,8 @@ $_mpc-btn-shadow:
   display: flex;
   align-items: center;
   justify-content: center;
-  max-height: $btn-size;
   gap: $mpc-gap-xs;
+  width: 100%;
 }
 
 .mpc-copyright {
@@ -464,7 +669,7 @@ $_mpc-btn-shadow:
   border-radius: $mpc-border-radius;
   box-shadow: $_mpc-btn-shadow;
   height: $btn-size;
-  min-width: calc($pad-size + $mpc-gap-xs * 2);
+  width: calc($pad-size);
   max-height: $btn-size;
 
   &::after {
@@ -481,7 +686,7 @@ $_mpc-btn-shadow:
   background: $mpc-btn-bg;
   border-radius: $mpc-border-radius;
   box-shadow: $_mpc-btn-shadow;
-  min-width: calc($pad-size + $mpc-gap-xs * 2);
+  width: calc($pad-size);
   height: $btn-size;
 
   &::after {
@@ -498,7 +703,6 @@ $_mpc-btn-shadow:
   }
 
   &:hover > .mpc-logo-awa-img {
-  max-height: calc($btn-size / 1.5);
   opacity: 1;
   transition: opacity $transition-speed-fast $transition-easing;
 }
