@@ -12,7 +12,7 @@ const LOOP_BUTTONS = [
 ] as const;
 
 // Row du haut en premier (indices 0-2), row du bas en second (indices 3-5)
-// i/o/p → indices 0/1/2 | k/l/m → indices 3/4/5
+// U/I/O → indices 0/1/2 | J/K/L → indices 3/4/5
 const PADS = [
   { name: 'PAD 4 ( U )', category: 'Open-Hat', file: 'DRUMS-pad-openhat.wav' },
   { name: 'PAD 5 ( I )', category: 'Hi-Hat',   file: 'DRUMS-pad-hihat.wav'   },
@@ -71,8 +71,8 @@ const buildMpcDom = (): HTMLElement => {
               <div class="mpc-screen" aria-hidden="true">
                 <canvas class="mpc-waveform-canvas"></canvas>
               </div>
-              <div class="mpc-options-btns" aria-hidden="true">
-                <span class="mpc-options-volume">
+              <div class="mpc-options-btns">
+                <div class="mpc-options-volume">
                   <div class="mpc-knob" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
                     <div class="mpc-knob-wheel">
                       <div class="mpc-knob-ring">
@@ -81,19 +81,19 @@ const buildMpcDom = (): HTMLElement => {
                     </div>
                     <span class="mpc-knob-label">VOL</span>
                   </div>
-                </span>
-                <span class="mpc-options-mute">
+                </div>
+                <div class="mpc-options-mute">
                   <button class="mpc-mute-btn" aria-label="Désactiver le son">
                     <span class="mpc-toggle-indicator"></span>
                     <span class="mpc-toggle-label"><span class="mpc-toggle-top">MUTE</span></span>
                   </button>
-                </span>
-                <span class="mpc-options-stop">
+                </div>
+                <div class="mpc-options-stop">
                   <button class="mpc-stop-btn" aria-label="Arrêt des boucles">
                     <span class="mpc-toggle-indicator"></span>
                     <span class="mpc-toggle-label"><span class="mpc-toggle-top">STOP</span></span>
                   </button>
-                </span>
+                </div>
               </div>
             </div>
           </div>
