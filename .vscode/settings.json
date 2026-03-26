@@ -19,7 +19,7 @@
     "editor.insertSpaces": true
   },
   "[typescript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": false,
     "editor.tabSize": 2,
     "editor.insertSpaces": true
