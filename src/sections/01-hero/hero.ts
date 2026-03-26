@@ -182,23 +182,28 @@ export const initHeroSection: SectionInitializer = async (context) => {
   const onClick = (event: MouseEvent): void => {
     if (!heroRaycaster.isClickOnCrt(event.clientX, event.clientY)) return;
 
-    if (!heroRaycaster.isAtMenuSection()) {
-      // Dans la section hero : tout clic sur la TV scroll vers le menu.
-      context.scrollManager.scrollToSection(SECTION_IDS.MENU, BASELINE_VIEWPORT_HEIGHT);
+    if (heroRaycaster.isAtMenuSection()) {
+      // Dans la section menu : naviguer vers l'item cliqué
+      hoverMenuIndex = heroRaycaster.getHoverMenuIndexFromPointer(
+        event.clientX,
+        event.clientY,
+        currentMenuOpacity,
+      );
+      if (hoverMenuIndex >= 0 && hoverMenuIndex < crtMenuSectionIds.length) {
+        const targetSectionId = crtMenuSectionIds[hoverMenuIndex];
+        if (targetSectionId)
+          context.scrollManager.scrollToSection(targetSectionId);
+      }
       return;
     }
 
-    // Dans la section menu : naviguer vers l'item cliqué
-    hoverMenuIndex = heroRaycaster.getHoverMenuIndexFromPointer(
-      event.clientX,
-      event.clientY,
-      currentMenuOpacity,
-    );
-    if (hoverMenuIndex >= 0 && hoverMenuIndex < crtMenuSectionIds.length) {
-      const targetSectionId = crtMenuSectionIds[hoverMenuIndex];
-      if (targetSectionId)
-        context.scrollManager.scrollToSection(targetSectionId);
+    // On est passé après le menu (sections 1/2/3, Outro) → ignorer le clic
+    if (menuElement instanceof HTMLElement && menuElement.getBoundingClientRect().bottom <= 0) {
+      return;
     }
+
+    // Dans la section hero : tout clic sur la TV scroll vers le menu.
+    context.scrollManager.scrollToSection(SECTION_IDS.MENU, BASELINE_VIEWPORT_HEIGHT);
   };
 
   const onViewportResize = (): void => {
