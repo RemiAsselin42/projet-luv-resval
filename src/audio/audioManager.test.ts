@@ -8,6 +8,7 @@ const makeHowlInstance = () => ({
   play: vi.fn(),
   fade: vi.fn(),
   volume: vi.fn(() => 0),
+  seek: vi.fn(),
   unload: vi.fn(),
 });
 
@@ -236,6 +237,44 @@ describe('createAudioManager — isMuted()', () => {
     expect(manager.isMuted()).toBe(true);
     manager.toggleMute();
     expect(manager.isMuted()).toBe(false);
+  });
+});
+
+describe('createAudioManager — lockMusicLayer()', () => {
+  it('appelle volume(0) sur la layer correspondante', () => {
+    const manager = createAudioManager();
+    manager.lockMusicLayer(0);
+
+    expect(howlInstances[0]?.volume).toHaveBeenCalledWith(0);
+  });
+
+  it('ne provoque aucune erreur pour un index hors-limites', () => {
+    const manager = createAudioManager();
+    expect(() => manager.lockMusicLayer(99)).not.toThrow();
+  });
+
+  it('ne provoque aucune erreur pour un index négatif', () => {
+    const manager = createAudioManager();
+    expect(() => manager.lockMusicLayer(-1)).not.toThrow();
+  });
+});
+
+describe('createAudioManager — seekMusicLayer()', () => {
+  it('appelle seek() sur la layer correspondante avec la position en secondes', () => {
+    const manager = createAudioManager();
+    manager.seekMusicLayer(2, 30);
+
+    expect(howlInstances[2]?.seek).toHaveBeenCalledWith(30);
+  });
+
+  it('ne provoque aucune erreur pour un index hors-limites', () => {
+    const manager = createAudioManager();
+    expect(() => manager.seekMusicLayer(99, 0)).not.toThrow();
+  });
+
+  it('ne provoque aucune erreur pour un index négatif', () => {
+    const manager = createAudioManager();
+    expect(() => manager.seekMusicLayer(-1, 0)).not.toThrow();
   });
 });
 

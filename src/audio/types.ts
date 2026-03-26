@@ -1,9 +1,9 @@
 export interface AudioManager {
   /** Lance les 4 layers musicaux synchronisés. Idempotent. */
   startExperience(): void;
-  /** Débloque une layer musicale (index 0-3) avec un fade-in. Appelé par la MPC. */
+  /** Débloque une layer musicale (index 0-5) avec un fade-in. Appelé par la MPC. */
   unlockMusicLayer(index: number): void;
-  /** Re-mute une layer musicale (index 0-3) avec un fade-out. Appelé par la MPC. */
+  /** Re-mute une layer musicale (index 0-5) avec un fade-out. Appelé par la MPC. */
   lockMusicLayer(index: number): void;
   /** Joue le FX sonore universel (hover/clic sur tout bouton interactif). */
   playUiFx(): void;
