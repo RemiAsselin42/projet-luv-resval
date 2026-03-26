@@ -77,6 +77,7 @@ const createTestContext = () => {
       setMusicVolume: vi.fn(),
       toggleMute: vi.fn(),
       isMuted: vi.fn(() => false),
+      seekMusicLayer: vi.fn(),
       dispose: vi.fn(),
     },
   };

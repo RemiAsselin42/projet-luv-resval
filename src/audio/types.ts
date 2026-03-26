@@ -12,5 +12,7 @@ export interface AudioManager {
   /** Toggle le mute global. Retourne le nouvel état isMuted. */
   toggleMute(): boolean;
   isMuted(): boolean;
+  /** Seek une layer musicale à la position donnée (secondes). Utilisé par le bouton stop MPC. */
+  seekMusicLayer(index: number, seconds: number): void;
   dispose(): void;
 }

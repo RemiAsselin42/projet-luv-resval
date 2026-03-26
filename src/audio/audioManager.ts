@@ -46,8 +46,11 @@ export const createAudioManager = (): AudioManager => {
   const startExperience = (): void => {
     if (_experienceStarted) return;
     _experienceStarted = true;
-    _musicLayers.forEach((layer) => {
+    // Layers 1-5 sont verrouillées au départ : seul le débloquage explicite (loop/play buttons)
+    // les rend audibles. Sans ça, setMusicVolume les passerait à volume 1 dès l'init du potard.
+    _musicLayers.forEach((layer, i) => {
       layer.play();
+      if (i !== 0) _lockedLayers.add(i);
     });
     _musicLayers[0]?.fade(0, MUSIC_LAYER_VOLUME, LAYER_FADE_DURATION_MS);
   };
@@ -85,6 +88,12 @@ export const createAudioManager = (): AudioManager => {
 
   const isMuted = (): boolean => _isMuted;
 
+  const seekMusicLayer = (index: number, seconds: number): void => {
+    const layer = _musicLayers[index];
+    if (!layer) return;
+    layer.seek(seconds);
+  };
+
   const dispose = (): void => {
     _musicLayers.forEach((layer) => layer.unload());
     _uiFx.unload();
@@ -98,6 +107,7 @@ export const createAudioManager = (): AudioManager => {
     setMusicVolume,
     toggleMute,
     isMuted,
+    seekMusicLayer,
     dispose,
   };
 };
