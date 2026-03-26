@@ -1,9 +1,9 @@
 import { Howl, Howler } from 'howler';
 import type { AudioManager } from './types';
+import { publicUrl } from '../utils/publicUrl';
 
-const BASE = import.meta.env.BASE_URL; // '/projet-luv-resval/' en dev et prod
-const MUSIC_BASE_PATH = `${BASE}audio/music/`;
-const FX_BASE_PATH = `${BASE}audio/fx/`;
+const MUSIC_BASE_PATH = publicUrl('audio/music/');
+const FX_BASE_PATH = publicUrl('audio/fx/');
 
 // Volume cible de chaque layer une fois débloquée
 const MUSIC_LAYER_VOLUME = 1;
@@ -61,6 +61,12 @@ export const createAudioManager = (): AudioManager => {
     layer.fade(layer.volume(), MUSIC_LAYER_VOLUME, LAYER_FADE_DURATION_MS);
   };
 
+  const lockMusicLayer = (index: number): void => {
+    const layer = _musicLayers[index];
+    if (!layer) return;
+    layer.fade(layer.volume(), 0, LAYER_FADE_DURATION_MS);
+  };
+
   const playUiFx = (): void => {
     _uiFx.play();
   };
@@ -86,6 +92,7 @@ export const createAudioManager = (): AudioManager => {
   return {
     startExperience,
     unlockMusicLayer,
+    lockMusicLayer,
     playUiFx,
     setMusicVolume,
     toggleMute,

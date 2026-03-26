@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { publicUrl } from '../../utils/publicUrl';
 
 interface DracoLoaderLike {
   setDecoderPath: (path: string) => void;
@@ -21,7 +22,7 @@ interface ThreeExampleLoaders {
 }
 
 const DRACO_DECODER_PATHS = [
-  `${import.meta.env.BASE_URL}draco/`,
+  publicUrl('draco/'),
   'https://www.gstatic.com/draco/versioned/decoders/1.5.7/',
   'https://www.gstatic.com/draco/v1/decoders/',
 ] as const;

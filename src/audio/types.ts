@@ -3,6 +3,8 @@ export interface AudioManager {
   startExperience(): void;
   /** Débloque une layer musicale (index 0-3) avec un fade-in. Appelé par la MPC. */
   unlockMusicLayer(index: number): void;
+  /** Re-mute une layer musicale (index 0-3) avec un fade-out. Appelé par la MPC. */
+  lockMusicLayer(index: number): void;
   /** Joue le FX sonore universel (hover/clic sur tout bouton interactif). */
   playUiFx(): void;
   /** Modifie le volume global de la musique (0-1). Utilisé par le potard MPC. */
