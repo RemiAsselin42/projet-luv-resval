@@ -369,7 +369,7 @@ $_mpc-btn-shadow:
   justify-content: center;
   gap: 2px;
   width: 100%;
-  height: $_mpc-knob-size;
+  height: $mpc-knob-size;
   background: $mpc-btn-bg;
   border: none;
   border-radius: $mpc-border-radius;
@@ -387,8 +387,8 @@ $_mpc-btn-shadow:
 .mpc-knob-wheel {
   position: relative;
   flex-shrink: 0;
-  width: $_mpc-knob-wheel;
-  height: $_mpc-knob-wheel;
+  width: $mpc-knob-wheel;
+  height: $mpc-knob-wheel;
   border-radius: 50%;
   background: $mpc-btn-bg;
   box-shadow:
@@ -406,8 +406,8 @@ $_mpc-btn-shadow:
     position: absolute;
     inset: 0;
     margin: auto;
-    width: $_mpc-knob-cap;
-    height: $_mpc-knob-cap;
+    width: $mpc-knob-cap;
+    height: $mpc-knob-cap;
     border-radius: 50%;
     background: rgb(182 182 184);
     box-shadow:
@@ -433,8 +433,8 @@ $_mpc-btn-shadow:
 // Dot orange — couleur Figma "Orange" #FF6119 ≈ $color-toggle-btn
 .mpc-knob-dot {
   position: absolute;
-  width: $_mpc-knob-dot;
-  height: $_mpc-knob-dot;
+  width: $mpc-knob-dot;
+  height: $mpc-knob-dot;
   border-radius: 50%;
   background: $color-toggle-btn;
   top: 2px;
