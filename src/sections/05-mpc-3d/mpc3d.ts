@@ -56,7 +56,8 @@ const buildMpcDom = (): HTMLElement => {
             <div class="mpc-table">
               <div class="mpc-top-row">
                 <div class="mpc-speakers" aria-hidden="true"
-                     style="background-image: url(${publicUrl('mpc-part-vent.png')})"></div>
+                     style="background-image: url(${publicUrl('mpc-part-vent.png')})">
+                </div>
                 <button class="mpc-play-btn" aria-label="Lecture">
                   <span class="mpc-play-dot"></span>
                   <span class="mpc-play-label">PLAY</span>
@@ -66,8 +67,34 @@ const buildMpcDom = (): HTMLElement => {
                 ${loopButtonsHtml}
               </div>
             </div>
-            <div class="mpc-screen" aria-hidden="true">
-              <canvas class="mpc-waveform-canvas"></canvas>
+            <div class="mpc-screen-container" aria-hidden="true">
+              <div class="mpc-screen" aria-hidden="true">
+                <canvas class="mpc-waveform-canvas"></canvas>
+              </div>
+              <div class="mpc-options-btns" aria-hidden="true">
+                <span class="mpc-options-volume">
+                  <div class="mpc-knob" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" tabindex="0">
+                    <div class="mpc-knob-wheel">
+                      <div class="mpc-knob-ring">
+                        <div class="mpc-knob-dot"></div>
+                      </div>
+                    </div>
+                    <span class="mpc-knob-label">VOL</span>
+                  </div>
+                </span>
+                <span class="mpc-options-mute">
+                  <button class="mpc-mute-btn" aria-label="Désactiver le son">
+                    <span class="mpc-toggle-indicator"></span>
+                    <span class="mpc-toggle-label"><span class="mpc-toggle-top">MUTE</span></span>
+                  </button>
+                </span>
+                <span class="mpc-options-stop">
+                  <button class="mpc-stop-btn" aria-label="Arrêt des boucles">
+                    <span class="mpc-toggle-indicator"></span>
+                    <span class="mpc-toggle-label"><span class="mpc-toggle-top">STOP</span></span>
+                  </button>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -227,24 +254,146 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   let isAcapPlaying = false;
 
   if (playBtn) {
-    const playLabel = playBtn.querySelector<HTMLElement>('.mpc-play-label');
     const onPlayClick = () => {
       if (!isAcapPlaying) {
         audioManager.unlockMusicLayer(ACAP_LAYER);
         isAcapPlaying = true;
         playBtn.classList.add('mpc-play-btn--active');
-        if (playLabel) playLabel.textContent = 'STOP';
         playBtn.setAttribute('aria-label', 'Arrêt');
       } else {
         audioManager.lockMusicLayer(ACAP_LAYER);
         isAcapPlaying = false;
         playBtn.classList.remove('mpc-play-btn--active');
-        if (playLabel) playLabel.textContent = 'PLAY';
         playBtn.setAttribute('aria-label', 'Lecture');
       }
     };
     playBtn.addEventListener('click', onPlayClick);
     cleanupFns.push(() => playBtn.removeEventListener('click', onPlayClick));
+  }
+
+  // Volume knob — drag vertical (haut = + volume)
+  const knob = mpcRoot.querySelector<HTMLElement>('.mpc-knob');
+  const knobRing = mpcRoot.querySelector<HTMLElement>('.mpc-knob-ring');
+  let isDragging = false;
+  let dragStartY = 0;
+  let currentVolume = 1; // 0–1
+
+  const volumeToAngle = (vol: number) => vol * 270 - 135; // -135° (min) → +135° (max)
+
+  if (knob && knobRing) {
+    const updateKnob = (vol: number) => {
+      currentVolume = Math.max(0, Math.min(1, vol));
+      knobRing.style.setProperty('--knob-angle', `${volumeToAngle(currentVolume)}deg`);
+      audioManager.setMusicVolume(currentVolume);
+      knob.setAttribute('aria-valuenow', String(Math.round(currentVolume * 100)));
+    };
+    updateKnob(1);
+
+    const onKnobMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      dragStartY = e.clientY;
+      e.preventDefault();
+    };
+    const onKnobMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const deltaY = dragStartY - e.clientY; // drag up = volume +
+      dragStartY = e.clientY;
+      updateKnob(currentVolume + deltaY * 0.005);
+    };
+    const onKnobMouseUp = () => { isDragging = false; };
+
+    const onKnobWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      updateKnob(currentVolume - e.deltaY * 0.001);
+    };
+
+    knob.addEventListener('mousedown', onKnobMouseDown);
+    knob.addEventListener('wheel', onKnobWheel, { passive: false });
+    document.addEventListener('mousemove', onKnobMouseMove);
+    document.addEventListener('mouseup', onKnobMouseUp);
+    cleanupFns.push(() => {
+      knob.removeEventListener('mousedown', onKnobMouseDown);
+      knob.removeEventListener('wheel', onKnobWheel);
+      document.removeEventListener('mousemove', onKnobMouseMove);
+      document.removeEventListener('mouseup', onKnobMouseUp);
+    });
+  }
+
+  // Mute button — toggle + sync avec la touche M (main.ts appelle toggleMute en premier)
+  const muteBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-mute-btn');
+  if (muteBtn) {
+    const syncMuteBtn = () => {
+      const muted = audioManager.isMuted();
+      muteBtn.classList.toggle('mpc-mute-btn--active', muted);
+      muteBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Désactiver le son');
+    };
+    const onMuteClick = () => { audioManager.toggleMute(); syncMuteBtn(); };
+    const onMuteKey = (e: KeyboardEvent) => {
+      if ((e.code === 'KeyM') && !e.repeat) syncMuteBtn(); // main.ts a déjà togglé
+    };
+    muteBtn.addEventListener('click', onMuteClick);
+    document.addEventListener('keydown', onMuteKey);
+    cleanupFns.push(() => {
+      muteBtn.removeEventListener('click', onMuteClick);
+      document.removeEventListener('keydown', onMuteKey);
+    });
+  }
+
+  // Stop button — freeze/unfreeze les boucles actives + redémarre à 0
+  const stopBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-stop-btn');
+  let isStopActive = false;
+  let frozenLayers: number[] = [];
+  let wasAcapPlayingBeforeStop = false;
+
+  if (stopBtn) {
+    const onStopClick = () => {
+      if (!isStopActive) {
+        // Gel : mémoriser + couper les boucles actives
+        isStopActive = true;
+        frozenLayers = [];
+        mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-loop-btn--active').forEach((btn) => {
+          const layer = Number(btn.dataset.layer);
+          frozenLayers.push(layer);
+          btn.classList.remove('mpc-loop-btn--active');
+          audioManager.lockMusicLayer(layer);
+        });
+        audioManager.lockMusicLayer(0); // SAMPLE de fond
+        wasAcapPlayingBeforeStop = isAcapPlaying;
+        if (isAcapPlaying) {
+          audioManager.lockMusicLayer(ACAP_LAYER);
+          isAcapPlaying = false;
+          playBtn?.classList.remove('mpc-play-btn--active');
+          playBtn?.setAttribute('aria-label', 'Lecture');
+        }
+        stopBtn.classList.add('mpc-stop-btn--active');
+        stopBtn.setAttribute('aria-label', 'Relancer les boucles');
+        mpcRoot.dataset.stopped = 'true';
+      } else {
+        // Dégel : relancer depuis 0 les boucles gelées
+        isStopActive = false;
+        frozenLayers.forEach((layer) => {
+          const btn = mpcRoot.querySelector<HTMLButtonElement>(`.mpc-loop-btn[data-layer="${layer}"]`);
+          btn?.classList.add('mpc-loop-btn--active');
+          audioManager.seekMusicLayer(layer, 0);
+          audioManager.unlockMusicLayer(layer);
+        });
+        audioManager.seekMusicLayer(0, 0);
+        audioManager.unlockMusicLayer(0); // SAMPLE de fond
+        if (wasAcapPlayingBeforeStop) {
+          audioManager.seekMusicLayer(ACAP_LAYER, 0);
+          audioManager.unlockMusicLayer(ACAP_LAYER);
+          isAcapPlaying = true;
+          playBtn?.classList.add('mpc-play-btn--active');
+          playBtn?.setAttribute('aria-label', 'Arrêt');
+        }
+        audioManager.setMusicVolume(currentVolume); // ré-applique le volume du potard
+        stopBtn.classList.remove('mpc-stop-btn--active');
+        stopBtn.setAttribute('aria-label', 'Arrêt des boucles');
+        delete mpcRoot.dataset.stopped;
+      }
+    };
+    stopBtn.addEventListener('click', onStopClick);
+    cleanupFns.push(() => stopBtn.removeEventListener('click', onStopClick));
   }
 
   // Pads — feedback visuel + son dédié
@@ -268,9 +417,15 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     cleanupFns.push(() => btn.removeEventListener('click', onClick));
   });
 
+  // Mapping clavier → loops (R/T/Y + Numpad7/8/9)
+  const KEY_LOOP_MAP: Record<string, number> = {
+    KeyR: 1, KeyT: 2, KeyY: 3,
+    Numpad7: 1, Numpad8: 2, Numpad9: 3,
+  };
+
   // Mapping clavier → pads
-  // i/o/p → row du haut (PAD 4/5/6, indices 0/1/2)
-  // k/l/m → row du bas  (PAD 1/2/3, indices 3/4/5)
+  // U/I/O → row du haut (PAD 4/5/6, indices 0/1/2)
+  // J/K/L → row du bas  (PAD 1/2/3, indices 3/4/5)
   const KEY_PAD_MAP: Record<string, number> = {
     KeyU: 0, KeyI: 1, KeyO: 2,
     KeyJ: 3, KeyK: 4, KeyL: 5,
@@ -279,8 +434,14 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.repeat) return;
+    const loopLayer = KEY_LOOP_MAP[e.code];
+    if (loopLayer !== undefined && !isStopActive) {
+      const btn = mpcRoot.querySelector<HTMLButtonElement>(`.mpc-loop-btn[data-layer="${loopLayer}"]`);
+      btn?.click();
+      return;
+    }
     const idx = KEY_PAD_MAP[e.code];
-    if (idx !== undefined) triggerPad(idx);
+    if (idx !== undefined && !isStopActive) triggerPad(idx);
   };
   document.addEventListener('keydown', onKeyDown);
   cleanupFns.push(() => document.removeEventListener('keydown', onKeyDown));
