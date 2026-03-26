@@ -16,11 +16,13 @@ const MUSIC_TRACKS = [
   `${MUSIC_BASE_PATH}DRUMS-loop-snare.wav`,
   `${MUSIC_BASE_PATH}DRUMS-loop-hihat.wav`,
   `${MUSIC_BASE_PATH}EVIL_SAMPLE.wav`,
+  `${MUSIC_BASE_PATH}ACAP-luv-resval.wav`,
 ] as const;
 
 export const createAudioManager = (): AudioManager => {
   let _isMuted = false;
   let _experienceStarted = false;
+  const _lockedLayers = new Set<number>();
 
   const _musicLayers = MUSIC_TRACKS.map((src) =>
     new Howl({
@@ -53,18 +55,15 @@ export const createAudioManager = (): AudioManager => {
   const unlockMusicLayer = (index: number): void => {
     const layer = _musicLayers[index];
     if (!layer) return;
-    // Si le mute global est actif, on mémorise seulement le fade à travers le volume
-    // Howler.volume(0) coupe tout globalement, le fade Howl reste cohérent
-    // TODO: lors de l'implémentation MPC, remplacer MUSIC_LAYER_VOLUME par le
-    // volume courant issu du potard (setMusicVolume). Actuellement le fade cible toujours 1,
-    // ce qui ignore le volume global réglé par l'utilisateur.
-    layer.fade(layer.volume(), MUSIC_LAYER_VOLUME, LAYER_FADE_DURATION_MS);
+    _lockedLayers.delete(index);
+    layer.volume(MUSIC_LAYER_VOLUME);
   };
 
   const lockMusicLayer = (index: number): void => {
     const layer = _musicLayers[index];
     if (!layer) return;
-    layer.fade(layer.volume(), 0, LAYER_FADE_DURATION_MS);
+    _lockedLayers.add(index);
+    layer.volume(0);
   };
 
   const playUiFx = (): void => {
@@ -73,7 +72,9 @@ export const createAudioManager = (): AudioManager => {
 
   const setMusicVolume = (volume: number): void => {
     const clamped = Math.max(0, Math.min(1, volume));
-    _musicLayers.forEach((layer) => layer.volume(clamped));
+    _musicLayers.forEach((layer, index) => {
+      if (!_lockedLayers.has(index)) layer.volume(clamped);
+    });
   };
 
   const toggleMute = (): boolean => {

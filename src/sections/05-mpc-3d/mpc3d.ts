@@ -4,7 +4,7 @@ import { getSectionSelector, SECTION_IDS } from '../definitions';
 import { publicUrl } from '../../utils/publicUrl';
 
 // Indices dans audioManager.MUSIC_TRACKS :
-// 0=SAMPLE, 1=DRUMS-loop-kick, 2=DRUMS-loop-snare, 3=DRUMS-loop-hihat
+// 0=SAMPLE, 1=DRUMS-loop-kick, 2=DRUMS-loop-snare, 3=DRUMS-loop-hihat, 4=EVIL_SAMPLE, 5=ACAP-luv-resval
 const LOOP_BUTTONS = [
   { label: 'KICK', layer: 1 },
   { label: 'SNARE', layer: 2 },
@@ -57,10 +57,10 @@ const buildMpcDom = (): HTMLElement => {
               <div class="mpc-top-row">
                 <div class="mpc-speakers" aria-hidden="true"
                      style="background-image: url(${publicUrl('mpc-part-vent.png')})"></div>
-                <div class="mpc-play-btn" aria-label="Lecture">
+                <button class="mpc-play-btn" aria-label="Lecture">
                   <span class="mpc-play-dot"></span>
                   <span class="mpc-play-label">PLAY</span>
-                </div>
+                </button>
               </div>
               <div class="mpc-loop-buttons">
                 ${loopButtonsHtml}
@@ -220,6 +220,32 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     btn.addEventListener('click', onClick);
     cleanupFns.push(() => btn.removeEventListener('click', onClick));
   });
+
+  // Play button — démarre / arrête la cappella (layer 5 = ACAP-luv-resval)
+  const ACAP_LAYER = 5;
+  const playBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-play-btn');
+  let isAcapPlaying = false;
+
+  if (playBtn) {
+    const playLabel = playBtn.querySelector<HTMLElement>('.mpc-play-label');
+    const onPlayClick = () => {
+      if (!isAcapPlaying) {
+        audioManager.unlockMusicLayer(ACAP_LAYER);
+        isAcapPlaying = true;
+        playBtn.classList.add('mpc-play-btn--active');
+        if (playLabel) playLabel.textContent = 'STOP';
+        playBtn.setAttribute('aria-label', 'Arrêt');
+      } else {
+        audioManager.lockMusicLayer(ACAP_LAYER);
+        isAcapPlaying = false;
+        playBtn.classList.remove('mpc-play-btn--active');
+        if (playLabel) playLabel.textContent = 'PLAY';
+        playBtn.setAttribute('aria-label', 'Lecture');
+      }
+    };
+    playBtn.addEventListener('click', onPlayClick);
+    cleanupFns.push(() => playBtn.removeEventListener('click', onPlayClick));
+  }
 
   // Pads — feedback visuel + son dédié
   const padSounds = PADS.map(({ file }) =>
