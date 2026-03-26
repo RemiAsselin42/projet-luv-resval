@@ -1,107 +1,126 @@
-# MPC 3D - Configuration HTML
+# Section 05 — MPC 3D (Beatmaker)
 
-Ce document definit la structure HTML minimale de la section MPC, en 2 etapes de livraison.
+## Description
 
-## Objectif
+Interface de beatmaker interactive inspirée d'une MPC physique : 6 pads de percussion, 3 boutons de loops (KICK, SNARE, HI-HAT), un bouton Play/Stop pour la cappella, et une waveform temps réel sur écran intégré.
 
-Construire une interface MPC en deux versions :
+## Architecture
 
-1. **Version 1 (fonctionnelle)** : tout fonctionne, sans exigence de style avance.
-2. **Version 2 (design Figma)** : meme logique fonctionnelle, mais habillage visuel conforme a la maquette.
+Tout le module est contenu dans `mpc3d.ts` et exporté via `initBeatmakerSection` (`SectionInitializer`).
 
-## Elements fonctionnels attendus
+| Fonction / Constante     | Rôle                                                                               |
+|--------------------------|------------------------------------------------------------------------------------|
+| `LOOP_BUTTONS`           | Mapping label → index de layer audio (KICK=1, SNARE=2, HI-HAT=3)                 |
+| `PADS`                   | Définition des 6 pads (nom, catégorie, fichier audio)                             |
+| `buildMpcDom()`          | Construit l'arbre HTML/CSS de la MPC et le retourne                               |
+| `startWaveform(canvas)`  | Lance la visualisation oscilloscope temps réel ; retourne une fonction `stop()`   |
+| `initBeatmakerSection`   | Point d'entrée `SectionInitializer` : branche tous les listeners, gère le dispose |
 
-- 1 ecran principal avec affichage de waveform (acapella/loop active).
-- 6 pads, chacun declenchant une loop differente.
-- 1 potard de volume global.
-- 3 controles de transport : `Stop`, `Play`, `Play from Start`.
-- 1 action de telechargement de la loop creee.
+## Layers audio — mapping `MUSIC_TRACKS`
 
-## Version 1 - Base fonctionnelle (pas de design)
+Les indices correspondent directement au tableau `MUSIC_TRACKS` de `audioManager.ts` :
 
-### Contraintes
+| Index | Fichier                  | Contrôle MPC          |
+|-------|--------------------------|-----------------------|
+| 0     | `SAMPLE.wav`             | *(toujours actif)*    |
+| 1     | `DRUMS-loop-kick.wav`    | Bouton loop KICK      |
+| 2     | `DRUMS-loop-snare.wav`   | Bouton loop SNARE     |
+| 3     | `DRUMS-loop-hihat.wav`   | Bouton loop HI-HAT    |
+| 4     | `EVIL_SAMPLE.wav`        | *(autre section)*           |
+| 5     | `ACAP-luv-resval.wav`    | Bouton PLAY/STOP      |
 
-- Priorite a l'accessibilite et au comportement (pas au rendu visuel).
-- HTML semantique simple.
-- Attributs `data-*` stables pour le branchement TypeScript.
-- Tous les controles doivent etre utilisables au clavier.
+## Bouton Play/Stop (cappella)
 
-### Structure HTML recommandee
+Le bouton `.mpc-play-btn` (élément `<button>` natif, accessible clavier) contrôle la layer 5 (`ACAP-luv-resval.wav`) :
 
-```html
-<section id="mpc" class="mpc" aria-labelledby="mpc-title">
-	<h2 id="mpc-title">MPC</h2>
+- **PLAY** → `audioManager.unlockMusicLayer(5)` ; classe `mpc-play-btn--active` ajoutée ; label devient `STOP`.
+- **STOP** → `audioManager.lockMusicLayer(5)` ; classe retirée ; label revient à `PLAY`.
+- `aria-label` mis à jour dynamiquement (`"Lecture"` / `"Arrêt"`).
 
-	<div class="mpc__screen" data-role="screen" aria-live="polite">
-		<canvas data-role="waveform" aria-label="Waveform de la loop active"></canvas>
-	</div>
-
-	<div class="mpc__pads" role="group" aria-label="Pads loops">
-		<button type="button" data-pad="1">Pad 1</button>
-		<button type="button" data-pad="2">Pad 2</button>
-		<button type="button" data-pad="3">Pad 3</button>
-		<button type="button" data-pad="4">Pad 4</button>
-		<button type="button" data-pad="5">Pad 5</button>
-		<button type="button" data-pad="6">Pad 6</button>
-	</div>
-
-	<div class="mpc__transport" role="group" aria-label="Controle lecture">
-		<button type="button" data-action="stop">Stop</button>
-		<button type="button" data-action="play">Play</button>
-		<button type="button" data-action="play-start">Play from Start</button>
-	</div>
-
-	<div class="mpc__volume">
-		<label for="mpc-volume">Volume</label>
-		<input
-			id="mpc-volume"
-			type="range"
-			min="0"
-			max="100"
-			step="1"
-			value="80"
-			data-role="volume"
-		/>
-	</div>
-
-	<div class="mpc__export">
-		<button type="button" data-action="download-loop">Download loop</button>
-	</div>
-</section>
+```typescript
+// Exemple interne (mpc3d.ts)
+const ACAP_LAYER = 5;
+audioManager.unlockMusicLayer(ACAP_LAYER); // démarre la cappella
+audioManager.lockMusicLayer(ACAP_LAYER);   // coupe la cappella
 ```
 
-### Definition de done - V1
+## Boutons de loops
 
-- Les 6 pads declenchent bien 6 loops differentes.
-- `Play` lit la loop active.
-- `Stop` arrete la lecture.
-- `Play from Start` relance depuis le debut.
-- Le potard modifie le volume global.
-- Le bouton `Download loop` telecharge un fichier audio valide.
+Les trois boutons `.mpc-loop-btn` (attribut `data-layer`) activent/désactivent chacun une stem en boucle via toggle :
 
-## Version 2 - Integration design Figma
+```typescript
+// Activation
+audioManager.unlockMusicLayer(layer); // volume immédiat à MUSIC_LAYER_VOLUME
+btn.classList.add('mpc-loop-btn--active');
 
-### Objectif
+// Désactivation
+audioManager.lockMusicLayer(layer);   // volume immédiat à 0
+btn.classList.remove('mpc-loop-btn--active');
+```
 
-Conserver exactement les comportements de la V1, puis appliquer la maquette Figma.
+## Pads (percussion)
 
-### Regles d'integration
+6 pads définis dans `PADS`, chacun chargé via `Howl` (`volume: 0.9, pool: 2`) depuis `audio/pads/`.
 
-- Ne pas casser les hooks JS/TS (`data-pad`, `data-action`, `data-role`).
-- Mapper les styles via classes CSS (pas de logique dans le HTML).
-- Respecter les espacements, typo, couleurs, et etats interactifs de la maquette.
-- Integrer le bouton de telechargement dans le design MPC final (pas en dehors du module).
+### Mapping clavier
 
-### Etapes conseillees
+| Touche          | Pad         |
+|-----------------|-------------|
+| `U`             | PAD 4 — Open-Hat |
+| `I`             | PAD 5 — Hi-Hat   |
+| `O`             | PAD 6 — AWA Tag  |
+| `J`             | PAD 1 — Snare    |
+| `K`             | PAD 2 — Kick 1   |
+| `L`             | PAD 3 — Kick 2   |
+| `Numpad4/5/6`   | Row haut (PAD 4/5/6) |
+| `Numpad1/2/3`   | Row bas  (PAD 1/2/3) |
 
-1. Verrouiller la V1 (tests manuels et/ou unitaires OK).
-2. Ajouter la structure necessaire au layout Figma (wrappers, zones, labels visuels).
-3. Appliquer les styles SCSS et animations.
-4. Verifier que tous les controles restent accessibles clavier + lecteur d'ecran.
+Les répétitions clavier (`e.repeat`) sont ignorées.
 
-### Definition de done - V2
+## Waveform temps réel
 
-- Le rendu correspond a la maquette Figma validee.
-- Aucun comportement fonctionnel V1 n'est perdu.
-- Les controles restent accessibles et testables.
-- Le telechargement est visuellement integre au design MPC.
+`startWaveform(canvas)` branche un `AnalyserNode` sur `Howler.masterGain` (connexion parallèle, sans couper le routage existant) et anime un oscilloscope via `requestAnimationFrame`.
+
+Paramètres configurables dans la fonction :
+
+| Paramètre               | Valeur par défaut | Effet                                 |
+|-------------------------|-------------------|---------------------------------------|
+| `fftSize`               | `2048`            | 1024 bins — waveform fine             |
+| `smoothingTimeConstant` | `0.82`            | Lissage temporel (0 = réactif)        |
+| Couleur gradient        | `rgba(161,84,242)`| Violet MPC                            |
+
+La fonction retourne `stop()` à appeler dans `dispose()` pour nettoyer le RAF et déconnecter l'analyser.
+
+## Scale responsive
+
+Un `ResizeObserver` sur `sectionElement` recalcule la variable CSS `--mpc-scale` à chaque redimensionnement :
+
+```typescript
+const MPC_NATURAL_W = 388; // largeur de référence (px)
+const MPC_NATURAL_H = 356; // hauteur de référence (px)
+const scale = Math.min(availW / MPC_NATURAL_W, availH / MPC_NATURAL_H, 1.8);
+```
+
+Le `transform: scale()` est appliqué en CSS via `var(--mpc-scale)` (rendu plus net qu'un calcul JS direct).
+
+## Dispose
+
+`dispose()` effectue dans l'ordre :
+1. `stopWaveform()` — annule le RAF et déconnecte l'analyser.
+2. `ro.disconnect()` — débranche le `ResizeObserver`.
+3. Supprime tous les listeners (loops, play, pads, clavier).
+4. `padSounds.forEach(s => s.unload())` — libère les Howl pads.
+5. `mpcRoot.remove()` — retire le DOM.
+6. `delete sectionElement.dataset.state` — remet la section à l'état initial.
+
+## Variables SCSS utilisées
+
+Définies dans `src/styles/_variables.scss` (section MPC) :
+
+| Variable              | Valeur     | Usage                        |
+|-----------------------|------------|------------------------------|
+| `$mpc-purple`         | `#a154f2`  | Waveform, indicateurs actifs |
+| `$mpc-purple-dim`     | `#9456d6`  | États hover                  |
+| `$mpc-purple-dark`    | `#3c1f70`  | Fond foncé MPC               |
+| `$mpc-border-radius`  | `2px`      | Coins éléments standard      |
+| `$mpc-border-radius-lg` | `4px`    | Coins boutons (Play, etc.)   |
