@@ -58,8 +58,8 @@ const buildMpcDom = (): HTMLElement => {
                 <div class="mpc-speakers" aria-hidden="true"
                      style="background-image: url(${publicUrl('mpc-part-vent.png')})"></div>
                 <div class="mpc-play-btn" aria-label="Lecture">
-                  <span class="mpc-rec-dot"></span>
-                  <span class="mpc-rec-label">RECORD</span>
+                  <span class="mpc-play-dot"></span>
+                  <span class="mpc-play-label">PLAY</span>
                 </div>
               </div>
               <div class="mpc-loop-buttons">
