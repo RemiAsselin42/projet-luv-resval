@@ -2,6 +2,7 @@ import { Howl, Howler } from 'howler';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
 import { publicUrl } from '../../utils/publicUrl';
+import { createRecorder } from './recorder';
 
 // Indices dans audioManager.MUSIC_TRACKS :
 // 0=SAMPLE, 1=DRUMS-loop-kick, 2=DRUMS-loop-snare, 3=DRUMS-loop-hihat, 4=EVIL_SAMPLE, 5=ACAP-luv-resval
@@ -106,10 +107,10 @@ const buildMpcDom = (): HTMLElement => {
           <span class="awa-tag" aria-hidden="true">            <img src="${publicUrl('Logo-AWA.png')}" class="mpc-logo-awa-img" alt="AWA" aria-hidden="true">
 </span>
             <span class="mpc-copyright"><p>&copy; 2026 Master DIMI<br>MPC Part. III</p></span>
-            <div class="mpc-record-btn" aria-hidden="true">
+            <button class="mpc-record-btn" aria-label="Démarrer l'enregistrement">
               <span class="mpc-rec-dot"></span>
               <span class="mpc-rec-label">RECORD</span>
-            </div>
+            </button>
           </div>
 
         </div>
@@ -394,6 +395,28 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     };
     stopBtn.addEventListener('click', onStopClick);
     cleanupFns.push(() => stopBtn.removeEventListener('click', onStopClick));
+  }
+
+  // Record button — capture audio → téléchargement .wav
+  const recordBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-record-btn');
+  if (recordBtn) {
+    const recorder = createRecorder(Howler.ctx as AudioContext, Howler.masterGain as GainNode);
+    const onRecordClick = () => {
+      if (!recorder.isActive()) {
+        recorder.start();
+        recordBtn.classList.add('is-recording');
+        recordBtn.setAttribute('aria-label', "Arrêter l'enregistrement");
+      } else {
+        recorder.stop();
+        recordBtn.classList.remove('is-recording');
+        recordBtn.setAttribute('aria-label', "Démarrer l'enregistrement");
+      }
+    };
+    recordBtn.addEventListener('click', onRecordClick);
+    cleanupFns.push(() => {
+      recordBtn.removeEventListener('click', onRecordClick);
+      if (recorder.isActive()) recorder.stop();
+    });
   }
 
   // Pads — feedback visuel + son dédié
