@@ -39,7 +39,7 @@ import { Howler } from 'howler';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const TRACKS_COUNT = 5; // SAMPLE + DRUMS kick/snare/hihat + EVIL_SAMPLE
+const TRACKS_COUNT = 6; // SAMPLE + DRUMS kick/snare/hihat + EVIL_SAMPLE + ACAP
 
 // Réinitialise les instances Howl avant chaque test
 beforeEach(() => {
@@ -49,9 +49,9 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('createAudioManager — initialisation', () => {
-  it('crée exactement 6 instances Howl (5 tracks + 1 fx)', () => {
+  it('crée exactement 7 instances Howl (6 tracks + 1 fx)', () => {
     createAudioManager();
-    // 5 music layers + 1 uiFx
+    // 6 music layers + 1 uiFx
     expect(howlInstances).toHaveLength(TRACKS_COUNT + 1);
   });
 
@@ -62,7 +62,7 @@ describe('createAudioManager — initialisation', () => {
 });
 
 describe('createAudioManager — startExperience()', () => {
-  it('appelle play() sur les 5 layers musicaux', () => {
+  it('appelle play() sur les 6 layers musicaux', () => {
     const manager = createAudioManager();
     manager.startExperience();
 
@@ -81,6 +81,7 @@ describe('createAudioManager — startExperience()', () => {
     expect(howlInstances[2]?.fade).not.toHaveBeenCalled();
     expect(howlInstances[3]?.fade).not.toHaveBeenCalled();
     expect(howlInstances[4]?.fade).not.toHaveBeenCalled();
+    expect(howlInstances[5]?.fade).not.toHaveBeenCalled();
   });
 
   it('est idempotent : un second appel n\'a aucun effet', () => {
@@ -96,22 +97,18 @@ describe('createAudioManager — startExperience()', () => {
 });
 
 describe('createAudioManager — unlockMusicLayer()', () => {
-  it('appelle fade() sur la layer correspondante', () => {
+  it('appelle volume() sur la layer correspondante', () => {
     const manager = createAudioManager();
     manager.unlockMusicLayer(1);
 
-    expect(howlInstances[1]?.fade).toHaveBeenCalledOnce();
+    expect(howlInstances[1]?.volume).toHaveBeenCalledWith(1);
   });
 
-  it('passe le volume courant comme valeur de départ du fade', () => {
+  it('passe MUSIC_LAYER_VOLUME (1) comme valeur', () => {
     const manager = createAudioManager();
-    // Simule un volume courant de 0.4 sur la layer 2
-    howlInstances[2]!.volume = vi.fn(() => 0.4);
-
     manager.unlockMusicLayer(2);
 
-    const [fromVolume] = howlInstances[2]!.fade.mock.calls[0] as [number, number, number];
-    expect(fromVolume).toBe(0.4);
+    expect(howlInstances[2]?.volume).toHaveBeenCalledWith(1);
   });
 
   it('ne provoque aucune erreur pour un index hors-limites', () => {
@@ -126,12 +123,12 @@ describe('createAudioManager — unlockMusicLayer()', () => {
 });
 
 describe('createAudioManager — playUiFx()', () => {
-  it('appelle play() sur le Howl fx (6e instance)', () => {
+  it('appelle play() sur le Howl fx (7e instance)', () => {
     const manager = createAudioManager();
     manager.playUiFx();
 
-    // La 6e instance (index 5) est le son fx
-    expect(howlInstances[5]?.play).toHaveBeenCalledOnce();
+    // La 7e instance (index 6) est le son fx
+    expect(howlInstances[6]?.play).toHaveBeenCalledOnce();
   });
 
   it('peut être appelé plusieurs fois (pooled)', () => {
@@ -140,7 +137,7 @@ describe('createAudioManager — playUiFx()', () => {
     manager.playUiFx();
     manager.playUiFx();
 
-    expect(howlInstances[5]?.play).toHaveBeenCalledTimes(3);
+    expect(howlInstances[6]?.play).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -243,7 +240,7 @@ describe('createAudioManager — isMuted()', () => {
 });
 
 describe('createAudioManager — dispose()', () => {
-  it('appelle unload() sur les 6 instances Howl', () => {
+  it('appelle unload() sur les 7 instances Howl', () => {
     const manager = createAudioManager();
     manager.dispose();
 
