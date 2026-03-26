@@ -4,6 +4,7 @@ $color-bg-secondary: #111;
 $color-text-primary: #fff;
 $color-text-secondary: #ccc;
 $color-accent: #ff0080;
+$color-toggle-btn: #ff611a;
 $color-accent-secondary: #00d9ff;
 
 // Star Wars theme colors
@@ -42,3 +43,23 @@ $transition-speed-fast: 0.2s;
 $transition-speed-normal: 0.3s;
 $transition-speed-slow: 0.5s;
 $transition-easing: ease-in-out;
+
+// ------------------------------------------------------------------
+// MPC — Beatmaker UI
+// ------------------------------------------------------------------
+
+$mpc-purple: #a154f2;
+$mpc-purple-dim: #9456d6;
+$mpc-body-bg: #2e3035;
+$mpc-frame-bg: #181818;
+$mpc-btn-bg: $mpc-body-bg;
+$mpc-pad-border: #3c3d3f;
+$mpc-pad-bg: #19191b;
+$btn-size: 46px;
+$pad-size: 100px;
+$mpc-gap-xs: 2px;
+$mpc-gap-sm: 4px;
+$mpc-gap-md: 8px;
+$mpc-gap-lg: 12px;
+$mpc-border-radius: 2px;
+$mpc-indicator-size: 5px;

@@ -1,12 +1,12 @@
 // Import variables and mixins
-@use './styles/variables' as *;
-@use './styles/mixins' as *;
-@use './styles/responsive';
+@use "./styles/variables" as *;
+@use "./styles/mixins" as *;
+@use "./styles/responsive";
 
 // Font faces
 @font-face {
   font-family: Silvermist-Regular;
-  src: url('./assets/fonts/Silvermist-Regular.otf') format('opentype');
+  src: url("./assets/fonts/Silvermist-Regular.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -14,7 +14,7 @@
 
 @font-face {
   font-family: Silvermist-Italic;
-  src: url('./assets/fonts/Silvermist-Italic.otf') format('opentype');
+  src: url("./assets/fonts/Silvermist-Italic.otf") format("opentype");
   font-weight: normal;
   font-style: italic;
   font-display: block;
@@ -22,7 +22,7 @@
 
 @font-face {
   font-family: Futura-CondensedExtraBold;
-  src: url('./assets/fonts/Futura-CondensedExtraBold.otf') format('opentype');
+  src: url("./assets/fonts/Futura-CondensedExtraBold.otf") format("opentype");
   font-weight: 800;
   font-style: normal;
   font-display: block;
@@ -30,7 +30,7 @@
 
 @font-face {
   font-family: Futura-Medium;
-  src: url('./assets/fonts/Futura-Medium.otf') format('opentype');
+  src: url("./assets/fonts/Futura-Medium.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
   font-display: block;
@@ -111,28 +111,16 @@ body {
 }
 
 // Section reliques : interactions 3D actives
-.experience-section[data-section='reliques'] {
+.experience-section[data-section="reliques"] {
   pointer-events: auto;
 }
 
-.experience-section[data-section='mpc'] {
+.experience-section[data-section="mpc"] {
   flex-direction: column;
   justify-content: center;
   gap: $spacing-xl;
   pointer-events: auto;
 }
-
-// ------------------------------------------------------------------
-// MPC — Beatmaker UI
-// ------------------------------------------------------------------
-
-$mpc-purple: #a154f2;
-$mpc-purple-dim: #9456d6;
-$mpc-body-bg: #2a2a2e;
-$mpc-frame-bg: #000;
-$mpc-btn-bg: #36383d;
-$mpc-pad-border: #525459;
-$mpc-pad-bg: #26262a;
 
 // Noise grain texture (SVG feTurbulence)
 $_mpc-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -144,7 +132,7 @@ $_mpc-btn-shadow:
 
 // Placeholder for noise overlay pseudo-element
 %mpc-noise-layer {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background-image: $_mpc-noise;
@@ -157,85 +145,92 @@ $_mpc-btn-shadow:
   display: flex;
   justify-content: center;
   align-items: center;
+  transform: scale(var(--mpc-scale, 1));
+  transform-origin: center center;
 }
 
 .mpc-body {
   background: $mpc-body-bg;
-  padding: 8px;
-  max-width: 372px;
+  padding: $mpc-gap-xs;
+  border-radius: $mpc-border-radius;
+  max-width: 50vw;
   width: 100%;
+  max-height: 50vh;
 }
 
 .mpc-frame {
   background: $mpc-frame-bg;
-  padding: 8px;
+  padding: $mpc-gap-xs;
+  border-radius: $mpc-border-radius;
 }
 
 .mpc-zones {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: $mpc-gap-xs;
 }
 
 // --- Top Zone ---
+// mpc-top-zone : mpc-table (largeur fixe) | mpc-screen (flex:1, waveform)
 .mpc-top-zone {
   display: flex;
-  height: 112px;
+  height: calc($btn-size + $btn-size + $mpc-gap-xs);
+  gap: $mpc-gap-xs;
 }
 
 .mpc-table {
-  width: 166px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 4px;
-  flex-shrink: 0;
+  gap: $mpc-gap-xs;
+  height: calc($btn-size + $btn-size + $mpc-gap-xs);
 }
 
+// Ligne haute : speakers (fixe) + play btn (flex:1)
 .mpc-top-row {
   display: flex;
-  flex: 1;
-  gap: 4px;
+  height: $btn-size;
+  gap: $mpc-gap-xs;
 }
 
-// Speakers — même style "Square Btn" que les loop buttons (sans noise)
+// Grille de ventilation — image PNG injectée via inline style (publicUrl)
 .mpc-speakers {
-  width: 50px;
-  background: $mpc-btn-bg;
-  background-image:
-    radial-gradient(circle, #3a3c41 1.5px, transparent 1.5px),
-    linear-gradient($mpc-btn-bg, $mpc-btn-bg);
-  background-size: 8px 8px, 100% 100%;
-  background-position: 4px 4px, 0 0;
-  box-shadow: $_mpc-btn-shadow;
-  border-radius: 4px;
+  width: $btn-size;
+  height: $btn-size;
   flex-shrink: 0;
-}
+  background-color: $mpc-btn-bg;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: $mpc-border-radius;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 35%);}
 
+// Ligne basse : 3 loop buttons côte-à-côte
 .mpc-loop-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
+  flex-direction: row;
+  height: $btn-size;
+  gap: $mpc-gap-xs;
 }
 
-// Loop button — bg #36383d, inner shadows, noise, radius 4
-// Contenu : indicateur dot + "LOOP" / type (deux lignes)
+// Loop button — dot · LOOP · label (flex column centré)
 .mpc-loop-btn {
   position: relative;
   overflow: hidden;
-  flex: 1;
+  height: $btn-size;
+  min-width: $btn-size;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 10px;
   background: $mpc-btn-bg;
   border: none;
-  border-radius: 4px;
+  border-radius: $mpc-border-radius;
   box-shadow: $_mpc-btn-shadow;
   color: #aaa;
-  font-family: $font-family-monospace;
+  font-family: Futura-Medium, $font-family-base;
+  font-size: 0.38rem;
+  letter-spacing: 0.06em;
   cursor: pointer;
   transition:
     background $transition-speed-fast $transition-easing,
@@ -249,25 +244,25 @@ $_mpc-btn-shadow:
 
   &:hover {
     background: #46484d;
-    color: #fff;
+    color: $color-text-primary;
   }
 
   &.mpc-loop-btn--active {
-    background: $mpc-purple;
-    color: #fff;
+    color: $color-text-primary;
   }
 }
 
 .mpc-loop-indicator {
-  width: 6px;
-  height: 6px;
+  width: $mpc-indicator-size;
+  height: $mpc-indicator-size;
   border-radius: 50%;
   background: #050505;
   flex-shrink: 0;
 }
 
 .mpc-loop-btn--active .mpc-loop-indicator {
-  background: #fff;
+  background: $color-toggle-btn;
+  box-shadow: 0 0 5px 0 rgba($color-toggle-btn, 50%);
 }
 
 .mpc-loop-label {
@@ -278,64 +273,80 @@ $_mpc-btn-shadow:
 }
 
 .mpc-loop-top {
-  font-size: 0.42rem;
+  font-size: 0.33rem;
   letter-spacing: 0.06em;
   opacity: 0.7;
 }
 
 .mpc-loop-type {
-  font-size: 0.46rem;
+  font-size: 0.36rem;
   letter-spacing: 0.08em;
 }
 
-// Play button — même style, sans noise (Figma "Inactive" state)
+// Play button — large, occupe toute la hauteur de mpc-top-row
 .mpc-play-btn {
-  height: 24px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: $mpc-gap-md;
   background: $mpc-btn-bg;
-  border: none;
-  border-radius: 4px;
-  box-shadow: $_mpc-btn-shadow;
-  color: #aaa;
-  font-family: $font-family-monospace;
-  font-size: 0.5rem;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: background $transition-speed-fast $transition-easing;
+  border-radius: $mpc-border-radius;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  padding: 0 5px;
+  height: $btn-size;
+  min-width: calc($btn-size * 2 + $mpc-gap-xs);
+  max-height: $btn-size;
 
-  &:hover {
-    background: #46484d;
-    color: #fff;
+  &::after {
+    @extend %mpc-noise-layer;
+
+    opacity: 0.12;
   }
 }
 
+// Panneau waveform — fond très sombre, hauteur calée sur mpc-table
 .mpc-screen {
   flex: 1;
-  background: #04040a;
+  background: $mpc-btn-bg;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  border-radius: 2px;
   overflow: hidden;
+  min-height: calc($btn-size + $mpc-gap-xs + $btn-size);
 }
 
-.mpc-waveform {
+.mpc-waveform-canvas {
   display: block;
   width: 100%;
+  min-width: calc(
+    ($btn-size + $mpc-gap-xs + $btn-size + $mpc-gap-xs + $btn-size) * 1.2
+  );
   height: 100%;
+  background-color: $mpc-pad-bg;
+  border: 4px solid $mpc-btn-bg;
+  border-radius: 8px;
 }
 
 // --- Middle Zone (Pads) ---
 .mpc-middle-zone {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: $mpc-gap-xs;
 }
 
 .mpc-pad-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
   outline: none;
+  gap: $mpc-gap-xs;
 }
 
 // Pad outer — bg #525459, inner shadows x2, radius 2 (pas de noise)
@@ -343,7 +354,6 @@ $_mpc-btn-shadow:
   aspect-ratio: 1;
   background: $mpc-pad-border;
   border-radius: 2px;
-  padding: 3px;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 10%),
     inset 0 -1px 0 rgb(0 0 0 / 50%);
@@ -358,7 +368,7 @@ $_mpc-btn-shadow:
   height: 100%;
   background: $mpc-pad-bg;
   border-radius: 2px;
-  box-shadow: inset 0 0 20px rgb(0 0 0 / 70%);
+  box-shadow: inset 0 0 20px rgb(78 78 78 / 70%);
   transition: background $transition-speed-fast $transition-easing;
 
   &::after {
@@ -368,87 +378,86 @@ $_mpc-btn-shadow:
   }
 }
 
-.mpc-pad-wrapper:hover .mpc-pad {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 10%),
-    inset 0 -1px 0 rgb(0 0 0 / 50%),
-    0 0 0 1px $mpc-purple;
+.mpc-pad-wrapper--active .mpc-pad {
+  transform: translateY(1px);
+  transition: all $transition-speed-fast $transition-easing;
 }
 
 .mpc-pad-wrapper--active .mpc-pad-bg {
   background: #3c1f70;
+  box-shadow: inset 0 3px 5px 0 rgb(26 26 26 / 70%);
 }
 
 .mpc-pad-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2px;
+  padding: $mpc-gap-sm;
+    background: $mpc-btn-bg;
+  border-radius: $mpc-border-radius;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    inset 0 -1px 0 rgb(0 0 0 / 5%);
 }
 
 .mpc-pad-name {
-  color: #fff;
-  font-size: 0.48rem;
-  font-family: $font-family-monospace;
+  color: $color-text-primary;
+  font-size: 0.4rem;
+  font-family: Futura-Medium, $font-family-base;
 }
 
 .mpc-pad-category {
-  color: $mpc-purple-dim;
-  font-size: 0.48rem;
-  font-family: $font-family-monospace;
+  color: $color-text-secondary;
+  font-size: 0.4rem;
+  font-family: Futura-Medium, $font-family-base;
 }
 
 // --- Bottom Zone ---
 .mpc-bottom-zone {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 35px;
-}
-
-.mpc-logo-awa {
-  width: 53px;
-  height: 100%;
-  background: #111114;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
   justify-content: center;
-
-  &::after {
-    content: 'AWA';
-    font-size: 0.48rem;
-    color: $mpc-purple-dim;
-    font-family: $font-family-monospace;
-    letter-spacing: 0.14em;
-  }
+  max-height: $btn-size;
+  gap: $mpc-gap-xs;
 }
 
 .mpc-copyright {
-  flex: 1;
-  color: #fff;
-  font-size: 0.42rem;
-  font-family: $font-family-monospace;
+  font-size: 0.36rem;
+  font-family: Futura-Medium, $font-family-base;
   line-height: 1.4;
   text-align: center;
-  margin: 0;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+
+  >p {
+      transform: translateY(2px);
+      position: absolute;
+      opacity: 0.8;
+      transition: opacity $transition-speed-fast $transition-easing;
+  }
+
+    &:hover p {
+      opacity: 1;
+      transition: opacity $transition-speed-fast $transition-easing;
+  }
 }
 
 // Record button — inner shadows (blanc + noir), noise 20%, radius 4
-.mpc-record-btn {
+.mpc-record-btn, .mpc-copyright {
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: $mpc-gap-md;
   background: $mpc-btn-bg;
-  border-radius: 4px;
+  border-radius: $mpc-border-radius;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 15%),
     inset 0 -1px 0 rgb(0 0 0 / 5%);
-  padding: 0 10px;
-  height: 100%;
-  flex-shrink: 0;
+  height: $btn-size;
+  min-width: calc($pad-size + $mpc-gap-xs * 2);
+  max-height: $btn-size;
 
   &::after {
     @extend %mpc-noise-layer;
@@ -457,24 +466,61 @@ $_mpc-btn-shadow:
   }
 }
 
+.awa-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $mpc-btn-bg;
+  border-radius: $mpc-border-radius;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 15%),
+    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  min-width: calc($pad-size + $mpc-gap-xs * 2);
+  height: $btn-size;
+
+  &::after {
+    @extend %mpc-noise-layer;
+
+    opacity: 0.12;
+  }
+
+  >.mpc-logo-awa-img {
+  max-height: calc($btn-size / 1.5);
+  opacity: 0.8;
+    transition: opacity $transition-speed-fast $transition-easing;
+
+  }
+
+  &:hover > .mpc-logo-awa-img {
+  max-height: calc($btn-size / 1.5);
+  opacity: 1;
+  transition: opacity $transition-speed-fast $transition-easing;
+}
+}
+
+
+
 // REC dot — orange #ff611a sur fond sombre #121212 (Figma : deux ellipses superposées)
 .mpc-rec-dot {
   position: relative;
   z-index: 1;
-  width: 10px;
-  height: 10px;
+  width: $mpc-indicator-size;
+  height: $mpc-indicator-size;
   border-radius: 50%;
-  background: #ff611a;
-  box-shadow: 0 0 0 2px #121212;
+  background: $color-toggle-btn;
+  box-shadow: 0 0 5px 0 $color-toggle-btn;
+  margin-left: 5px;
 }
 
 .mpc-rec-label {
   position: relative;
   z-index: 1;
-  color: #fff;
-  font-size: 0.48rem;
-  font-family: $font-family-monospace;
+  color: $color-text-primary;
+  font-size: 0.4rem;
+  font-family: Futura-Medium, $font-family-base;
   letter-spacing: 0.08em;
+  line-height: 1;
+  transform: translateY(0.2px);
 }
 
 // Accessibilité : masque visuellement mais reste lisible par les lecteurs d'écran
