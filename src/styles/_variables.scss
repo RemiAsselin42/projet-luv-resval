@@ -7,16 +7,8 @@ $color-accent: #ff0080;
 $color-toggle-btn: #ff611a;
 $color-accent-secondary: #00d9ff;
 
-// Star Wars theme colors
-$color-dark-side: #f00;
-$color-light-side: #0f0;
-$color-saber-blue: #0080ff;
-
 // Typography
-$font-family-base:
-  -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-  'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-$font-family-monospace: 'Courier New', Courier, monospace;
+$font-family-base: 'Futura-Medium';
 
 // Spacing
 $spacing-xs: 0.25rem;
@@ -50,6 +42,7 @@ $transition-easing: ease-in-out;
 
 $mpc-purple: #a154f2;
 $mpc-purple-dim: #9456d6;
+$mpc-purple-dark: #3c1f70;
 $mpc-body-bg: #2e3035;
 $mpc-frame-bg: #181818;
 $mpc-btn-bg: $mpc-body-bg;
@@ -62,4 +55,5 @@ $mpc-gap-sm: 4px;
 $mpc-gap-md: 8px;
 $mpc-gap-lg: 12px;
 $mpc-border-radius: 2px;
+$mpc-border-radius-lg: 4px;
 $mpc-indicator-size: 5px;

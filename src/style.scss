@@ -53,7 +53,7 @@ html {
 body {
   background-color: $color-bg-primary;
   color: $color-text-primary;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -125,7 +125,7 @@ body {
 // Noise grain texture (SVG feTurbulence)
 $_mpc-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
 
-// Shared inner-shadow bevel (highlight top, shadow bottom) — Figma INNER_SHADOW x2
+// Shared inner-shadow bevel (highlight top, shadow bottom)
 $_mpc-btn-shadow:
   inset 0 1px 0 rgb(255 255 255 / 10%),
   inset 0 -1px 0 rgb(0 0 0 / 35%);
@@ -160,7 +160,7 @@ $_mpc-btn-shadow:
 
 .mpc-frame {
   background: $mpc-frame-bg;
-  padding: $mpc-gap-xs;
+  padding: 2.3px $mpc-gap-xs;
   border-radius: $mpc-border-radius;
 }
 
@@ -202,7 +202,8 @@ $_mpc-btn-shadow:
   background-position: center;
   background-repeat: no-repeat;
   border-radius: $mpc-border-radius;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%), inset 0 -1px 0 rgb(0 0 0 / 35%);}
+  box-shadow: $_mpc-btn-shadow;
+}
 
 // Ligne basse : 3 loop buttons côte-à-côte
 .mpc-loop-buttons {
@@ -228,7 +229,7 @@ $_mpc-btn-shadow:
   border-radius: $mpc-border-radius;
   box-shadow: $_mpc-btn-shadow;
   color: #aaa;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
   font-size: 0.38rem;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -257,7 +258,7 @@ $_mpc-btn-shadow:
   width: $mpc-indicator-size;
   height: $mpc-indicator-size;
   border-radius: 50%;
-  background: #050505;
+  background: $color-bg-secondary;
   flex-shrink: 0;
 }
 
@@ -292,44 +293,49 @@ $_mpc-btn-shadow:
   align-items: center;
   gap: $mpc-gap-md;
   background: $mpc-btn-bg;
+  border: none;
   border-radius: $mpc-border-radius;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    inset 0 -1px 0 rgb(0 0 0 / 5%);
-  padding: 0 5px;
+  box-shadow: $_mpc-btn-shadow;
   height: $btn-size;
   min-width: calc($btn-size * 2 + $mpc-gap-xs);
   max-height: $btn-size;
+  cursor: pointer;
+  transition: filter $transition-speed-fast $transition-easing;
+
+  &:hover {
+    filter: brightness(1.2);
+  }
 
   &::after {
     @extend %mpc-noise-layer;
 
     opacity: 0.12;
   }
+
 }
 
 // Panneau waveform — fond très sombre, hauteur calée sur mpc-table
 .mpc-screen {
   flex: 1;
   background: $mpc-btn-bg;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    inset 0 -1px 0 rgb(0 0 0 / 5%);
-  border-radius: 2px;
+  box-shadow: $_mpc-btn-shadow;
+  border-radius: $mpc-border-radius;
   overflow: hidden;
   min-height: calc($btn-size + $mpc-gap-xs + $btn-size);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .mpc-waveform-canvas {
   display: block;
   width: 100%;
-  min-width: calc(
-    ($btn-size + $mpc-gap-xs + $btn-size + $mpc-gap-xs + $btn-size) * 1.2
-  );
-  height: 100%;
+  max-width: calc(100% - $mpc-gap-sm * 2);
+  height: calc(100% - $mpc-gap-sm * 2);
   background-color: $mpc-pad-bg;
-  border: 4px solid $mpc-btn-bg;
-  border-radius: 8px;
+  border-radius: $mpc-border-radius-lg;
+  border: $mpc-gap-xs solid $mpc-frame-bg;
+  box-shadow: inset 0 0 20px rgb(0 0 0 / 70%);
 }
 
 // --- Middle Zone (Pads) ---
@@ -354,10 +360,8 @@ $_mpc-btn-shadow:
 .mpc-pad {
   aspect-ratio: 1;
   background: $mpc-pad-border;
-  border-radius: 2px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 10%),
-    inset 0 -1px 0 rgb(0 0 0 / 50%);
+  border-radius: $mpc-border-radius-lg;
+  box-shadow: $_mpc-btn-shadow;
   transition: all $transition-speed-fast $transition-easing;
 
   &:hover {
@@ -373,9 +377,10 @@ $_mpc-btn-shadow:
   width: 100%;
   height: 100%;
   background: $mpc-pad-bg;
-  border-radius: 2px;
+  border-radius: $mpc-border-radius;
   box-shadow: inset 0 0 20px rgb(78 78 78 / 70%);
-  transition: background $transition-speed-fast $transition-easing;
+  transition: box-shadow $transition-speed-fast $transition-easing, border $transition-speed-fast $transition-easing;
+  border: $mpc-gap-xs solid $mpc-pad-border;
 
   &::after {
     @extend %mpc-noise-layer;
@@ -386,12 +391,13 @@ $_mpc-btn-shadow:
 
 .mpc-pad-wrapper--active .mpc-pad {
   transform: translateY(1px);
-  transition: all $transition-speed-fast $transition-easing;
+  transition: transform 0 $transition-easing;
 }
 
 .mpc-pad-wrapper--active .mpc-pad-bg {
-  background: #3c1f70;
   box-shadow: inset 0 3px 5px 0 rgb(26 26 26 / 70%);
+  border: $mpc-gap-xs solid rgba($mpc-purple-dim, 50%);
+  transition: box-shadow $transition-speed-fast $transition-easing, border $transition-speed-fast $transition-easing;
 }
 
 .mpc-pad-label {
@@ -401,21 +407,19 @@ $_mpc-btn-shadow:
   padding: $mpc-gap-sm;
     background: $mpc-btn-bg;
   border-radius: $mpc-border-radius;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  box-shadow: $_mpc-btn-shadow;
 }
 
 .mpc-pad-name {
   color: $color-text-primary;
   font-size: 0.4rem;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
 }
 
 .mpc-pad-category {
   color: $color-text-secondary;
   font-size: 0.4rem;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
 }
 
 // --- Bottom Zone ---
@@ -429,7 +433,7 @@ $_mpc-btn-shadow:
 
 .mpc-copyright {
   font-size: 0.36rem;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
   line-height: 1.4;
   text-align: center;
   justify-content: center;
@@ -458,9 +462,7 @@ $_mpc-btn-shadow:
   gap: $mpc-gap-md;
   background: $mpc-btn-bg;
   border-radius: $mpc-border-radius;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  box-shadow: $_mpc-btn-shadow;
   height: $btn-size;
   min-width: calc($pad-size + $mpc-gap-xs * 2);
   max-height: $btn-size;
@@ -478,9 +480,7 @@ $_mpc-btn-shadow:
   justify-content: center;
   background: $mpc-btn-bg;
   border-radius: $mpc-border-radius;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 15%),
-    inset 0 -1px 0 rgb(0 0 0 / 5%);
+  box-shadow: $_mpc-btn-shadow;
   min-width: calc($pad-size + $mpc-gap-xs * 2);
   height: $btn-size;
 
@@ -491,7 +491,7 @@ $_mpc-btn-shadow:
   }
 
   >.mpc-logo-awa-img {
-  max-height: calc($btn-size / 1.5);
+  max-height: calc($btn-size / 2);
   opacity: 0.8;
     transition: opacity $transition-speed-fast $transition-easing;
 
@@ -504,17 +504,13 @@ $_mpc-btn-shadow:
 }
 }
 
-
-
-// REC dot — orange #ff611a sur fond sombre #121212 (Figma : deux ellipses superposées)
 .mpc-rec-dot {
   position: relative;
   z-index: 1;
   width: $mpc-indicator-size;
   height: $mpc-indicator-size;
   border-radius: 50%;
-  background: $color-toggle-btn;
-  box-shadow: 0 0 5px 0 $color-toggle-btn;
+  background: $color-bg-secondary;
   margin-left: 5px;
 }
 
@@ -523,7 +519,7 @@ $_mpc-btn-shadow:
   z-index: 1;
   color: $color-text-primary;
   font-size: 0.4rem;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
   letter-spacing: 0.08em;
   line-height: 1;
   transform: translateY(0.2px);
@@ -539,18 +535,22 @@ $_mpc-btn-shadow:
   margin-left: 5px;
 }
 
+.mpc-play-btn--active .mpc-play-dot {
+  background: $color-toggle-btn;
+  box-shadow: 0 0 5px 0 rgba($color-toggle-btn, 50%);
+}
+
 .mpc-play-label {
   position: relative;
   z-index: 1;
   color: $color-text-primary;
   font-size: 0.4rem;
-  font-family: Futura-Medium, $font-family-base;
+  font-family: $font-family-base;
   letter-spacing: 0.08em;
   line-height: 1;
   transform: translateY(0.2px);
 }
 
-// Accessibilité : masque visuellement mais reste lisible par les lecteurs d'écran
 .sr-only {
   position: absolute;
   width: 1px;
@@ -562,5 +562,3 @@ $_mpc-btn-shadow:
   white-space: nowrap;
   border: 0;
 }
-
-// Components (à étendre selon les besoins du projet)
