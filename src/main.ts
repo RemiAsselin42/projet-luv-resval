@@ -118,7 +118,7 @@ const init = async (): Promise<void> => {
   window.addEventListener('resize', onResize);
 
   const onKeydown = (e: KeyboardEvent): void => {
-    if (e.key === 'm' || e.key === 'M') audioManager.toggleMute();
+    if ((e.key === 'm' || e.key === 'M') && !e.repeat) audioManager.toggleMute();
   };
   window.addEventListener('keydown', onKeydown);
 

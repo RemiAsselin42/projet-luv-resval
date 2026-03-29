@@ -272,6 +272,12 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     cleanupFns.push(() => playBtn.removeEventListener('click', onPlayClick));
   }
 
+  // Sons des pads — déclarés tôt pour être accessibles dans updateKnob
+  const PAD_BASE_VOLUME = 0.9;
+  const padSounds = PADS.map(({ file }) =>
+    new Howl({ src: [publicUrl(`audio/pads/${file}`)], volume: PAD_BASE_VOLUME, pool: 2, preload: true }),
+  );
+
   // Volume knob — drag vertical (haut = + volume)
   const knob = mpcRoot.querySelector<HTMLElement>('.mpc-knob');
   const knobRing = mpcRoot.querySelector<HTMLElement>('.mpc-knob-ring');
@@ -286,6 +292,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
       currentVolume = Math.max(0, Math.min(1, vol));
       knobRing.style.setProperty('--knob-angle', `${volumeToAngle(currentVolume)}deg`);
       audioManager.setMusicVolume(currentVolume);
+      padSounds.forEach((sound) => sound.volume(currentVolume * PAD_BASE_VOLUME));
       knob.setAttribute('aria-valuenow', String(Math.round(currentVolume * 100)));
     };
     updateKnob(1);
@@ -320,7 +327,8 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     });
   }
 
-  // Mute button — toggle + sync avec la touche M (main.ts appelle toggleMute en premier)
+  // Mute button — toggle + sync. Gère aussi la touche M directement pour éviter
+  // tout problème d'ordre d'exécution des listeners (document vs window).
   const muteBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-mute-btn');
   if (muteBtn) {
     const syncMuteBtn = () => {
@@ -329,14 +337,17 @@ const initBeatmakerSection: SectionInitializer = (context) => {
       muteBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Désactiver le son');
     };
     const onMuteClick = () => { audioManager.toggleMute(); syncMuteBtn(); };
+    // Sync-only : main.ts a déjà appelé toggleMute() (listener window enregistré avant).
+    // On écoute aussi sur window pour garantir que notre listener s'exécute après le sien
+    // (les listeners window se déclenchent dans l'ordre d'enregistrement).
     const onMuteKey = (e: KeyboardEvent) => {
-      if ((e.code === 'KeyM') && !e.repeat) syncMuteBtn(); // main.ts a déjà togglé
+      if ((e.key === 'm' || e.key === 'M') && !e.repeat) syncMuteBtn();
     };
     muteBtn.addEventListener('click', onMuteClick);
-    document.addEventListener('keydown', onMuteKey);
+    window.addEventListener('keydown', onMuteKey);
     cleanupFns.push(() => {
       muteBtn.removeEventListener('click', onMuteClick);
-      document.removeEventListener('keydown', onMuteKey);
+      window.removeEventListener('keydown', onMuteKey);
     });
   }
 
@@ -420,10 +431,6 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   }
 
   // Pads — feedback visuel + son dédié
-  const padSounds = PADS.map(({ file }) =>
-    new Howl({ src: [publicUrl(`audio/pads/${file}`)], volume: 0.9, pool: 2, preload: true }),
-  );
-
   const padButtons = mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-pad-wrapper');
 
   const triggerPad = (i: number) => {
