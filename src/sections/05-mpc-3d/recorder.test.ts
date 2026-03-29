@@ -1,25 +1,37 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { createRecorder } from './recorder';
 
+// Mock the AudioWorklet processor URL (Vite ?worker&url transform)
+vi.mock('./recorder-processor.ts?worker&url', () => ({ default: 'blob:mock-processor-url' }));
+
 // ── Mocks Web Audio API ───────────────────────────────────────────────────────
 
-const makeScriptProcessorNode = () => ({
-  connect: vi.fn(),
-  disconnect: vi.fn(),
-  onaudioprocess: null as ((e: AudioProcessingEvent) => void) | null,
+const makeWorkletPort = () => ({
+  onmessage: null as ((e: MessageEvent) => void) | null,
+  postMessage: vi.fn(),
 });
 
-type ScriptProcessorMock = ReturnType<typeof makeScriptProcessorNode>;
+const makeWorkletNode = () => ({
+  connect: vi.fn(),
+  disconnect: vi.fn(),
+  port: makeWorkletPort(),
+});
 
-let scriptNodeMock: ScriptProcessorMock;
+type WorkletNodeMock = ReturnType<typeof makeWorkletNode>;
+let workletNodeMock!: WorkletNodeMock;
+
+const AudioWorkletNodeMock = vi.fn().mockImplementation(() => {
+  workletNodeMock = makeWorkletNode();
+  return workletNodeMock;
+});
+vi.stubGlobal('AudioWorkletNode', AudioWorkletNodeMock);
 
 const makeAudioContext = () => ({
   sampleRate: 44100,
   destination: {},
-  createScriptProcessor: vi.fn(() => {
-    scriptNodeMock = makeScriptProcessorNode();
-    return scriptNodeMock;
-  }),
+  audioWorklet: {
+    addModule: vi.fn(() => Promise.resolve()),
+  },
 });
 
 const makeMasterGain = () => ({
@@ -49,6 +61,7 @@ beforeEach(() => {
   ctx = makeAudioContext();
   masterGain = makeMasterGain();
   anchorMock.click.mockClear();
+  AudioWorkletNodeMock.mockClear();
   (URL.createObjectURL as ReturnType<typeof vi.fn>).mockClear();
 });
 
@@ -75,51 +88,71 @@ describe('createRecorder — isActive', () => {
 });
 
 describe('createRecorder — start()', () => {
-  it('crée un ScriptProcessorNode stéréo de 4096 samples', () => {
+  it('crée un AudioWorkletNode après résolution du module', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
-    expect(ctx.createScriptProcessor).toHaveBeenCalledWith(4096, 2, 2);
+    await Promise.resolve();
+    expect(AudioWorkletNodeMock).toHaveBeenCalledWith(ctx, 'recorder-processor', expect.any(Object));
   });
 
-  it('connecte masterGain → scriptNode → destination', () => {
+  it('connecte masterGain → workletNode → destination', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
-    expect(masterGain.connect).toHaveBeenCalledWith(scriptNodeMock);
-    expect(scriptNodeMock.connect).toHaveBeenCalledWith(ctx.destination);
+    await Promise.resolve();
+    expect(masterGain.connect).toHaveBeenCalledWith(workletNodeMock);
+    expect(workletNodeMock.connect).toHaveBeenCalledWith(ctx.destination);
   });
 
-  it('est idempotent — un second start() est ignoré', () => {
+  it('est idempotent — un second start() est ignoré', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
     recorder.start();
-    expect(ctx.createScriptProcessor).toHaveBeenCalledTimes(1);
+    await Promise.resolve();
+    expect(AudioWorkletNodeMock).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('createRecorder — stop()', () => {
-  it('déconnecte le scriptNode du masterGain', () => {
+  it('déconnecte le workletNode du masterGain', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
-    const nodeAtStart = scriptNodeMock;
+    await Promise.resolve();
+    const nodeAtStart = workletNodeMock;
     recorder.stop();
     expect(masterGain.disconnect).toHaveBeenCalledWith(nodeAtStart);
     expect(nodeAtStart.disconnect).toHaveBeenCalled();
   });
 
-  it('déclenche un téléchargement avec le nom recording.wav', () => {
+  it('déclenche un téléchargement avec le nom recording.wav', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
+    await Promise.resolve();
+    workletNodeMock.port.onmessage?.({
+      data: { left: new Float32Array(128), right: new Float32Array(128) },
+    } as unknown as MessageEvent);
     recorder.stop();
     expect(anchorMock.download).toBe('recording.wav');
     expect(anchorMock.click).toHaveBeenCalled();
   });
 
-  it('est idempotent — un second stop() est ignoré', () => {
+  it('est idempotent — un second stop() est ignoré', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
+    await Promise.resolve();
+    workletNodeMock.port.onmessage?.({
+      data: { left: new Float32Array(128), right: new Float32Array(128) },
+    } as unknown as MessageEvent);
     recorder.stop();
     recorder.stop();
     expect(anchorMock.click).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne télécharge rien si arrêté avant la collecte de données', async () => {
+    const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
+    recorder.start();
+    recorder.stop();
+    await Promise.resolve();
+    expect(anchorMock.click).not.toHaveBeenCalled();
   });
 
   it('ne télécharge rien si stop() est appelé sans start()', () => {
@@ -130,17 +163,14 @@ describe('createRecorder — stop()', () => {
 });
 
 describe('createRecorder — encodage WAV', () => {
-  it('produit un Blob de type audio/wav', () => {
+  it('produit un Blob de type audio/wav', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
+    await Promise.resolve();
 
-    // Simule un événement onaudioprocess avec des samples silencieux
-    const silentBuffer = {
-      getChannelData: vi.fn(() => new Float32Array(4096)),
-    };
-    scriptNodeMock.onaudioprocess?.({
-      inputBuffer: silentBuffer,
-    } as unknown as AudioProcessingEvent);
+    workletNodeMock.port.onmessage?.({
+      data: { left: new Float32Array(128), right: new Float32Array(128) },
+    } as unknown as MessageEvent);
 
     recorder.stop();
 
@@ -152,9 +182,13 @@ describe('createRecorder — encodage WAV', () => {
   it('le header WAV commence par RIFF', async () => {
     const recorder = createRecorder(ctx as unknown as AudioContext, masterGain as unknown as GainNode);
     recorder.start();
+    await Promise.resolve();
 
-    const silentBuffer = { getChannelData: vi.fn(() => new Float32Array(4096)) };
-    scriptNodeMock.onaudioprocess?.({ inputBuffer: silentBuffer } as unknown as AudioProcessingEvent);
+    const silentBuffer = new Float32Array(128);
+    workletNodeMock.port.onmessage?.({
+      data: { left: silentBuffer, right: silentBuffer },
+    } as unknown as MessageEvent);
+
     recorder.stop();
 
     const blob = (URL.createObjectURL as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as Blob;

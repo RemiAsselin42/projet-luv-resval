@@ -19,3 +19,8 @@ declare module '*.gltf?url' {
   const src: string;
   export default src;
 }
+
+declare module '*?worker&url' {
+  const src: string;
+  export default src;
+}

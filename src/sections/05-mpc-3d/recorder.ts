@@ -1,3 +1,5 @@
+import recorderProcessorUrl from './recorder-processor.ts?worker&url';
+
 export interface Recorder {
   start(): void;
   stop(): void;
@@ -7,16 +9,19 @@ export interface Recorder {
 /**
  * Capture tout l'audio passant par le masterGain de Howler et l'encode en WAV.
  *
- * Branche un ScriptProcessorNode sur le masterGain (parallèle, sans couper le
+ * Branche un AudioWorkletNode sur le masterGain (parallèle, sans couper le
  * routage existant) et collecte les samples PCM Float32 stéréo en mémoire.
  * À l'arrêt, encode un WAV PCM 16-bit et déclenche le téléchargement.
  */
 export function createRecorder(ctx: AudioContext, masterGain: GainNode): Recorder {
-  const BUFFER_SIZE = 4096;
-  let scriptNode: ScriptProcessorNode | null = null;
+  // Pré-chargement du module — se résout avant le premier clic utilisateur.
+  const moduleReady = ctx.audioWorklet.addModule(recorderProcessorUrl);
+
+  let workletNode: AudioWorkletNode | null = null;
   const leftSamples: Float32Array[] = [];
   const rightSamples: Float32Array[] = [];
   let _isActive = false;
+  let sessionId = 0; // distingue les sessions pour éviter les doublons en cas de stop → start rapide
 
   return {
     start() {
@@ -24,27 +29,40 @@ export function createRecorder(ctx: AudioContext, masterGain: GainNode): Recorde
       _isActive = true;
       leftSamples.length = 0;
       rightSamples.length = 0;
+      const currentSession = ++sessionId;
 
-      scriptNode = ctx.createScriptProcessor(BUFFER_SIZE, 2, 2);
-      scriptNode.onaudioprocess = (e) => {
-        leftSamples.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-        rightSamples.push(new Float32Array(e.inputBuffer.getChannelData(1)));
-      };
-      masterGain.connect(scriptNode);
-      scriptNode.connect(ctx.destination);
+      moduleReady.then(() => {
+        // Abandonne si stop() a été appelé, ou si une nouvelle session a démarré entre-temps.
+        if (!_isActive || sessionId !== currentSession) return;
+        workletNode = new AudioWorkletNode(ctx, 'recorder-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [2],
+        });
+        workletNode.port.onmessage = ({ data }: MessageEvent<{ left: Float32Array; right: Float32Array }>) => {
+          leftSamples.push(data.left);
+          rightSamples.push(data.right);
+        };
+        masterGain.connect(workletNode);
+        workletNode.connect(ctx.destination);
+      }).catch((err) => {
+        console.error('[Recorder] Impossible de charger le processor AudioWorklet:', err);
+        _isActive = false;
+      });
     },
 
     stop() {
       if (!_isActive) return;
       _isActive = false;
 
-      if (scriptNode) {
-        masterGain.disconnect(scriptNode);
-        scriptNode.disconnect();
-        scriptNode.onaudioprocess = null;
-        scriptNode = null;
+      if (workletNode) {
+        masterGain.disconnect(workletNode);
+        workletNode.disconnect();
+        workletNode.port.onmessage = null;
+        workletNode = null;
       }
 
+      if (leftSamples.length === 0) return; // rien enregistré, pas de téléchargement
       const blob = encodeWav(leftSamples, rightSamples, ctx.sampleRate);
       downloadBlob(blob, 'recording.wav');
     },
