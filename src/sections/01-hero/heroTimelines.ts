@@ -4,6 +4,8 @@ import * as THREE from 'three';
 interface HeroScrollTimelines {
   heroTimeline: gsap.core.Timeline | null;
   faceVaderFadeTimeline: gsap.core.Timeline | null;
+  /** Retourne l'opacité courante du CRT (1 = visible, 0 = éteint). */
+  getCrtFade: () => number;
 }
 
 export const createHeroScrollTimelines = (
@@ -34,8 +36,8 @@ export const createHeroScrollTimelines = (
     ? gsap.timeline({
       scrollTrigger: {
         trigger: faceVaderElement,
-        start: 'top 80%',
-        end: 'top top',
+        start: 'top bottom',
+        end: 'top 40%',
         scrub: true,
       },
     })
