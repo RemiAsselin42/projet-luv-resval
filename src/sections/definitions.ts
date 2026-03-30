@@ -41,9 +41,8 @@ const sectionDefinitions = [
   },
   {
     id: 'reliques',
-    heading: 'Section 1 - Les Reliques',
-    description:
-      'Objets 3D : death_star.glb, zelda.glb, minautor.glb, rose.glb',
+    heading: 'Les Reliques',
+    screenReaderOnlyHeading: true,
     includeInCrtMenu: true,
     crtMenuLabel: 'LES RELIQUES',
     load: async () => (await import('./03-les-reliques/reliques')).default,
