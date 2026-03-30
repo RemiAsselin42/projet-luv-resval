@@ -28,7 +28,6 @@ export default defineConfig({
         // Re-export with no logic
         'src/sections/registry.ts',
         // Stub sections — no implementation yet (test when implemented)
-        'src/sections/02-hub-central-menu/menu.ts',
         'src/sections/03-les-reliques/reliques.ts',
         'src/sections/04-oeil-big-brother/bigBrother.ts',
         'src/sections/05-mpc-3d/mpc3d.ts',

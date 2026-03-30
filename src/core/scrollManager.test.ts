@@ -128,6 +128,8 @@ describe('createScrollManager — initialisation', () => {
     expect(typeof sm.refresh).toBe('function');
     expect(typeof sm.getScrollY).toBe('function');
     expect(typeof sm.scrollToSection).toBe('function');
+    expect(typeof sm.registerSection).toBe('function');
+    expect(typeof sm.unregisterSection).toBe('function');
     expect(typeof sm.stop).toBe('function');
     expect(typeof sm.start).toBe('function');
     expect(typeof sm.dispose).toBe('function');
@@ -212,9 +214,10 @@ describe('createScrollManager — snap (getSectionIndexAtViewportAnchor)', () =>
   it("snap vers la section suivante lors d'un scroll vers le bas", () => {
     const section1 = buildSectionEl('hero', 0, 768);
     const section2 = buildSectionEl('hub-central', 768, 768);
-    document.body.append(section1, section2);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
 
     // Simule un scroll de 10px vers le bas : l'ancre de snap (scrollY + 0.7 * 768) = 547.6
     // section1 top=0, bottom=768 → ancre dans section1 tant que scrollY < 231
@@ -229,9 +232,10 @@ describe('createScrollManager — snap (getSectionIndexAtViewportAnchor)', () =>
   it("appelle scrollTo sur la section cible lors d'un changement de section", () => {
     const section1 = buildSectionEl('hero', 0, 768);
     const section2 = buildSectionEl('hub-central', 768, 768);
-    document.body.append(section1, section2);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
 
     // Premier scroll pour initialiser activeSectionIndex à 0
     lenisInstance.emit(5);
@@ -251,12 +255,14 @@ describe('createScrollManager — snap (getSectionIndexAtViewportAnchor)', () =>
     const section1 = buildSectionEl('hero', 0, 768);
     const section2 = buildSectionEl('hub-central', 768, 768);
     const section3 = buildSectionEl('reliques', 1536, 768);
-    document.body.append(section1, section2, section3);
 
     const now = 1000;
     vi.spyOn(window.performance, 'now').mockReturnValue(now);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
+    sm.registerSection(section3);
 
     // Init
     lenisInstance.emit(5);
@@ -280,12 +286,13 @@ describe('createScrollManager — snap (getSectionIndexAtViewportAnchor)', () =>
   it('effectue un snap après la fin du cooldown', () => {
     const section1 = buildSectionEl('hero', 0, 768);
     const section2 = buildSectionEl('hub-central', 768, 768);
-    document.body.append(section1, section2);
 
     const startTime = 1000;
     vi.spyOn(window.performance, 'now').mockReturnValue(startTime);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
     lenisInstance.emit(5);
 
     // Premier snap
@@ -317,6 +324,8 @@ describe('createScrollManager — scrollToSection', () => {
     document.body.append(section1, section2);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
     sm.scrollToSection('hub-central');
 
     expect(lenisInstance.scroll).toBe(768);
@@ -343,6 +352,8 @@ describe('createScrollManager — scrollToSection', () => {
     document.body.append(section1, section2);
 
     const sm = createScrollManager();
+    sm.registerSection(section1);
+    sm.registerSection(section2);
     lenisInstance.emit(5); // init section 0
 
     // scrollToSection déclenche le scroll manuel, bypass snap

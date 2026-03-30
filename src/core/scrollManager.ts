@@ -26,6 +26,8 @@ export interface ScrollManager {
   refresh: () => void;
   getScrollY: () => number;
   scrollToSection: (sectionId: string, minScrollY?: number) => void;
+  registerSection: (element: HTMLElement) => void;
+  unregisterSection: (element: HTMLElement) => void;
   stop: () => void;
   start: () => void;
   dispose: () => void;
@@ -87,9 +89,7 @@ export const createScrollManager = (): ScrollManager => {
     lerp: 0.1,
     syncTouch: true,
   });
-  const sectionElements = Array.from(
-    document.querySelectorAll<HTMLElement>('.experience-section[data-section]'),
-  );
+  const sectionElements: HTMLElement[] = [];
 
   let scrollY = window.scrollY;
   let activeSectionIndex = -1;
@@ -226,6 +226,21 @@ export const createScrollManager = (): ScrollManager => {
           isManualScrolling = false;
         },
       });
+    },
+    registerSection: (element: HTMLElement) => {
+      if (!sectionElements.includes(element)) {
+        sectionElements.push(element);
+        sectionElements.sort((a, b) => a.offsetTop - b.offsetTop);
+      }
+    },
+    unregisterSection: (element: HTMLElement) => {
+      const index = sectionElements.indexOf(element);
+      if (index !== -1) {
+        sectionElements.splice(index, 1);
+        if (activeSectionIndex >= sectionElements.length) {
+          activeSectionIndex = sectionElements.length - 1;
+        }
+      }
     },
     dispose: () => {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());

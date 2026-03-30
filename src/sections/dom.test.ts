@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderSectionsLayout } from './dom';
+import { renderSectionsLayout, createSectionDomManager } from './dom';
 import { sections } from './definitions';
 
 describe('renderSectionsLayout', () => {
@@ -28,5 +28,60 @@ describe('renderSectionsLayout', () => {
         expect(element?.dataset.interaction).toBe('none');
       }
     });
+  });
+
+  it('returns a SectionDomManager', () => {
+    const root = document.createElement('main');
+    const manager = renderSectionsLayout(root);
+
+    expect(typeof manager.getElement).toBe('function');
+    expect(typeof manager.getAllElements).toBe('function');
+    expect(typeof manager.dispose).toBe('function');
+  });
+});
+
+describe('createSectionDomManager', () => {
+  it('getElement returns the correct element by id', () => {
+    const root = document.createElement('main');
+    const manager = createSectionDomManager(sections);
+    manager.renderAll(root);
+
+    const heroEl = manager.getElement('hero');
+    expect(heroEl).not.toBeNull();
+    expect(heroEl?.dataset.section).toBe('hero');
+  });
+
+  it('getElement returns null for unknown id', () => {
+    const root = document.createElement('main');
+    const manager = createSectionDomManager(sections);
+    manager.renderAll(root);
+
+    // @ts-expect-error — testing with invalid id
+    expect(manager.getElement('unknown')).toBeNull();
+  });
+
+  it('getAllElements returns all section elements in order', () => {
+    const root = document.createElement('main');
+    const manager = createSectionDomManager(sections);
+    manager.renderAll(root);
+
+    const elements = manager.getAllElements();
+    expect(elements).toHaveLength(sections.length);
+    elements.forEach((el, i) => {
+      expect(el.dataset.section).toBe(sections[i]?.id);
+    });
+  });
+
+  it('dispose removes all elements from the DOM', () => {
+    const root = document.createElement('main');
+    const manager = createSectionDomManager(sections);
+    manager.renderAll(root);
+
+    expect(root.children).toHaveLength(sections.length);
+
+    manager.dispose();
+
+    expect(root.children).toHaveLength(0);
+    expect(manager.getAllElements()).toHaveLength(0);
   });
 });

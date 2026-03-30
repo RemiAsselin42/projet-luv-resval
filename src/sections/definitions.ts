@@ -18,7 +18,10 @@ export interface SectionDefinition {
   interactionMode?: 'auto' | 'none';
   includeInCrtMenu?: boolean;
   crtMenuLabel?: string;
-  load: () => Promise<SectionInitializer>;
+  /** Sections without a loader (e.g. spacers) omit this field. */
+  load?: () => Promise<SectionInitializer>;
+  /** A spacer section reserves scroll height but has no JS lifecycle. Default: 'section'. */
+  type?: 'section' | 'spacer';
 }
 
 const sectionDefinitions = [
@@ -37,7 +40,7 @@ const sectionDefinitions = [
     scrollHeight: 'clamp(200vh, 300vh, 400vh)',
     interactionMode: 'none',
     includeInCrtMenu: false,
-    load: async () => (await import('./02-hub-central-menu/menu')).default,
+    type: 'spacer',
   },
   {
     id: 'reliques',
@@ -122,10 +125,14 @@ export const SECTION_IDS = {
   GRUNT: 'outro-eclipse',
 } as const;
 
-export const sectionLoaders: SectionLoader[] = sections.map(({ id, load }) => ({
-  id,
-  load,
-}));
+type LoadableSection = SectionDefinition & { load: () => Promise<SectionInitializer> };
+
+const isLoadable = (s: SectionDefinition): s is LoadableSection =>
+  s.type !== 'spacer' && s.load !== undefined;
+
+export const sectionLoaders: SectionLoader[] = sections
+  .filter(isLoadable)
+  .map(({ id, load }) => ({ id, load }));
 
 export const crtMenuItems = sections
   .filter((section) => section.includeInCrtMenu)

@@ -22,12 +22,13 @@ if (!sectionsRoot) {
   throw new Error('Conteneur #experience-sections introuvable.');
 }
 
-renderSectionsLayout(sectionsRoot);
+const sectionDom = renderSectionsLayout(sectionsRoot);
 
 const { scene, camera, renderer } = createThreeViewport(canvasContainer);
 addDefaultLights(scene);
 const renderPipeline = createRenderPipeline(renderer, scene, camera);
 const scrollManager = createScrollManager();
+sectionDom.getAllElements().forEach((el) => scrollManager.registerSection(el));
 const assetLoader = createAssetLoader();
 const audioManager = createAudioManager();
 
@@ -129,6 +130,7 @@ const init = async (): Promise<void> => {
       }
       sectionManagerActive = false;
       sectionManager?.dispose();
+      sectionDom.dispose();
       scrollManager.dispose();
       assetLoader.dispose();
       audioManager.dispose();
