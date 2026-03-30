@@ -51,5 +51,9 @@ export const createHeroScrollTimelines = (
     });
   }
 
-  return { heroTimeline, faceVaderFadeTimeline };
+  return {
+    heroTimeline,
+    faceVaderFadeTimeline,
+    getCrtFade: () => fadeTvState.fade,
+  };
 };

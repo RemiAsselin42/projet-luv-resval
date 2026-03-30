@@ -27,7 +27,7 @@ export const RELIQUES: readonly ReliqueData[] = [
       <path d="M38 32 Q44 28 52 30"/>
       <path d="M68 30 Q76 26 84 30"/>
     `,
-    description: `<p>Forgée dans les abysses de l'acier stellaire, cette sphère de destruction fut l'œuvre d'une volonté sans merci. Capable d'annihiler un astre en un seul battement de son cœur de cristal.</p><p>Les scribes l'appellent <em>Mors Siderum</em> — la mort des étoiles. Quiconque la contemple trop longtemps perd le goût de la lumière.</p>`,
+    description: '<p>Forgée dans les abysses de l\'acier stellaire, cette sphère de destruction fut l\'œuvre d\'une volonté sans merci. Capable d\'annihiler un astre en un seul battement de son cœur de cristal.</p><p>Les scribes l\'appellent <em>Mors Siderum</em> — la mort des étoiles. Quiconque la contemple trop longtemps perd le goût de la lumière.</p>',
   },
   {
     id: 'rose',
@@ -45,7 +45,7 @@ export const RELIQUES: readonly ReliqueData[] = [
       <path d="M50 75 Q44 78 40 85"/>
       <path d="M70 75 Q76 78 80 85"/>
     `,
-    description: `<p>Cueillie au crépuscule d'un monde disparu, cette rose défie le temps et la pourriture. Ses pétales gardent en eux la chaleur d'un soleil éteint depuis des siècles.</p><p>On dit que celui qui la respire entend, dans un souffle ténu, le nom de ce qu'il a le plus aimé.</p>`,
+    description: '<p>Cueillie au crépuscule d\'un monde disparu, cette rose défie le temps et la pourriture. Ses pétales gardent en eux la chaleur d\'un soleil éteint depuis des siècles.</p><p>On dit que celui qui la respire entend, dans un souffle ténu, le nom de ce qu\'il a le plus aimé.</p>',
   },
   {
     id: 'zelda',
@@ -64,7 +64,7 @@ export const RELIQUES: readonly ReliqueData[] = [
       <rect x="40" y="82" width="40" height="8" rx="1" ry="1" fill="none"/>
       <path d="M35 100 L35 105 Q35 108 38 108 L82 108 Q85 108 85 105 L85 100"/>
     `,
-    description: `<p>Cette minuscule tablette renferme des univers entiers : châteaux de pixel, héros oubliés, triforces brisées. Un monde dans la paume de la main.</p><p>Les anciens la nomment <em>Porta Mundorum</em>. Insérez-la dans l'oracle et laissez-vous happer par ce qui demeure.</p>`,
+    description: '<p>Cette minuscule tablette renferme des univers entiers : châteaux de pixel, héros oubliés, triforces brisées. Un monde dans la paume de la main.</p><p>Les anciens la nomment <em>Porta Mundorum</em>. Insérez-la dans l\'oracle et laissez-vous happer par ce qui demeure.</p>',
   },
   {
     id: 'minotaur',
@@ -86,6 +86,6 @@ export const RELIQUES: readonly ReliqueData[] = [
       <circle cx="44" cy="44" r="2"/>
       <circle cx="76" cy="44" r="2"/>
     `,
-    description: `<p>Mi-homme, mi-taureau, toujours exilé au centre du labyrinthe qu'il n'a pas choisi. Sa fureur n'est pas cruauté — c'est la douleur d'une existence sans nom propre.</p><p>Dans certains grimoires, on lit qu'il chante la nuit. Une complainte sourde que seuls les murs de pierre se rappellent.</p>`,
+    description: '<p>Mi-homme, mi-taureau, toujours exilé au centre du labyrinthe qu\'il n\'a pas choisi. Sa fureur n\'est pas cruauté — c\'est la douleur d\'une existence sans nom propre.</p><p>Dans certains grimoires, on lit qu\'il chante la nuit. Une complainte sourde que seuls les murs de pierre se rappellent.</p>',
   },
 ];

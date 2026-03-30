@@ -279,6 +279,7 @@ $_grimoire-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
       opacity: 0.9;
     }
 
+    /* stylelint-disable-next-line no-descending-specificity -- nested under &:hover, no real conflict */
     svg {
       filter: drop-shadow(0 0 4px color.change($parchment-dark, $alpha: 0.4));
     }
@@ -292,6 +293,7 @@ $_grimoire-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
   &.is-active {
     background-color: color.change($parchment-mid, $alpha: 0.35);
 
+    /* stylelint-disable-next-line no-descending-specificity -- nested under &.is-active, no real conflict */
     svg {
       filter: drop-shadow(0 0 8px var(--glow-color, #{$parchment-mid}))
               drop-shadow(0 0 16px var(--glow-color, #{$parchment-mid}));
@@ -374,6 +376,7 @@ $_grimoire-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
   padding: clamp(4px, 1%, 10px) 0;
   opacity: 0.45;
 
+  /* stylelint-disable-next-line no-descending-specificity -- scoped to .grimoire__page-ornament, no real conflict */
   svg {
     width: clamp(80px, 40%, 160px);
     height: auto;
