@@ -29,6 +29,7 @@ export interface ScrollManager {
   registerSection: (element: HTMLElement) => void;
   unregisterSection: (element: HTMLElement) => void;
   stop: () => void;
+  lock: () => void;
   start: () => void;
   dispose: () => void;
 }
@@ -189,6 +190,11 @@ export const createScrollManager = (): ScrollManager => {
       window.scrollTo(0, 0);
       scrollY = 0;
       ScrollTrigger.update();
+    },
+    lock: () => {
+      // Gèle le scroll sans réinitialiser la position (usage : état crash eclipse).
+      document.body.style.overflow = 'hidden';
+      lenis.stop();
     },
     start: () => {
       // Supprime l'override inline pour laisser le CSS statique (overflow-x: hidden sur body)
