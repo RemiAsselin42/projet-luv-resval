@@ -1,12 +1,9 @@
 import * as THREE from 'three';
-import { createCrtScreen, CRT_MODEL_PREVIEW_ASPECT } from '../sections/01-hero/crt/crtShader';
-import type { CrtScreen } from '../sections/01-hero/crt/crtShader';
-import { applyCrtModelPreview } from '../sections/01-hero/crt/crtModelPreview';
-import {
-  CRT_MENU_CONFIG,
-  getPlayButtonUVBounds,
-} from '../sections/01-hero/crt/crtConfig';
-import { detectGpuTier, getShaderComplexity } from '../core/gpuCapabilities';
+import { CRT_MODEL_PREVIEW_ASPECT } from '../crt/crtShader';
+import { applyCrtModelPreview } from '../crt/crtModelPreview';
+import { getPlayButtonUVBounds } from '../crt/crtConfig';
+import type { CrtManager } from '../crt/crtManager';
+import { detectGpuTier } from '../core/gpuCapabilities';
 import {
   createMenuPreview3D,
   getMenuPreviewQualityOptions,
@@ -18,7 +15,6 @@ import mpcUrl from '../3d-models/mpc.glb?url';
 import tapeUrl from '../3d-models/tape.glb?url';
 import { createLoadingController } from '../sections/01-hero/heroLoader';
 import { createHeroRaycaster } from '../sections/01-hero/heroRaycaster';
-import { computeCrtScale } from '../sections/01-hero/crt/crtScaling';
 import type { ScrollManager } from '../core/scrollManager';
 import type { AudioManager } from '../audio/types';
 
@@ -34,7 +30,6 @@ const MENU_PREVIEW_TARGET_DIMENSIONS = {
 // ── Public interface ───────────────────────────────────────────────────────────
 
 export interface LoadingScreenResources {
-  crt: CrtScreen;
   menuPreview: MenuPreview3D;
 }
 
@@ -42,30 +37,22 @@ export interface LoadingScreen {
   /** Appeler chaque frame pendant la phase loading. */
   update: (deltaSeconds: number, elapsedSeconds: number) => void;
   /**
-   * Retourne `crt` et `menuPreview` immédiatement après la création du loading screen,
+   * Retourne `menuPreview` immédiatement après la création du loading screen,
    * sans attendre le clic PLAY. Permet de pré-initialiser le sectionManager en parallèle
    * de l'animation de loading.
-   *
-   * **Attention** : ces ressources sont toujours sous le contrôle du loading screen.
-   * Ne pas les disposer avant d'avoir appelé `dispose()` sur ce loading screen.
    */
   getResources: () => LoadingScreenResources;
   /**
    * Résout quand PLAY est cliqué et la transition de fondu terminée (loadingProgress >= 2).
    *
-   * **Transfert de propriété** : les ressources {@link LoadingScreenResources} retournées
-   * (`crt` et `menuPreview`) sont désormais sous la responsabilité de l'appelant.
-   * `dispose()` sur ce loading screen ne les détruira **pas** — c'est la section hero qui
-   * devra appeler `crt.dispose()` et `menuPreview.dispose()` lors de son propre cycle de vie.
-   *
-   * La promesse ne se résout qu'une seule fois ; les appels ultérieurs à `update()` après
-   * la résolution n'ont aucun effet sur la promesse.
+   * **Transfert de propriété** : `menuPreview` est désormais sous la responsabilité de l'appelant.
+   * `dispose()` sur ce loading screen ne le détruira **pas** — c'est la section hero qui
+   * devra appeler `menuPreview.dispose()` lors de son propre cycle de vie.
    */
   waitForPlay: () => Promise<LoadingScreenResources>;
   /**
    * Nettoie les event listeners de la phase loading (mousemove, click, resize).
-   * **Ne dispose pas** `crt` ni `menuPreview` — ces ressources ont été transférées
-   * à la section hero via `waitForPlay()`.
+   * **Ne dispose pas** `menuPreview` — transféré à la section hero via `waitForPlay()`.
    * Idempotent : peut être appelé plusieurs fois sans effet de bord.
    */
   dispose: () => void;
@@ -74,23 +61,13 @@ export interface LoadingScreen {
 // ── Factory ────────────────────────────────────────────────────────────────────
 
 export const createLoadingScreen = async (
-  scene: THREE.Scene,
+  crtManager: CrtManager,
   camera: THREE.PerspectiveCamera,
   renderer: THREE.WebGLRenderer,
   scrollManager: ScrollManager,
   audioManager: AudioManager,
 ): Promise<LoadingScreen> => {
   const gpuTier = detectGpuTier();
-  const shaderSettings = getShaderComplexity(gpuTier);
-
-  const CRT_ASPECT = 16 / 9;
-  const BASE_PLANE_HEIGHT = CRT_MENU_CONFIG.PLANE_HEIGHT;
-  const BASE_PLANE_WIDTH = BASE_PLANE_HEIGHT * CRT_ASPECT;
-
-  // ── CRT Screen ──────────────────────────────────────────────────────────────
-  const crt = await createCrtScreen(CRT_ASPECT, shaderSettings.textureResolution);
-  crt.mesh.position.set(0, 0, 0);
-  scene.add(crt.mesh);
 
   // ── Menu preview (4 GLBs) ───────────────────────────────────────────────────
   const menuPreviewQuality = getMenuPreviewQualityOptions(gpuTier, CRT_MODEL_PREVIEW_ASPECT);
@@ -126,30 +103,17 @@ export const createLoadingScreen = async (
   menuPreview.preloadAll();
 
   // ── Responsive CRT sizing ───────────────────────────────────────────────────
-  const fitCrtToViewport = (): void => {
-    const fovRad = (camera.fov * Math.PI) / 180;
-    const visibleHeight = 2 * camera.position.z * Math.tan(fovRad / 2);
-    const viewportAspect = window.innerWidth / Math.max(window.innerHeight, 1);
-    const scale = computeCrtScale(
-      visibleHeight,
-      viewportAspect,
-      BASE_PLANE_WIDTH,
-      BASE_PLANE_HEIGHT,
-    );
-    crt.mesh.scale.set(scale, scale, 1);
-  };
-  fitCrtToViewport();
+  crtManager.fitToViewport(camera);
 
   // ── Loading controller ──────────────────────────────────────────────────────
   const loadingCtrl = createLoadingController(
-    crt,
+    crtManager,
     scrollManager,
     () => menuPreview.getPreloadProgress(),
   );
 
   // ── Raycaster (PLAY button UV detection uniquement) ─────────────────────────
-  // menuElement = null : isAtMenuSection() retournera toujours false (correct pendant loading)
-  const raycaster = createHeroRaycaster(camera, renderer, crt.mesh, null);
+  const raycaster = createHeroRaycaster(camera, renderer, crtManager.mesh, null);
   const playButtonUVBounds = getPlayButtonUVBounds();
   let playButtonHovered = false;
 
@@ -197,7 +161,7 @@ export const createLoadingScreen = async (
   };
 
   const onViewportResize = (): void => {
-    fitCrtToViewport();
+    crtManager.fitToViewport(camera);
   };
 
   window.addEventListener('mousemove', onMouseMove);
@@ -207,21 +171,20 @@ export const createLoadingScreen = async (
   let isDisposed = false;
 
   return {
-    getResources: (): LoadingScreenResources => ({ crt, menuPreview }),
+    getResources: (): LoadingScreenResources => ({ menuPreview }),
 
-    update: (deltaSeconds: number, elapsedSeconds: number): void => {
+    update: (deltaSeconds: number, _elapsedSeconds: number): void => {
       if (isDisposed) return;
 
-      crt.update(elapsedSeconds);
-
+      // crtManager.update() est appelé centralement dans main.ts — ne pas le rappeler ici.
       const loadingProgress = loadingCtrl.getLoadingProgress();
 
       // Pendant le loading : heroProgress=0, menuOpacity=0, aucun hover menu
-      crt.setUiProgress(0, 0, -1, loadingProgress, playButtonHovered);
+      crtManager.setUiProgress(0, 0, -1, loadingProgress, playButtonHovered);
 
       menuPreview.update(deltaSeconds);
       menuPreview.renderPreview();
-      applyCrtModelPreview(crt, {
+      applyCrtModelPreview(crtManager, {
         texture: menuPreview.getTexture(),
         opacity: menuPreview.getOpacity(),
         texelSize: menuPreview.getTexelSize(),
@@ -231,7 +194,7 @@ export const createLoadingScreen = async (
       if (loadingProgress >= 2 && resolvePlay) {
         const resolve = resolvePlay;
         resolvePlay = null;
-        resolve({ crt, menuPreview });
+        resolve({ menuPreview });
       }
     },
 
@@ -244,7 +207,6 @@ export const createLoadingScreen = async (
       window.removeEventListener('click', onClick);
       window.removeEventListener('resize', onViewportResize);
       loadingCtrl.dispose();
-      // Note : crt et menuPreview ne sont PAS disposés ici — ils sont transmis à hero section
     },
   };
 };

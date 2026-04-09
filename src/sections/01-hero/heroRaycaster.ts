@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CRT_MENU_CONFIG, getCrtMenuStartY } from './crt/crtConfig';
+import { CRT_MENU_CONFIG, getCrtMenuStartY } from '../../crt/crtConfig';
 
 export interface HeroRaycaster {
   /** Retourne l'index du menu survolé (-1 si aucun). */

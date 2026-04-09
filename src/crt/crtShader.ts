@@ -39,6 +39,12 @@ export const createCrtScreen = async (
     uPowerOn: { value: 0.0 },
     uFade: { value: 1.0 },
     uResolution: { value: new THREE.Vector2(texWidth, texHeight) },
+    uGlitch: { value: 0.0 },
+    uBlackout: { value: 0.0 },
+    uShiftX: { value: 0.0 },
+    uShiftY: { value: 0.0 },
+    uMosaic: { value: 0.0 },
+    uBlur: { value: 0.0 },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -77,6 +83,9 @@ export const createCrtScreen = async (
       if (texelSize) {
         uniforms.uModelTexelSize.value.copy(texelSize);
       }
+    },
+    setGlitch: (value: number) => {
+      uniforms.uGlitch.value = value;
     },
     dispose: () => {
       geometry.dispose();

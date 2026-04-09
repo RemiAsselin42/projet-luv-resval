@@ -24,6 +24,12 @@ export const fragmentShader = /* glsl */ `
   uniform float uPowerOn;       // 0 → 1 : animation d'allumage
   uniform float uFade;          // 1 → 0 : fondu de sortie
   uniform vec2  uResolution;
+  uniform float uGlitch;        // 0 → 1 : intensité du glitch (0 = comportement hero normal)
+  uniform float uBlackout;      // 0 ou 1 : flash écran noir (eclipse uniquement)
+  uniform float uShiftX;        // décalage UV horizontal global (eclipse uniquement)
+  uniform float uShiftY;        // décalage UV vertical global (eclipse uniquement)
+  uniform float uMosaic;        // 0 ou 1 : mosaïque 3×3 (eclipse uniquement)
+  uniform float uBlur;          // 0 → 1 : flou du contenu (section MPC)
 
   varying vec2 vUv;
 
@@ -69,33 +75,40 @@ export const fragmentShader = /* glsl */ `
       return;
     }
 
-    // --- Aberration chromatique ---
-    float aberration = 0.0015;
+    // Décalage global XY (eclipse : flash de déplacement, wrap avec fract)
+    uv = fract(uv + vec2(uShiftX, uShiftY));
+
+    // --- Aberration chromatique (amplifiée par uGlitch) ---
+    float aberration = 0.0015 + uGlitch * 0.018;
 
     // --- Glitch Effect (bandes horizontales qui se déplacent) ---
     float glitchTime = uTime * 1.6;
     float glitchLine = floor(uv.y * 12.0); // 12 bandes horizontales
     float glitchNoise = hash(vec2(glitchLine, floor(glitchTime * 2.0)));
 
-    // Probabilité de glitch par bande (rare mais visible)
-    float glitchTrigger = step(0.980, glitchNoise);
+    // Probabilité de glitch par bande : uGlitch=0 → rare (hero), uGlitch=1 → fréquent
+    float glitchThreshold = 1.0 - uGlitch * 0.55;
+    float glitchTrigger = step(glitchThreshold, glitchNoise);
 
-    // Déplacement horizontal aléatoire des bandes affectées
-    float glitchOffset = (hash(vec2(glitchLine, floor(glitchTime * 10.0))) - 0.5) * 0.15 * glitchTrigger;
+    // Déplacement horizontal aléatoire des bandes affectées (magnitude amplifiée par uGlitch)
+    float glitchOffset = (hash(vec2(glitchLine, floor(glitchTime * 10.0))) - 0.5) * (0.15 + uGlitch * 0.5) * glitchTrigger;
     vec2 glitchedUv = vec2(uv.x + glitchOffset, uv.y);
 
     // Clamp pour éviter les débordements
     glitchedUv.x = fract(glitchedUv.x);
 
-    // Séparation RGB exacerbée sur les zones glitchées
-    float glitchAberration = aberration + glitchTrigger * 0.008;
+    // Mosaïque 3×3 (eclipse : tiling de la vidéo)
+    vec2 sampledUv = mix(glitchedUv, fract(glitchedUv * 3.0), step(0.5, uMosaic));
+
+    // Séparation RGB exacerbée sur les zones glitchées (et par uGlitch)
+    float glitchAberration = aberration + glitchTrigger * (0.008 + uGlitch * 0.05);
     // Drift horizontal subtil de l'aberration chromatique
     float chromaDrift = sin(uTime * 1.8) * 0.001;
     float dynamicAberration = glitchAberration + chromaDrift;
 
-    float r = texture2D(uTexture, glitchedUv + vec2( dynamicAberration, 0.0)).r;
-    float g = texture2D(uTexture, glitchedUv).g;
-    float b = texture2D(uTexture, glitchedUv + vec2(-dynamicAberration, 0.0)).b;
+    float r = texture2D(uTexture, sampledUv + vec2( dynamicAberration, 0.0)).r;
+    float g = texture2D(uTexture, sampledUv).g;
+    float b = texture2D(uTexture, sampledUv + vec2(-dynamicAberration, 0.0)).b;
     vec3 color = vec3(r, g, b);
 
     // ── Composite contour 3D (render target) avant les effets CRT ───────────
@@ -138,8 +151,20 @@ export const fragmentShader = /* glsl */ `
       color = mix(color, vec3(1.0), modelLineAlpha);
     }
 
-    // Ajouter du bruit blanc sur les bandes glitchées
-    color += glitchTrigger * 0.2 * hash(uv * uResolution + glitchTime * 500.0);
+    // Ajouter du bruit blanc sur les bandes glitchées (amplifié par uGlitch)
+    color += glitchTrigger * (0.2 + uGlitch * 0.4) * hash(uv * uResolution + glitchTime * 500.0);
+
+    // --- Blur (flou du contenu, utilisé pour la section MPC) ---
+    if (uBlur > 0.001) {
+      vec2 blurSize = vec2(uBlur * 0.012);
+      vec3 blurred = vec3(0.0);
+      for (float dx = -1.0; dx <= 1.0; dx += 1.0) {
+        for (float dy = -1.0; dy <= 1.0; dy += 1.0) {
+          blurred += texture2D(uTexture, sampledUv + vec2(dx, dy) * blurSize).rgb;
+        }
+      }
+      color = mix(color, blurred / 9.0, uBlur);
+    }
 
     // --- Scanlines (fréquence virtuelle fixe pour look rétro) ---
     // Résolution virtuelle SD : 480 lignes pour un effet visible même en 4K
@@ -157,16 +182,18 @@ export const fragmentShader = /* glsl */ `
     );
     color *= mix(vec3(1.0), phosphor, 0.08);
 
-    // --- Bruit / grain / neige ---
+    // --- Bruit / grain / neige (neige amplifiée par uGlitch) ---
     float noise = hash(uv * uResolution + uTime * 1000.0);
-    // Neige : petits points blancs aléatoires
-    float snow = step(0.985, noise) * 0.6;
-    // Grain analogique fin
-    float grain = (noise - 0.5) * 0.08;
+    // Neige : petits points blancs aléatoires (seuil abaissé + intensité montée par uGlitch)
+    float snowThreshold = 0.985 - uGlitch * 0.12;
+    float snow = step(snowThreshold, noise) * (0.6 + uGlitch * 0.4);
+    // Grain analogique fin (légèrement amplifié)
+    float grain = (noise - 0.5) * (0.08 + uGlitch * 0.02);
     color += grain + snow;
 
-    // --- Flicker léger (scintillement CRT) ---
-    float flicker = 1.0 - 0.02 * sin(uTime * 8.0) * sin(uTime * 13.0 + 2.0);
+    // --- Flicker (scintillement CRT, amplifié par uGlitch) ---
+    float flickerAmp = 0.02 + uGlitch * 0.08;
+    float flicker = 1.0 - flickerAmp * sin(uTime * 8.0) * sin(uTime * 13.0 + 2.0);
     color *= flicker;
 
     // --- Vignette (assombrissement des bords) ---
@@ -195,6 +222,9 @@ export const fragmentShader = /* glsl */ `
     // Résidu de la ligne d'allumage pendant la transition
     float residualLine = exp(-abs(vUv.y - 0.5) / 0.02) * (1.0 - imagePhase) * 0.5;
     color += vec3(0.7, 0.85, 1.0) * residualLine;
+
+    // Blackout flash (eclipse : écran noir brutal)
+    color = mix(color, vec3(0.0), uBlackout);
 
     gl_FragColor = vec4(color, uFade);
   }

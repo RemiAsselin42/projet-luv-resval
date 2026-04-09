@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockInstance } from 'vitest';
 import * as THREE from 'three';
 import { createHeroRaycaster } from './heroRaycaster';
-import { CRT_MENU_CONFIG, getCrtMenuStartY } from './crt/crtConfig';
+import { CRT_MENU_CONFIG, getCrtMenuStartY } from '../../crt/crtConfig';
 
 const mockDomElement = {
   getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),

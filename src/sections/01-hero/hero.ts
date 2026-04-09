@@ -1,11 +1,7 @@
 import type { SectionInitializer } from '../types';
-import { applyCrtModelPreview } from './crt/crtModelPreview';
-import type { CrtScreen } from './crt/crtShader';
+import { applyCrtModelPreview } from '../../crt/crtModelPreview';
 import { clamp01 } from '../../utils/math';
-import {
-  CRT_MENU_CONFIG,
-  BASELINE_VIEWPORT_HEIGHT,
-} from './crt/crtConfig';
+import { BASELINE_VIEWPORT_HEIGHT } from '../../crt/crtConfig';
 import { hasWebGLSupport } from '../../core/gpuCapabilities';
 import initHeroFallback from './heroFallback';
 import {
@@ -17,7 +13,6 @@ import type { MenuPreview3D } from '../../components/3d/menuPreview3D';
 import { createAccessibilityMenu } from './heroAccessibility';
 import { createHeroRaycaster } from './heroRaycaster';
 import { createHeroScrollTimelines } from './heroTimelines';
-import { computeCrtScale } from './crt/crtScaling';
 
 // Réexports pour la compatibilité des tests existants (hero.test.ts)
 export {
@@ -29,26 +24,17 @@ export {
 export type { LoadingController } from './heroLoader';
 
 // Réexport de computeCrtScale depuis le module partagé (compatibilité hero.test.ts)
-export { computeCrtScale } from './crt/crtScaling';
+export { computeCrtScale } from '../../crt/crtScaling';
 
 // ── Type guard pour context.extras ────────────────────────────────────────────
 
 /** Extras typés transmis par le loading screen à la section hero. */
 interface HeroExtras {
-  crt: CrtScreen;
   menuPreview: MenuPreview3D;
 }
 
-/**
- * Vérifie que l'objet extras contient bien les ressources attendues par la section hero.
- * Utilise les propriétés discriminantes de chaque interface pour éviter les double-casts.
- */
 const isHeroExtras = (extras: unknown): extras is HeroExtras =>
   typeof extras === 'object' && extras !== null &&
-  'crt' in extras &&
-  typeof (extras as Record<string, unknown>).crt === 'object' &&
-  (extras as Record<string, unknown>).crt !== null &&
-  'mesh' in ((extras as Record<string, unknown>).crt as object) &&
   'menuPreview' in extras &&
   typeof (extras as Record<string, unknown>).menuPreview === 'object' &&
   (extras as Record<string, unknown>).menuPreview !== null &&
@@ -67,61 +53,34 @@ export const initHeroSection: SectionInitializer = async (context) => {
       : fallbackResult;
   }
 
-  const { scene, camera, renderer } = context;
+  const { camera, renderer, crtManager } = context;
 
-  // ── Récupération des objets pré-créés par le loading screen ───────────────
+  // ── Récupération du menuPreview pré-créé par le loading screen ────────────
   if (!isHeroExtras(context.extras)) {
-    throw new Error('[hero] crt et menuPreview sont requis dans context.extras (initialisés par loadingScreen)');
+    throw new Error('[hero] menuPreview est requis dans context.extras (initialisé par loadingScreen)');
   }
 
-  const { crt, menuPreview } = context.extras;
+  const { menuPreview } = context.extras;
 
-  const CRT_ASPECT = 16 / 9;
-  const BASE_PLANE_HEIGHT = CRT_MENU_CONFIG.PLANE_HEIGHT;
-  const BASE_PLANE_WIDTH = BASE_PLANE_HEIGHT * CRT_ASPECT;
-
-  // ── Responsive sizing du CRT ───────────────────────────────────────────────
-  // Le CRT mesh existe déjà dans la scène (créé par loadingScreen).
-  // On réinstalle seulement le resize listener pour maintenir le bon scale.
-  const fitCrtToViewport = (): void => {
-    const fovRad = (camera.fov * Math.PI) / 180;
-    const distToMesh = camera.position.z;
-    const visibleHeight = 2 * distToMesh * Math.tan(fovRad / 2);
-    const viewportAspect = window.innerWidth / Math.max(window.innerHeight, 1);
-    const scale = computeCrtScale(
-      visibleHeight,
-      viewportAspect,
-      BASE_PLANE_WIDTH,
-      BASE_PLANE_HEIGHT,
-    );
-    crt.mesh.scale.set(scale, scale, 1);
-  };
-
-  fitCrtToViewport();
-
-  // ── Parallax et fondu-sortie TV ───────────────────────────────────────
+  // ── Parallax TV ──────────────────────────────────────────────────────────
   const heroElement = document.querySelector(
     getSectionSelector(SECTION_IDS.HERO),
   );
   const menuElement = document.querySelector(
     getSectionSelector(SECTION_IDS.MENU),
   );
-  const faceVaderElement = document.querySelector(
-    getSectionSelector(SECTION_IDS.FACE_VADER),
-  );
 
-  const { heroTimeline, faceVaderFadeTimeline } = createHeroScrollTimelines(
+  const { heroTimeline } = createHeroScrollTimelines(
     heroElement,
     menuElement,
-    faceVaderElement,
-    crt,
+    crtManager,
   );
 
   // ── Détection hover menu via raycaster ─────────────────────
   const heroRaycaster = createHeroRaycaster(
     camera,
     renderer,
-    crt.mesh,
+    crtManager.mesh,
     menuElement,
   );
   let hoverMenuIndex = -1;
@@ -206,18 +165,12 @@ export const initHeroSection: SectionInitializer = async (context) => {
     context.scrollManager.scrollToSection(SECTION_IDS.MENU, BASELINE_VIEWPORT_HEIGHT);
   };
 
-  const onViewportResize = (): void => {
-    fitCrtToViewport();
-  };
-
-  window.addEventListener('resize', onViewportResize);
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('click', onClick);
 
   return {
-    update: (_deltaSeconds: number, elapsedSeconds: number) => {
-      crt.update(elapsedSeconds);
-
+    update: (_deltaSeconds: number, _elapsedSeconds: number) => {
+      // crtManager.update() est appelé centralement dans main.ts — ne pas le rappeler ici.
       const scrollY = context.scrollManager.getScrollY();
 
       const heroProgress = clamp01(scrollY / BASELINE_VIEWPORT_HEIGHT);
@@ -227,12 +180,12 @@ export const initHeroSection: SectionInitializer = async (context) => {
       currentMenuOpacity = menuOpacity;
 
       // loadingProgress = 2 : transition loading complète, vue héro active
-      crt.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, 2, false);
+      crtManager.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, 2, false);
 
       menuPreview.setHoveredIndex(heroRaycaster.isAtMenuSection() ? hoverMenuIndex : -1);
       menuPreview.update(_deltaSeconds);
       menuPreview.renderPreview();
-      applyCrtModelPreview(crt, {
+      applyCrtModelPreview(crtManager, {
         texture: menuPreview.getTexture(),
         opacity: menuPreview.getOpacity(),
         texelSize: menuPreview.getTexelSize(),
@@ -241,11 +194,9 @@ export const initHeroSection: SectionInitializer = async (context) => {
       accessibilityMenu.updateVisibility(menuOpacity, heroRaycaster.isAtMenuSection());
     },
     dispose: () => {
-      window.removeEventListener('resize', onViewportResize);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('click', onClick);
       heroTimeline?.kill();
-      faceVaderFadeTimeline?.kill();
       accessibilityMenu.dispose();
 
       if (heroFocusElement.parentNode) {
@@ -253,8 +204,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
       }
 
       menuPreview.dispose();
-      scene.remove(crt.mesh);
-      crt.dispose();
+      // Note : le CRT mesh n'est PAS disposé ici — il est global et géré par main.ts
     },
   };
 };

@@ -1,4 +1,4 @@
-import { CRT_MENU_CONFIG } from './crt/crtConfig';
+import { CRT_MENU_CONFIG } from '../../crt/crtConfig';
 
 export interface AccessibilityMenu {
   container: HTMLElement;
@@ -53,7 +53,7 @@ export const createAccessibilityMenu = (
 
     button.addEventListener('focus', () => {
       onHoverChange(index);
-      button.style.outline = '2px solid rgba(255, 255, 255, 0.8)';
+      button.style.outline = '0px solid rgba(255, 255, 255, 0.8)';
       button.style.outlineOffset = '4px';
       button.style.color = 'rgba(255, 255, 255, 0.9)';
     });

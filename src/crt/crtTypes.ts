@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export interface CrtUniforms {
   [uniform: string]: THREE.IUniform;
-  uTexture: THREE.IUniform<THREE.CanvasTexture>;
+  uTexture: THREE.IUniform<THREE.Texture>;
   uModelTexture: THREE.IUniform<THREE.Texture>;
   uModelTextureOpacity: THREE.IUniform<number>;
   uModelTexelSize: THREE.IUniform<THREE.Vector2>;
@@ -11,6 +11,12 @@ export interface CrtUniforms {
   uPowerOn: THREE.IUniform<number>;
   uFade: THREE.IUniform<number>;
   uResolution: THREE.IUniform<THREE.Vector2>;
+  uGlitch: THREE.IUniform<number>;
+  uBlackout: THREE.IUniform<number>;
+  uShiftX: THREE.IUniform<number>;
+  uShiftY: THREE.IUniform<number>;
+  uMosaic: THREE.IUniform<number>;
+  uBlur: THREE.IUniform<number>;
 }
 
 export interface CrtScreen {
@@ -32,5 +38,7 @@ export interface CrtScreen {
     opacity: number,
     texelSize?: THREE.Vector2,
   ) => void;
+  /** Pilote l'intensité du glitch (0 = normal hero, 1 = glitch maximum). */
+  setGlitch: (value: number) => void;
   dispose: () => void;
 }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { ScrollManager } from '../core/scrollManager';
 import type { AssetLoader } from '../core/assetLoader';
 import type { AudioManager } from '../audio/types';
+import type { CrtManager } from '../crt/crtManager';
 
 export interface SectionContext {
   scene: THREE.Scene;
@@ -11,7 +12,8 @@ export interface SectionContext {
   scrollManager: ScrollManager;
   assetLoader: AssetLoader;
   audioManager: AudioManager;
-  /** Données additionnelles passées par le bloc loading (ex : crt, menuPreview). */
+  crtManager: CrtManager;
+  /** Données additionnelles passées par le bloc loading (ex : menuPreview). */
   extras?: Record<string, unknown>;
 }
 

@@ -37,30 +37,15 @@ const mockRenderTarget = {
 // Stub pour la texture canvas
 const mockTexture = { dispose: vi.fn() };
 
-// Stub CrtScreen
-const makeCrtMesh = () => ({
-  position: { set: vi.fn() },
-  scale: { set: vi.fn() },
-});
-
-const makeCrtScreen = () => ({
-  mesh: makeCrtMesh(),
-  update: vi.fn(),
-  setUiProgress: vi.fn(),
-  setPowerOn: vi.fn(),
-  dispose: vi.fn(),
-});
-
-vi.mock('../sections/01-hero/crt/crtShader', () => ({
+vi.mock('../crt/crtShader', () => ({
   CRT_MODEL_PREVIEW_ASPECT: 1,
-  createCrtScreen: vi.fn(async () => makeCrtScreen()),
 }));
 
-vi.mock('../sections/01-hero/crt/crtModelPreview', () => ({
+vi.mock('../crt/crtModelPreview', () => ({
   applyCrtModelPreview: vi.fn(),
 }));
 
-vi.mock('../sections/01-hero/crt/crtConfig', () => ({
+vi.mock('../crt/crtConfig', () => ({
   CRT_MENU_CONFIG: { PLANE_HEIGHT: 3.5 },
   getPlayButtonUVBounds: vi.fn(() => ({ xMin: 0.3, xMax: 0.7, yMin: 0.1, yMax: 0.4 })),
 }));
@@ -120,13 +105,30 @@ vi.mock('../sections/01-hero/heroRaycaster', () => ({
   })),
 }));
 
-vi.mock('../sections/01-hero/crt/crtScaling', () => ({
-  computeCrtScale: vi.fn(() => 1.2),
-}));
-
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const makeScene = () => ({ add: vi.fn(), remove: vi.fn() });
+const makeCrtManager = () => ({
+  mesh: {
+    position: { set: vi.fn() },
+    scale: { set: vi.fn() },
+  },
+  uniforms: {},
+  update: vi.fn(),
+  setContentTexture: vi.fn(),
+  getHeroCanvasTexture: vi.fn(() => mockTexture),
+  setPowerOn: vi.fn(),
+  setFade: vi.fn(),
+  setGlitch: vi.fn(),
+  setBlur: vi.fn(),
+  setBlackout: vi.fn(),
+  setShift: vi.fn(),
+  setMosaic: vi.fn(),
+  setModelPreview: vi.fn(),
+  setUiProgress: vi.fn(),
+  fitToViewport: vi.fn(),
+  resetEffects: vi.fn(),
+  dispose: vi.fn(),
+});
 
 const makeCamera = () => ({
   fov: 60,
@@ -186,7 +188,7 @@ describe('createLoadingScreen', () => {
 
   it('expose les méthodes update, waitForPlay et dispose', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -200,7 +202,7 @@ describe('createLoadingScreen', () => {
 
   it('waitForPlay() retourne une Promise en attente avant que loadingProgress atteigne 2', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -221,7 +223,7 @@ describe('createLoadingScreen', () => {
 
   it('waitForPlay() se résout quand loadingProgress >= 2', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -236,13 +238,12 @@ describe('createLoadingScreen', () => {
     screen.update(0.016, 10);
     const resources = await promise;
 
-    expect(resources).toHaveProperty('crt');
     expect(resources).toHaveProperty('menuPreview');
   });
 
   it('waitForPlay() ne se résout qu\'une seule fois (idempotence)', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -258,14 +259,14 @@ describe('createLoadingScreen', () => {
     screen.update(0.016, 10.016);
 
     const resources = await promise;
-    expect(resources).toHaveProperty('crt');
+    expect(resources).toHaveProperty('menuPreview');
   });
 
   it('dispose() supprime les listeners resize, mousemove et click', async () => {
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -282,7 +283,7 @@ describe('createLoadingScreen', () => {
 
   it('dispose() est idempotent (double appel sans erreur)', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -297,7 +298,7 @@ describe('createLoadingScreen', () => {
 
   it('update() après dispose() ne lance pas d\'erreur', async () => {
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      makeCrtManager() as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
@@ -311,60 +312,45 @@ describe('createLoadingScreen', () => {
     }).not.toThrow();
   });
 
-  it('un événement resize déclenche le recalcul du scale CRT', async () => {
-    const { computeCrtScale } = await import('../sections/01-hero/crt/crtScaling');
-    const computeCrtScaleMock = vi.mocked(computeCrtScale);
-
+  it('un événement resize déclenche fitToViewport sur le CRT manager', async () => {
+    const crtMgr = makeCrtManager();
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      crtMgr as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
       makeAudioManager() as never,
     );
 
-    // Mémoriser le compte après création (fitCrtToViewport est appelé une fois à l'init)
-    const callCountAfterCreate = computeCrtScaleMock.mock.calls.length;
+    // fitToViewport est appelé une fois à l'init
+    const callCountAfterCreate = crtMgr.fitToViewport.mock.calls.length;
 
     window.dispatchEvent(new Event('resize'));
 
     // Un appel supplémentaire doit avoir eu lieu
-    expect(computeCrtScaleMock.mock.calls.length).toBeGreaterThan(callCountAfterCreate);
+    expect(crtMgr.fitToViewport.mock.calls.length).toBeGreaterThan(callCountAfterCreate);
 
     screen.dispose();
   });
 
-  it('resize après dispose() ne déclenche plus de mise à jour du scale CRT de cette instance', async () => {
-    // On vérifie que le scale.set du mesh CRT de cette instance
-    // n'est plus appelé après dispose, même si d'autres instances peuvent encore écouter.
-    const crtShaderModule = await import('../sections/01-hero/crt/crtShader');
-    const crtScreens: ReturnType<typeof makeCrtScreen>[] = [];
-    vi.mocked(crtShaderModule.createCrtScreen).mockImplementation(async () => {
-      const crt = makeCrtScreen();
-      crtScreens.push(crt);
-      return crt as never;
-    });
-
+  it('resize après dispose() ne déclenche plus fitToViewport', async () => {
+    const crtMgr = makeCrtManager();
     const screen = await createLoadingScreen(
-      makeScene() as never,
+      crtMgr as never,
       makeCamera() as never,
       makeRenderer() as never,
       makeScrollManager() as never,
       makeAudioManager() as never,
     );
 
-    // L'instance CRT créée par ce test
-    const thisCrt = crtScreens[crtScreens.length - 1];
-    expect(thisCrt).toBeDefined();
-
     screen.dispose();
 
     // Réinitialiser le compteur après dispose
-    thisCrt!.mesh.scale.set.mockClear();
+    crtMgr.fitToViewport.mockClear();
 
     window.dispatchEvent(new Event('resize'));
 
-    // Le mesh de cette instance ne doit plus être mis à jour
-    expect(thisCrt!.mesh.scale.set).not.toHaveBeenCalled();
+    // fitToViewport ne doit plus être appelé par cette instance
+    expect(crtMgr.fitToViewport).not.toHaveBeenCalled();
   });
 });

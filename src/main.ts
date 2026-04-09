@@ -10,6 +10,9 @@ import type { SectionManager } from './sections/sectionManager';
 import { sectionLoaders } from './sections/registry';
 import { renderSectionsLayout } from './sections/dom';
 import { createLoadingScreen } from './loader/loadingScreen';
+import { createCrtManager } from './crt/crtManager';
+import type { CrtManager } from './crt/crtManager';
+import { detectGpuTier, getShaderComplexity } from './core/gpuCapabilities';
 
 const canvasContainer = document.getElementById('canvas-container');
 const sectionsRoot = document.getElementById('experience-sections');
@@ -36,13 +39,17 @@ let animationFrameId: number | null = null;
 let lastFrameTime = window.performance.now();
 let sectionManager: SectionManager | null = null;
 let sectionManagerActive = false;
+let crtManager: CrtManager | null = null;
 
 const init = async (): Promise<void> => {
+  // ── CRT Manager (persistant tout le long du site) ─────────────────────────
+  const gpuTier = detectGpuTier();
+  const shaderSettings = getShaderComplexity(gpuTier);
+  crtManager = await createCrtManager(scene, 16 / 9, shaderSettings.textureResolution);
+
   // ── Phase loading indépendante ─────────────────────────────────────────────
-  // Le loading screen crée le CRT + menuPreview, lance le preload des GLBs,
-  // et bloque jusqu'au clic PLAY.
   const loadingScreen = await createLoadingScreen(
-    scene,
+    crtManager,
     camera,
     renderer,
     scrollManager,
@@ -50,11 +57,7 @@ const init = async (): Promise<void> => {
   );
 
   // ── Pré-initialiser les sections pendant le loading ────────────────────────
-  // Les ressources CRT/menuPreview sont disponibles dès maintenant.
-  // On crée le sectionManager tout de suite mais on n'appellera sectionManager.update()
-  // qu'après le clic PLAY (flag sectionManagerActive) pour éviter que hero.update()
-  // n'écrase l'animation de loading dans le CRT.
-  const { crt, menuPreview } = loadingScreen.getResources();
+  const { menuPreview } = loadingScreen.getResources();
   sectionsRoot.style.visibility = 'hidden';
 
   sectionManager = createSectionManager({
@@ -65,7 +68,8 @@ const init = async (): Promise<void> => {
     scrollManager,
     assetLoader,
     audioManager,
-    extras: { crt, menuPreview },
+    crtManager,
+    extras: { menuPreview },
   });
 
   // Hero est exclu du pre-init : son onClick (scroll vers menu, resize TV) et ses
@@ -81,6 +85,10 @@ const init = async (): Promise<void> => {
 
     loadingScreen.update(deltaSeconds, time / 1000);
     scrollManager.update(time);
+    // crtManager.update() est centralisé ici — les sections ne doivent PAS l'appeler.
+    // Cela évite la double mise à jour de uTime si deux sections (hero + eclipse) sont
+    // actives simultanément pendant une transition scroll.
+    crtManager?.update(time / 1000);
     if (sectionManagerActive) sectionManager?.update(deltaSeconds, time / 1000);
 
     renderPipeline.render();
@@ -100,9 +108,6 @@ const init = async (): Promise<void> => {
   }
 
   // ── Initialiser hero puis activer le sectionManager ───────────────────────
-  // Hero est initialisé ici (après PLAY) pour que ses listeners/timelines ne soient
-  // actifs que lorsque le site est réellement visible. sectionManager.initialize()
-  // est idempotent : les sections déjà initialisées sont silencieusement ignorées.
   await sectionManager.initialize(sectionLoaders);
   sectionManagerActive = true;
   scrollManager.refresh();
@@ -115,6 +120,7 @@ const init = async (): Promise<void> => {
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
     renderer.setPixelRatio(getRecommendedPixelRatio());
+    crtManager?.fitToViewport(camera);
   };
   window.addEventListener('resize', onResize);
 
@@ -134,6 +140,7 @@ const init = async (): Promise<void> => {
       scrollManager.dispose();
       assetLoader.dispose();
       audioManager.dispose();
+      crtManager?.dispose();
       window.removeEventListener('resize', onResize);
       window.removeEventListener('keydown', onKeydown);
       renderPipeline.dispose();

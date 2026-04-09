@@ -20,9 +20,9 @@ export default defineConfig({
         'src/vite-env.d.ts',
         'src/audio/types.ts',
         'src/sections/types.ts',
-        'src/sections/01-hero/crtTypes.ts',
+        'src/crt/crtTypes.ts',
         // GLSL shader strings — no testable JS logic
-        'src/sections/01-hero/crtShaders.ts',
+        'src/crt/crtShaders.ts',
         // Application entry point — integration/E2E only
         'src/main.ts',
         // Re-export with no logic

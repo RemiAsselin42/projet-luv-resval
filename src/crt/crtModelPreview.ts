@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp01 } from '../../../utils/math';
+import { clamp01 } from '../utils/math';
 
 export interface CrtModelPreviewPayload {
   texture: THREE.Texture | null;

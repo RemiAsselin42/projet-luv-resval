@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { createSectionManager } from './sectionManager';
+import type { CrtManager } from '../crt/crtManager';
 import type { SectionContext, SectionLoader } from './types';
 
 class IntersectionObserverMock {
@@ -64,6 +65,7 @@ const createTestContext = () => {
       registerSection: vi.fn(),
       unregisterSection: vi.fn(),
       stop: vi.fn(),
+      lock: vi.fn(),
       start: vi.fn(),
       dispose: vi.fn(),
     },
@@ -74,14 +76,35 @@ const createTestContext = () => {
     audioManager: {
       startExperience: vi.fn(),
       unlockMusicLayer: vi.fn(),
+      fadeMusicLayerIn: vi.fn(),
       lockMusicLayer: vi.fn(),
       playUiFx: vi.fn(),
       setMusicVolume: vi.fn(),
       toggleMute: vi.fn(),
       isMuted: vi.fn(() => false),
       seekMusicLayer: vi.fn(),
+      getMusicLayerPosition: vi.fn(() => 0),
       dispose: vi.fn(),
     },
+    crtManager: {
+      mesh: { position: { set: vi.fn() }, scale: { set: vi.fn() } },
+      uniforms: {},
+      update: vi.fn(),
+      setContentTexture: vi.fn(),
+      getHeroCanvasTexture: vi.fn(),
+      setPowerOn: vi.fn(),
+      setFade: vi.fn(),
+      setGlitch: vi.fn(),
+      setBlur: vi.fn(),
+      setBlackout: vi.fn(),
+      setShift: vi.fn(),
+      setMosaic: vi.fn(),
+      setModelPreview: vi.fn(),
+      setUiProgress: vi.fn(),
+      fitToViewport: vi.fn(),
+      resetEffects: vi.fn(),
+      dispose: vi.fn(),
+    } as unknown as CrtManager,
   };
 
   return {
