@@ -777,3 +777,26 @@ button.mpc-record-btn {
   white-space: nowrap;
   border: 0;
 }
+
+// ── Section Eclipse (06-outro-eclipse) ────────────────────────────────────────
+// Boutons accessibles invisibles positionnés SOUS le canvas Three.js.
+// Les positions individuelles (left/bottom/transform) sont gérées en JS
+// depuis BTN_LAYOUT (eclipse403Canvas.ts) — source unique de vérité.
+.eclipse-overlay {
+  pointer-events: none;
+
+  &.is-visible {
+    pointer-events: auto;
+  }
+}
+
+.eclipse-overlay__btn {
+  background: transparent;
+  border: none;
+  color: transparent;
+  font-family: Futura-Medium, sans-serif;
+  font-size: clamp(0.75rem, 1.5vw, 1rem);
+  padding: 0.8em 2em;
+  cursor: pointer;
+  outline: none;
+}
