@@ -62,6 +62,18 @@ export const createAudioManager = (): AudioManager => {
     layer.volume(MUSIC_LAYER_VOLUME);
   };
 
+  const fadeMusicLayerIn = (index: number, durationMs: number): void => {
+    const layer = _musicLayers[index];
+    if (!layer) return;
+    _lockedLayers.delete(index);
+    // Partir du volume courant pour éviter une coupure brutale si la layer
+    // est déjà active (ex. : re-entrée dans la section eclipse après un
+    // onLeaveBack). Howl.volume() retourne la valeur courante sans argument.
+    const currentVol = layer.volume() as number;
+    if (currentVol >= MUSIC_LAYER_VOLUME) return; // déjà au max, rien à faire
+    layer.fade(currentVol, MUSIC_LAYER_VOLUME, durationMs);
+  };
+
   const lockMusicLayer = (index: number): void => {
     const layer = _musicLayers[index];
     if (!layer) return;
@@ -94,6 +106,13 @@ export const createAudioManager = (): AudioManager => {
     layer.seek(seconds);
   };
 
+  const getMusicLayerPosition = (index: number): number => {
+    const layer = _musicLayers[index];
+    if (!layer) return 0;
+    const pos = layer.seek();
+    return typeof pos === 'number' ? pos : 0;
+  };
+
   const dispose = (): void => {
     _musicLayers.forEach((layer) => layer.unload());
     _uiFx.unload();
@@ -102,12 +121,14 @@ export const createAudioManager = (): AudioManager => {
   return {
     startExperience,
     unlockMusicLayer,
+    fadeMusicLayerIn,
     lockMusicLayer,
     playUiFx,
     setMusicVolume,
     toggleMute,
     isMuted,
     seekMusicLayer,
+    getMusicLayerPosition,
     dispose,
   };
 };
