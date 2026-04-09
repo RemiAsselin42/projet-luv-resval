@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const TEXT_EXTENSIONS = new Set([
@@ -46,7 +46,7 @@ export const getTrackedTextFiles = () => {
     .split('\u0000')
     .filter(Boolean);
 
-  return allFiles.filter(isTextFile);
+  return allFiles.filter(isTextFile).filter((f) => existsSync(resolve(f)));
 };
 
 export const fileHasCrlf = (relativePath) => {
