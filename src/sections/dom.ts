@@ -1,5 +1,5 @@
 import type { SectionDefinition, SectionId } from './definitions';
-import { sections } from './definitions';
+import { visibleSections } from './definitions';
 
 const createSectionContent = (section: SectionDefinition): HTMLElement => {
   const content = document.createElement('div');
@@ -81,7 +81,7 @@ export const createSectionDomManager = (
 
 /** Convenience wrapper — creates a manager with the default section definitions, renders, and returns it. */
 export const renderSectionsLayout = (root: HTMLElement): SectionDomManager => {
-  const manager = createSectionDomManager(sections);
+  const manager = createSectionDomManager(visibleSections);
   manager.renderAll(root);
   return manager;
 };

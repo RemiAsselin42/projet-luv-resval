@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderSectionsLayout, createSectionDomManager } from './dom';
-import { sections } from './definitions';
+import { sections, visibleSections } from './definitions';
 
 describe('renderSectionsLayout', () => {
   it('renders all configured sections with required attributes', () => {
@@ -9,9 +9,9 @@ describe('renderSectionsLayout', () => {
     renderSectionsLayout(root);
 
     const renderedSections = root.querySelectorAll<HTMLElement>('.experience-section[data-section]');
-    expect(renderedSections).toHaveLength(sections.length);
+    expect(renderedSections).toHaveLength(visibleSections.length);
 
-    sections.forEach((section) => {
+    visibleSections.forEach((section) => {
       const element = root.querySelector<HTMLElement>(`[data-section="${section.id}"]`);
       expect(element).not.toBeNull();
       expect(element?.id).toBe(section.id);

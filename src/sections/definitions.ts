@@ -16,6 +16,8 @@ export interface SectionDefinition {
   screenReaderOnlyHeading?: boolean;
   scrollHeight?: string;
   interactionMode?: 'auto' | 'none';
+  /** Section masquée : exclue du DOM, du menu CRT et des loaders. */
+  hidden?: boolean;
   includeInCrtMenu?: boolean;
   crtMenuLabel?: string;
   /** Sections without a loader (e.g. spacers) omit this field. */
@@ -46,8 +48,8 @@ const sectionDefinitions = [
     id: 'reliques',
     heading: 'Les Reliques',
     screenReaderOnlyHeading: true,
-    includeInCrtMenu: true,
-    crtMenuLabel: 'LES RELIQUES',
+    hidden: true,
+    includeInCrtMenu: false,
     load: async () => (await import('./03-les-reliques/reliques')).default,
   },
   {
@@ -55,8 +57,8 @@ const sectionDefinitions = [
     heading: "Section 2 - L'Oeil de Big Brother",
     description:
       'Transition dystopique, visage geant et parallax de levee de tete au scroll.',
-    includeInCrtMenu: true,
-    crtMenuLabel: 'BIG BROTHER',
+    hidden: true,
+    includeInCrtMenu: false,
     load: async () =>
       (await import('./04-oeil-big-brother/bigBrother')).default,
   },
@@ -70,9 +72,8 @@ const sectionDefinitions = [
   },
   {
     id: 'outro-eclipse',
-    heading: "Section Outro - L'Eclipse",
-    description:
-      'Retour au noir, 4 projecteurs de scene puis extinction finale un a un au dernier scroll.',
+    heading: "L'Eclipse",
+    screenReaderOnlyHeading: true,
     includeInCrtMenu: true,
     crtMenuLabel: "L'ECLIPSE",
     load: async () => (await import('./06-outro-eclipse/eclipse')).default,
@@ -127,19 +128,22 @@ export const SECTION_IDS = {
 
 type LoadableSection = SectionDefinition & { load: () => Promise<SectionInitializer> };
 
+/** Sections visibles (exclut les sections hidden). */
+export const visibleSections: SectionDefinition[] = sections.filter((s) => !s.hidden);
+
 const isLoadable = (s: SectionDefinition): s is LoadableSection =>
-  s.type !== 'spacer' && s.load !== undefined;
+  s.type !== 'spacer' && s.load !== undefined && !s.hidden;
 
 export const sectionLoaders: SectionLoader[] = sections
   .filter(isLoadable)
   .map(({ id, load }) => ({ id, load }));
 
-export const crtMenuItems = sections
+export const crtMenuItems = visibleSections
   .filter((section) => section.includeInCrtMenu)
   .map((section) => section.crtMenuLabel ?? section.heading.toUpperCase());
 
 // Mapping des indices du menu CRT vers les IDs de section
-export const crtMenuSectionIds = sections
+export const crtMenuSectionIds = visibleSections
   .filter((section) => section.includeInCrtMenu)
   .map((section) => section.id);
 

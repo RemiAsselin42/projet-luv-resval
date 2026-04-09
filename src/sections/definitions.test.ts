@@ -29,14 +29,25 @@ describe('sections definitions', () => {
     });
   });
 
-  it('includes all non-spacer sections in sectionLoaders', () => {
-    const nonSpacerIds = sections
-      .filter((s) => s.type !== 'spacer')
+  it('includes all non-spacer, non-hidden sections in sectionLoaders', () => {
+    const nonSpacerVisibleIds = sections
+      .filter((s) => s.type !== 'spacer' && !s.hidden)
       .map((s) => s.id);
 
     const loaderIds = sectionLoaders.map((l) => l.id);
-    nonSpacerIds.forEach((id) => {
+    nonSpacerVisibleIds.forEach((id) => {
       expect(loaderIds).toContain(id);
+    });
+  });
+
+  it('excludes hidden sections from sectionLoaders', () => {
+    const hiddenIds = sections
+      .filter((s) => s.hidden)
+      .map((s) => s.id);
+
+    const loaderIds = sectionLoaders.map((l) => l.id);
+    hiddenIds.forEach((id) => {
+      expect(loaderIds).not.toContain(id);
     });
   });
 });
