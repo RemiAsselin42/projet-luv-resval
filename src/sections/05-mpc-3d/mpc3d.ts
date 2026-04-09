@@ -3,6 +3,7 @@ import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
 import { publicUrl } from '../../utils/publicUrl';
 import { createRecorder } from './recorder';
+import { createMpcCrtSync } from './mpcCrtSync';
 
 // Indices dans audioManager.MUSIC_TRACKS :
 // 0=SAMPLE, 1=DRUMS-loop-kick, 2=DRUMS-loop-snare, 3=DRUMS-loop-hihat, 4=EVIL_SAMPLE, 5=ACAP-luv-resval
@@ -203,7 +204,7 @@ const startWaveform = (canvas: HTMLCanvasElement): (() => void) => {
 };
 
 const initBeatmakerSection: SectionInitializer = (context) => {
-  const { audioManager } = context;
+  const { audioManager, scrollManager, crtManager } = context;
   const sectionElement = document.querySelector(getSectionSelector(SECTION_IDS.MPC));
 
   if (!(sectionElement instanceof HTMLElement)) {
@@ -211,6 +212,21 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   }
 
   sectionElement.dataset.state = 'active';
+
+  // Play button — démarre / arrête la cappella (layer 5 = ACAP-luv-resval)
+  const ACAP_LAYER = 5;
+  let isAcapPlaying = false;
+
+  // ── Sync vidéo Grünt ↔ CRT (ScrollTrigger + VideoTexture) ────────────────
+  const crtSync = createMpcCrtSync(
+    sectionElement,
+    scrollManager,
+    audioManager,
+    crtManager,
+    ACAP_LAYER,
+    () => isAcapPlaying,
+  );
+  const { syncCrtVideo } = crtSync;
 
   const mpcRoot = buildMpcDom();
   sectionElement.appendChild(mpcRoot);
@@ -249,10 +265,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     cleanupFns.push(() => btn.removeEventListener('click', onClick));
   });
 
-  // Play button — démarre / arrête la cappella (layer 5 = ACAP-luv-resval)
-  const ACAP_LAYER = 5;
   const playBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-play-btn');
-  let isAcapPlaying = false;
 
   if (playBtn) {
     const onPlayClick = () => {
@@ -261,11 +274,13 @@ const initBeatmakerSection: SectionInitializer = (context) => {
         isAcapPlaying = true;
         playBtn.classList.add('mpc-play-btn--active');
         playBtn.setAttribute('aria-label', 'Arrêt');
+        syncCrtVideo(true);
       } else {
         audioManager.lockMusicLayer(ACAP_LAYER);
         isAcapPlaying = false;
         playBtn.classList.remove('mpc-play-btn--active');
         playBtn.setAttribute('aria-label', 'Lecture');
+        syncCrtVideo(false);
       }
     };
     playBtn.addEventListener('click', onPlayClick);
@@ -376,6 +391,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
           isAcapPlaying = false;
           playBtn?.classList.remove('mpc-play-btn--active');
           playBtn?.setAttribute('aria-label', 'Lecture');
+          syncCrtVideo(false);
         }
         stopBtn.classList.add('mpc-stop-btn--active');
         stopBtn.setAttribute('aria-label', 'Relancer les boucles');
@@ -397,6 +413,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
           isAcapPlaying = true;
           playBtn?.classList.add('mpc-play-btn--active');
           playBtn?.setAttribute('aria-label', 'Arrêt');
+          syncCrtVideo(true);
         }
         audioManager.setMusicVolume(currentVolume); // ré-applique le volume du potard
         stopBtn.classList.remove('mpc-stop-btn--active');
@@ -479,6 +496,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   return {
     update: () => {},
     dispose: () => {
+      crtSync.dispose();
       stopWaveform?.();
       ro.disconnect();
       cleanupFns.forEach((fn) => fn());
