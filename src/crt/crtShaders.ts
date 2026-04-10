@@ -1,5 +1,9 @@
-// Passe les UV au fragment shader et applique la projection standard.
-// Source : https://www.shadertoy.com/view/4djSRW
+// Note : le code des shaders est écrit en GLSL (langage de programmation graphique).
+// Le GLSL est une convention internationale et ses mots-clés (vec2, uniform, smoothstep…)
+// Chaque notion clé est accompagnée d'une explication en français.
+
+// Vertex shader : passe les coordonnées UV au fragment shader et applique la projection standard.
+// (Boilerplate Three.js — aucune source externe.)
 
 export const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -33,7 +37,9 @@ export const fragmentShader = /* glsl */ `
 
   varying vec2 vUv;
 
-  // ── Bruit pseudo-aléatoire (Hash without Sine - David Hoskins) ──
+  // ── Bruit pseudo-aléatoire (Hash without Sine — David Hoskins) ──
+  // (génère un nombre aléatoire à partir d'une coordonnée 2D, sans utiliser la fonction sinus)
+  // Source : https://www.shadertoy.com/view/4djSRW
   // Plus stable que sin() sur tous les GPU
   float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * .1031);
@@ -41,7 +47,9 @@ export const fragmentShader = /* glsl */ `
     return fract((p3.x + p3.y) * p3.z);
   }
 
-  // ── Barrel distortion (écran bombé) ───────────────────────────
+  // ── Barrel distortion (déformation en barillet — effet d'écran bombé) ────────
+  // Formule classique des shaders CRT : centered * (1 + r² * k) + 0.5
+  // Référence : https://www.shadertoy.com/view/XtlSD7
   vec2 barrelDistortion(vec2 uv, float strength) {
     vec2 centered = uv - 0.5;
     float r2 = dot(centered, centered);
@@ -123,8 +131,8 @@ export const fragmentShader = /* glsl */ `
       );
       vec4 modelSample = texture2D(uModelTexture, modelUv);
 
-      // Contour externe 2D via dilatation locale de l'alpha du masque.
-      // maxNeighbor - alpha produit un liseré externe uniquement.
+      // Contour externe 2D via dilatation de masque (technique morphologique) :
+      // maxNeighbor - alpha isole les pixels voisins de la silhouette → liseré externe uniquement.
       vec2 modelTexel = uModelTexelSize;
       float maxNeighbor = 0.0;
       maxNeighbor = max(maxNeighbor, texture2D(uModelTexture, modelUv + vec2( modelTexel.x, 0.0)).a);
@@ -173,7 +181,7 @@ export const fragmentShader = /* glsl */ `
     scanline = mix(1.0, scanline, 0.22);
     color *= scanline;
 
-    // --- Phosphor RGB sub-pixels ---
+    // --- Phosphor RGB sub-pixels (lueur des sous-pixels rouge/vert/bleu d'un vrai tube cathodique) ---
     float pixelX = mod(uv.x * uResolution.x, 3.0);
     vec3 phosphor = vec3(
       smoothstep(0.0, 1.0, pixelX),
@@ -202,8 +210,7 @@ export const fragmentShader = /* glsl */ `
     vignette = clamp(vignette, 0.0, 1.0);
     color *= vignette;
 
-    // --- Bezel Shadow (ombre interne du cadre CRT) ---
-    // Simule la profondeur du tube sous le plastique
+    // --- Bezel Shadow (ombre interne du cadre CRT — simule la profondeur du tube sous le plastique) ---
     vec2 bezelUv = abs(vUv - 0.5) * 2.0;
     float bezelDist = max(bezelUv.x, bezelUv.y);
     float bezelShadow = smoothstep(0.88, 1.0, bezelDist);

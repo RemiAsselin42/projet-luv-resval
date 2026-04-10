@@ -8,6 +8,19 @@ export interface SectionManager {
   dispose: () => void;
 }
 
+// Le sectionManager distingue deux modes d'initialisation des sections :
+//
+// - Sections "immédiates" : pas d'élément HTML dans le DOM (ex. : spacers, hero).
+//   Elles sont initialisées au démarrage, avant même que l'utilisateur ne scrolle.
+//
+// - Sections "différées" : possèdent un élément HTML (data-section="…") dans la page.
+//   Elles sont initialisées à la demande, via un IntersectionObserver qui surveille
+//   leur entrée dans le viewport. Cela évite de charger inutilement les sections
+//   qui ne seront peut-être jamais visitées.
+//
+// L'IntersectionObserver est un mécanisme natif du navigateur qui notifie quand
+// un élément devient visible à l'écran, sans avoir besoin de vérifier en permanence.
+
 // Marge de préchargement : déclenche l'init 120% de la hauteur viewport avant/après.
 const SECTION_OBSERVER_OPTIONS: IntersectionObserverInit = {
   root: null,
@@ -36,7 +49,11 @@ interface CategorizedLoaders {
   deferred: DeferredEntry[];
 }
 
-/** Sépare les loaders en « immédiats » (pas d'élément DOM) et « différés » (élément trouvé). */
+/**
+ * Sépare les loaders en deux catégories :
+ * - « immédiats » : aucun élément HTML correspondant dans le DOM → init dès le démarrage
+ * - « différés »  : élément HTML trouvé → init retardée jusqu'à l'entrée dans le viewport
+ */
 const categorizeLoaders = (loaders: SectionLoader[]): CategorizedLoaders => {
   const immediate: SectionLoader[] = [];
   const deferred: DeferredEntry[] = [];
@@ -53,7 +70,10 @@ const categorizeLoaders = (loaders: SectionLoader[]): CategorizedLoaders => {
   return { immediate, deferred };
 };
 
-/** Crée un IntersectionObserver qui init les sections différées lorsqu'elles entrent dans le viewport. */
+/**
+ * Crée un IntersectionObserver qui initialise les sections différées
+ * dès qu'elles entrent dans le viewport (avec la marge définie par SECTION_OBSERVER_OPTIONS).
+ */
 const createDeferredSectionObserver = (
   remainingEntries: DeferredEntry[],
   onIntersect: (loader: SectionLoader) => Promise<void>,

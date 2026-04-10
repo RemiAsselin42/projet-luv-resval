@@ -40,6 +40,18 @@ const SNAP_COOLDOWN_MS = 450; // Durée minimale entre deux snaps consécutifs
 const SNAP_ANCHOR_RATIO_DOWN = 0.7; // Sensibilité de snap vers le bas - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
 const SNAP_ANCHOR_RATIO_UP = 0.7; // Sensibilité de snap vers le haut - 0 = pas de snap, 1 = snap dès que la section entre dans le viewport
 
+/**
+ * Renvoie l'index de la section qui se trouve sous le "point d'ancrage" du viewport.
+ *
+ * Le point d'ancrage est une position virtuelle dans la fenêtre (par ex. 70% de la hauteur)
+ * qui se déplace avec le scroll. Quand ce point entre dans une section, cette section
+ * devient "active" et le scroll s'y accroche automatiquement (effet snap).
+ *
+ * @param sectionElements Liste des éléments HTML de section, triés par position verticale
+ * @param currentScrollY Position de scroll actuelle (pixels depuis le haut de la page)
+ * @param isScrollingDown true si l'utilisateur scrolle vers le bas, false vers le haut
+ * @returns Index de la section active, ou -1 si aucune section n'est trouvée
+ */
 const getSectionIndexAtViewportAnchor = (
   sectionElements: HTMLElement[],
   currentScrollY: number,
@@ -101,6 +113,9 @@ export const createScrollManager = (): ScrollManager => {
     listeners.forEach((listener) => listener(scrollY));
   };
 
+  // isManualScrolling est activé pendant une navigation déclenchée par le menu CRT.
+  // Il désactive temporairement le snap automatique pour éviter qu'il n'entre en conflit
+  // avec le défilement programmé (lenis.scrollTo) vers la section cible.
   let isManualScrolling = false;
 
   const snapToSectionIfNeeded = (currentScrollY: number, isScrollingDown: boolean): void => {

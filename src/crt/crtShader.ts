@@ -20,7 +20,7 @@ export const createCrtScreen = async (
     await ensureFontsLoaded();
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.warn('Failed to preload CRT fonts, continuing with fallback fonts:', error);
+    console.warn('Impossible de précharger les polices CRT, repli sur les polices système :', error);
   }
 
   const texWidth = textureResolution;
@@ -32,9 +32,10 @@ export const createCrtScreen = async (
     uModelTexture: { value: new THREE.Texture() },
     uModelTextureOpacity: { value: 0.0 },
     uModelTexelSize: { value: new THREE.Vector2(1 / 512, 1 / 512) },
-    // Zone centre-droite de l'ecran en UV distordu : (x0, y0, x1, y1)
+    // Zone centre-droite de l'écran en UV distordu : (x0, y0, x1, y1)
     // UV y=0 est en bas, y=1 en haut.
-    uModelRect: { value: new THREE.Vector4(0.47, 0.20, 0.87, 0.80) }, // Garder 0.40 de différence entre x0 et x1. Garder 0.60 entre y0 et y1.
+    // Contrainte : ratio UV (0.40 / 0.60) × (16/9) = CRT_MODEL_PREVIEW_ASPECT
+    uModelRect: { value: new THREE.Vector4(0.47, 0.20, 0.87, 0.80) },
     uTime: { value: 0.0 },
     uPowerOn: { value: 0.0 },
     uFade: { value: 1.0 },
@@ -55,7 +56,7 @@ export const createCrtScreen = async (
     depthWrite: false,
   });
 
-  // Ecran CRT occupant la majorite du viewport.
+  // Plan CRT occupant la majorité du viewport.
   // La hauteur est centralisée dans CRT_MENU_CONFIG.PLANE_HEIGHT pour éviter la duplication.
   const planeHeight = CRT_MENU_CONFIG.PLANE_HEIGHT;
   const planeWidth = planeHeight * aspectRatio;

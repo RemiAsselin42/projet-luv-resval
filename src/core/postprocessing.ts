@@ -1,3 +1,5 @@
+// Pipeline de rendu Three.js : encapsule le rendu de la scène 3D dans une interface simple.
+
 import * as THREE from 'three';
 
 export interface RenderPipeline {

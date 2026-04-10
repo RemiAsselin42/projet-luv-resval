@@ -40,9 +40,9 @@ export const createAudioManager = (): AudioManager => {
     preload: true,
   });
 
-  // TODO: cette méthode DOIT être appelée depuis un gestionnaire d'événement
-  // utilisateur (clic, touche) pour satisfaire la politique autoplay des navigateurs.
-  // Sans interaction préalable, Howler ne peut pas démarrer la lecture audio.
+  // Note : cette méthode doit être appelée depuis un gestionnaire d'événement utilisateur
+  // (clic, touche) pour respecter la politique autoplay des navigateurs modernes.
+  // Sans interaction préalable de l'utilisateur, Howler ne peut pas démarrer la lecture audio.
   const startExperience = (): void => {
     if (_experienceStarted) return;
     _experienceStarted = true;

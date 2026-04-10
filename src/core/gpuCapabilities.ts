@@ -1,13 +1,13 @@
 /**
- * GPU capability detection for adaptive performance optimization.
- * Detects GPU tier to adjust rendering quality and prevent performance issues.
+ * Détection des capacités du GPU pour l'optimisation adaptative des performances.
+ * Identifie le niveau du GPU afin d'ajuster la qualité de rendu et d'éviter les ralentissements.
  */
 
 export type GpuTier = 'low' | 'medium' | 'high';
 
 /**
- * Detects the GPU tier based on renderer information.
- * @returns 'low' for integrated/mobile GPUs, 'medium' for basic discrete GPUs, 'high' for modern gaming GPUs
+ * Détecte le niveau du GPU d'après les informations du moteur de rendu WebGL.
+ * @returns 'low' pour les GPU intégrés/mobiles, 'medium' pour les GPU dédiés basiques, 'high' pour les GPU récents gaming
  */
 export const detectGpuTier = (): GpuTier => {
   try {
@@ -17,7 +17,7 @@ export const detectGpuTier = (): GpuTier => {
 
     if (!gl) return 'low';
 
-    // Duck-typing keeps this robust in test environments and older runtimes.
+    // Duck-typing : permet de rester robuste dans les environnements de test et les runtimes anciens.
     if (typeof (gl as { getExtension?: unknown }).getExtension !== 'function')
       return 'low';
     if (typeof (gl as { getParameter?: unknown }).getParameter !== 'function')
@@ -28,7 +28,7 @@ export const detectGpuTier = (): GpuTier => {
     const renderer = (webgl.getParameter(webgl.RENDERER) as string).toLowerCase();
 
     if (!renderer || renderer === 'unknown') {
-      // Renderer name unavailable, use texture size as conservative heuristic.
+      // Nom du moteur indisponible : utiliser la taille de texture maximale comme indicateur de repli.
       const MIN_TEXTURE_SIZE_FOR_MEDIUM = 8192;
       const maxTextureSize = webgl.getParameter(
         webgl.MAX_TEXTURE_SIZE,
@@ -36,27 +36,27 @@ export const detectGpuTier = (): GpuTier => {
       return maxTextureSize >= MIN_TEXTURE_SIZE_FOR_MEDIUM ? 'medium' : 'low';
     }
 
-    // Integrated/mobile GPUs (low tier)
+    // GPU intégrés ou mobiles (niveau bas)
     if (/intel|mali|adreno|powervr|videocore|sgx/i.test(renderer)) {
       return 'low';
     }
 
-    // Dedicated modern GPUs (high tier)
+    // GPU dédiés récents (niveau haut)
     if (/nvidia|geforce|rtx|gtx|amd|radeon rx/i.test(renderer)) {
       return 'high';
     }
 
-    // Default to medium for unknown GPUs
+    // GPU inconnu : niveau intermédiaire par défaut
     return 'medium';
   } catch (error) {
-    console.warn('GPU detection failed:', error);
-    return 'low'; // Conservative fallback
+    console.warn('Détection GPU échouée :', error);
+    return 'low'; // Repli conservateur
   }
 };
 
 /**
- * Checks if WebGL is available in the current browser.
- * @returns true if WebGL is supported, false otherwise
+ * Vérifie si WebGL est disponible dans le navigateur actuel.
+ * @returns true si WebGL est supporté, false sinon
  */
 export const hasWebGLSupport = (): boolean => {
   try {
@@ -70,9 +70,9 @@ export const hasWebGLSupport = (): boolean => {
 };
 
 /**
- * Gets recommended shader complexity based on GPU tier.
- * @param tier GPU tier detected
- * @returns Configuration object with performance settings
+ * Retourne la complexité de shader recommandée selon le niveau du GPU.
+ * @param tier Niveau du GPU détecté
+ * @returns Objet de configuration avec les réglages de performance adaptés
  */
 export const getShaderComplexity = (tier: GpuTier) => {
   switch (tier) {

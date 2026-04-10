@@ -7,7 +7,7 @@ import { createDustCanvas } from './grimoire/dustCanvas';
 import { createTextReveal } from './grimoire/textReveal';
 import { createObjectSelector } from './grimoire/objectSelector';
 
-// ── Rune SVG (decorative symbol shown under selected object) ──────────────────
+// ── SVG de la rune (symbole décoratif affiché sous l'objet sélectionné) ─────────
 const RUNE_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <circle cx="40" cy="40" r="36"/>
   <circle cx="40" cy="40" r="24"/>
@@ -16,7 +16,7 @@ const RUNE_SVG = `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" ar
   <circle cx="40" cy="40" r="4"/>
 </svg>`;
 
-// ── Decorative ornament (top/bottom of right page) ────────────────────────────
+// ── SVG ornemental (en-tête et pied de la page droite du grimoire) ───────────
 const ORNAMENT_SVG = `<svg viewBox="0 0 200 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path d="M0 10 Q50 2 100 10 Q150 18 200 10"/>
   <circle cx="100" cy="10" r="3"/>
@@ -25,14 +25,14 @@ const ORNAMENT_SVG = `<svg viewBox="0 0 200 20" xmlns="http://www.w3.org/2000/sv
   <path d="M10 10 L30 5 M170 10 L190 15"/>
 </svg>`;
 
-// ── DOM builder ───────────────────────────────────────────────────────────────
+// ── Construction du DOM ───────────────────────────────────────────────────────
 const buildGrimoireDom = (): HTMLElement => {
   const grimoire = document.createElement('div');
   grimoire.className = 'grimoire';
   grimoire.setAttribute('role', 'region');
   grimoire.setAttribute('aria-label', 'Grimoire des Reliques');
 
-  // Candle overlay (animated by GSAP)
+  // Voile de bougie (animé par GSAP)
   const candleOverlay = document.createElement('div');
   candleOverlay.className = 'grimoire__candle-overlay';
   grimoire.appendChild(candleOverlay);
@@ -131,9 +131,9 @@ const buildGrimoireDom = (): HTMLElement => {
   return grimoire;
 };
 
-// ── Candle flicker animation ──────────────────────────────────────────────────
+// ── Animation de scintillement de bougie ──────────────────────────────────────
 const startCandleFlicker = (overlayEl: HTMLElement): gsap.core.Tween => {
-  // Animate the candle overlay with subtle size/position drift
+  // Anime le voile avec des variations légères de taille et de position
   return gsap.to(overlayEl, {
     scale: 1.06,
     x: '+=4',
@@ -143,7 +143,7 @@ const startCandleFlicker = (overlayEl: HTMLElement): gsap.core.Tween => {
     ease: 'sine.inOut',
     yoyo: true,
     repeat: -1,
-    repeatRefresh: true, // each repeat generates a new random delta via modifiers
+    repeatRefresh: true, // à chaque répétition, recalcule les deltas aléatoires via les modifiers
     modifiers: {
       x: () => `${(Math.random() - 0.5) * 8}px`,
       y: () => `${(Math.random() - 0.5) * 6}px`,
@@ -152,7 +152,7 @@ const startCandleFlicker = (overlayEl: HTMLElement): gsap.core.Tween => {
   });
 };
 
-// ── Page turn entry animation ─────────────────────────────────────────────────
+// ── Animation d'entrée (tournage de page) ────────────────────────────────────
 const playPageTurnEntry = (rightPage: HTMLElement): Promise<void> => {
   return new Promise((resolve) => {
     rightPage.classList.add('is-page-turn');
@@ -173,7 +173,7 @@ const playPageTurnEntry = (rightPage: HTMLElement): Promise<void> => {
   });
 };
 
-// ── Section initializer ───────────────────────────────────────────────────────
+// ── Initialisation de la section ─────────────────────────────────────────────
 const initThematicObjectsSection: SectionInitializer = (_context) => {
   const sectionElement = document.querySelector(getSectionSelector(SECTION_IDS.RELIQUES));
   if (!(sectionElement instanceof HTMLElement)) {
@@ -183,7 +183,7 @@ const initThematicObjectsSection: SectionInitializer = (_context) => {
     };
   }
 
-  // Build and mount DOM
+  // Construction et insertion du DOM
   const grimoire = buildGrimoireDom();
   sectionElement.appendChild(grimoire);
 
@@ -218,23 +218,23 @@ const initThematicObjectsSection: SectionInitializer = (_context) => {
   // ── Candle flicker ──
   const candleTween = startCandleFlicker(candleOverlay);
 
-  // ── Entry animations ──
-  // Book fade in from bottom
+  // ── Animations d'entrée ──
+  // Fondu + remontée du grimoire depuis le bas
   gsap.fromTo(
     grimoireBook,
     { opacity: 0, y: 40 },
     { opacity: 1, y: 0, duration: 1.0, ease: 'power2.out' },
   );
 
-  // Page turn on right page (Tier 3)
+  // Tournage de la page droite à l'entrée
   playPageTurnEntry(rightPage);
 
-  // Select first object after entry animation settles
+  // Sélectionne le premier objet une fois les animations d'entrée terminées
   const initTimer = setTimeout(() => {
     selector.selectById(RELIQUES[0]?.id ?? '');
   }, 600);
 
-  // ── Section resize sync for parchment ──
+  // ── Synchronisation du shader parchemin au redimensionnement ──
   const resizeObserver = new ResizeObserver(() => {
     const w = grimoireBook.offsetWidth;
     const h = grimoireBook.offsetHeight;

@@ -1,3 +1,6 @@
+// Cache d'imports : garantit que chaque section n'est chargée qu'une seule fois,
+// même si elle est demandée plusieurs fois simultanément.
+
 export interface AssetLoader {
   preloadSectionOnce: <T>(key: string, importer: () => Promise<T>) => Promise<T>;
   dispose: () => void;
