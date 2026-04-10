@@ -30,7 +30,7 @@ const initGruntSection: SectionInitializer = (context) => {
     getSectionSelector(SECTION_IDS.OUTRO_ECLIPSE),
   );
   if (!(sectionElement instanceof HTMLElement)) {
-    return { update: () => { return; }, dispose: () => { return; } };
+    return { update: () => {}, dispose: () => {} };
   }
 
   // ── Vidéo ─────────────────────────────────────────────────────────────────

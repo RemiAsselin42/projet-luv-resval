@@ -45,6 +45,100 @@ export const BTN_LAYOUT: BtnLayout = {
   centered: TEXT_CENTERED,
 };
 
+// ── Helpers de rendu ──────────────────────────────────────────────────────────
+
+/**
+ * Dessine un bouton avec fond blanc inversé si hovered.
+ * Le rect tient compte de textAlign : centré → ancre au milieu, gauche → ancre à gauche.
+ */
+const drawBtn = (
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  x: number,
+  y: number,
+  hovered: boolean,
+  fontSize: number,
+) => {
+  ctx.font = `500 ${fontSize}px 'Futura-Medium'`;
+  if (hovered) {
+    const w = ctx.measureText(label).width;
+    const pad = 8;
+    const rectX = TEXT_CENTERED ? x - w / 2 - pad : x - pad;
+    ctx.fillStyle = WHITE;
+    ctx.fillRect(rectX, y - fontSize + 2, w + pad * 2, fontSize + pad);
+    ctx.fillStyle = '#000000';
+  } else {
+    ctx.fillStyle = WHITE;
+  }
+  ctx.fillText(label, x, y);
+};
+
+/**
+ * Dessine les trois lignes de texte du terminal (typewriter partiel selon charsToShow).
+ * Retourne la coordonnée Y après la dernière ligne (pour positionner le curseur).
+ */
+const drawTextLines = (
+  ctx: CanvasRenderingContext2D,
+  charsToShow: number,
+): number => {
+  const lineH = CANVAS_H / 10;
+  let y = CANVAS_H * 0.16;
+  let rem = charsToShow;
+
+  ctx.textAlign = TEXT_CENTERED ? 'center' : 'left';
+
+  // Ligne 0 : > SIGNAL CORRUPTED
+  ctx.font = `500 ${Math.round(lineH * 0.55)}px 'Futura-Medium'`;
+  ctx.fillStyle = WHITE_DIM;
+  ctx.fillText(LINES[0].slice(0, Math.min(rem, LINES[0].length)), TEXT_X, y);
+  rem = Math.max(0, rem - LINES[0].length);
+  y += lineH * 1.1;
+
+  // Ligne 1 : ERROR 403
+  ctx.font = `500 ${Math.round(lineH * 0.35)}px 'Futura-Medium'`;
+  ctx.fillStyle = WHITE_DIM;
+  ctx.fillText(LINES[1].slice(0, Math.min(rem, LINES[1].length)), TEXT_X, y);
+  rem = Math.max(0, rem - LINES[1].length);
+  y += lineH * 1.2;
+
+  // Ligne 2 : ACCESS DENIED
+  ctx.font = `500 ${Math.round(lineH * 1.1)}px 'Futura-Medium'`;
+  ctx.fillStyle = WHITE;
+  ctx.fillText(LINES[2].slice(0, Math.min(rem, LINES[2].length)), TEXT_X, y);
+  y += lineH * 1.3;
+
+  return y;
+};
+
+/**
+ * Dessine le curseur clignotant et les deux boutons d'action,
+ * uniquement après la fin de l'animation typewriter.
+ */
+const drawPostTypingElements = (
+  ctx: CanvasRenderingContext2D,
+  cursorY: number,
+  blinkVisible: boolean,
+  hoveredButton: 'restart' | 'see-more' | null,
+) => {
+  const lineH = CANVAS_H / 10;
+
+  // Curseur clignotant
+  if (blinkVisible) {
+    ctx.font = `500 ${Math.round(lineH * 0.45)}px 'Futura-Medium'`;
+    ctx.fillStyle = WHITE;
+    ctx.textAlign = TEXT_CENTERED ? 'center' : 'left';
+    ctx.fillText('_', TEXT_X, cursorY);
+  }
+
+  // Boutons RESTART et SEE MORE
+  const btnFontSize = Math.round(lineH * 0.55);
+  const btnY = CANVAS_H * BTN_Y_RATIO;
+  drawBtn(ctx, '[RESTART]',  CANVAS_W * BTN_RESTART_X_RATIO,  btnY, hoveredButton === 'restart',  btnFontSize);
+  drawBtn(ctx, '[SEE MORE]', CANVAS_W * BTN_SEE_MORE_X_RATIO, btnY, hoveredButton === 'see-more', btnFontSize);
+};
+
+// ── Factory ───────────────────────────────────────────────────────────────────
+
 export const createError403Canvas = (): {
   texture: THREE.CanvasTexture;
   start: (onComplete?: () => void) => void;
@@ -66,79 +160,15 @@ export const createError403Canvas = (): {
   let blinkIntervalId: ReturnType<typeof setInterval> | null = null;
   let typingIntervalId: ReturnType<typeof setInterval> | null = null;
 
-  // Dessine un bouton avec fond blanc inversé si hovered.
-  // Le rect tient compte de textAlign : centré → ancre au milieu, gauche → ancre à gauche.
-  const drawBtn = (label: string, x: number, y: number, hovered: boolean, fontSize: number) => {
-    ctx.font = `500 ${fontSize}px 'Futura-Medium'`;
-    if (hovered) {
-      const w = ctx.measureText(label).width;
-      const pad = 8;
-      const rectX = TEXT_CENTERED ? x - w / 2 - pad : x - pad;
-      ctx.fillStyle = WHITE;
-      ctx.fillRect(rectX, y - fontSize + 2, w + pad * 2, fontSize + pad);
-      ctx.fillStyle = '#000000';
-    } else {
-      ctx.fillStyle = WHITE;
-    }
-    ctx.fillText(label, x, y);
-  };
-
   const draw = () => {
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-    ctx.textAlign = TEXT_CENTERED ? 'center' : 'left';
-    const lineH = CANVAS_H / 10;
-    let y = CANVAS_H * 0.16;
-    let rem = charsToShow;
+    const cursorY = drawTextLines(ctx, charsToShow);
 
-    // Ligne 0 : > SIGNAL CORRUPTED
-    ctx.font = `500 ${Math.round(lineH * 0.55)}px 'Futura-Medium'`;
-    ctx.fillStyle = WHITE_DIM;
-    ctx.fillText(LINES[0].slice(0, Math.min(rem, LINES[0].length)), TEXT_X, y);
-    rem = Math.max(0, rem - LINES[0].length);
-    y += lineH * 1.1;
-
-    // Ligne 1 : ERROR 403
-    ctx.font = `500 ${Math.round(lineH * 0.35)}px 'Futura-Medium'`;
-    ctx.fillStyle = WHITE_DIM;
-    ctx.fillText(LINES[1].slice(0, Math.min(rem, LINES[1].length)), TEXT_X, y);
-    rem = Math.max(0, rem - LINES[1].length);
-    y += lineH * 1.2;
-
-    // Ligne 2 : ACCESS DENIED
-    ctx.font = `500 ${Math.round(lineH * 1.1)}px 'Futura-Medium'`;
-    ctx.fillStyle = WHITE;
-    ctx.fillText(LINES[2].slice(0, Math.min(rem, LINES[2].length)), TEXT_X, y);
-    rem = Math.max(0, rem - LINES[2].length);
-    y += lineH * 1.3;
-
-    // Curseur clignotant (apparaît uniquement après la fin du typewriter)
-    if (textComplete && blinkVisible) {
-      ctx.font = `500 ${Math.round(lineH * 0.45)}px 'Futura-Medium'`;
-      ctx.fillStyle = WHITE;
-      ctx.fillText('_', TEXT_X, y);
-    }
-
-    // Boutons (apparaissent uniquement après la fin du typewriter)
     if (textComplete) {
-      const btnFontSize = Math.round(lineH * 0.55);
-      const btnY = CANVAS_H * BTN_Y_RATIO;
-      drawBtn(
-        '[RESTART]',
-        CANVAS_W * BTN_RESTART_X_RATIO,
-        btnY,
-        hoveredButton === 'restart',
-        btnFontSize,
-      );
-      drawBtn(
-        '[SEE MORE]',
-        CANVAS_W * BTN_SEE_MORE_X_RATIO,
-        btnY,
-        hoveredButton === 'see-more',
-        btnFontSize,
-      );
+      drawPostTypingElements(ctx, cursorY, blinkVisible, hoveredButton);
     }
 
     texture.needsUpdate = true;
