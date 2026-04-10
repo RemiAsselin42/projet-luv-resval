@@ -46,6 +46,12 @@ const padsHtml = PADS.map(
               </button>`,
 ).join('');
 
+/**
+ * Construit le DOM complet de la MPC :
+ * - Zone haute : bouton play, boucles (kick/snare/hihat), écran waveform, potard volume, mute, stop
+ * - Zone milieu : 6 pads percussifs
+ * - Zone basse : logo AWA, copyright, bouton record
+ */
 const buildMpcDom = (): HTMLElement => {
   const root = document.createElement('div');
   root.className = 'mpc-root';
@@ -134,8 +140,6 @@ const buildMpcDom = (): HTMLElement => {
  *   - gradient colors         → remplacer les stops rgba pour un thème différent
  *   - `getByteFrequencyData`  → passer sur un rendu barres EQ
  *
- * Remplacer SAMPLE.wav par la vraie a cappella quand elle arrive — aucun autre changement.
- *
  * @returns stop — appeler dans dispose() pour nettoyer le RAF et déconnecter l'analyser
  */
 const startWaveform = (canvas: HTMLCanvasElement): (() => void) => {
@@ -203,53 +207,14 @@ const startWaveform = (canvas: HTMLCanvasElement): (() => void) => {
   };
 };
 
-const initBeatmakerSection: SectionInitializer = (context) => {
-  const { audioManager, scrollManager, crtManager } = context;
-  const sectionElement = document.querySelector(getSectionSelector(SECTION_IDS.MPC));
+// ── Fonctions de câblage des contrôles ────────────────────────────────────────
 
-  if (!(sectionElement instanceof HTMLElement)) {
-    return { update: () => {}, dispose: () => {} };
-  }
-
-  sectionElement.dataset.state = 'active';
-
-  // Play button — démarre / arrête la cappella (layer 5 = ACAP-luv-resval)
-  const ACAP_LAYER = 5;
-  let isAcapPlaying = false;
-
-  // ── Sync vidéo Grünt ↔ CRT (ScrollTrigger + VideoTexture) ────────────────
-  const crtSync = createMpcCrtSync(
-    sectionElement,
-    scrollManager,
-    audioManager,
-    crtManager,
-    ACAP_LAYER,
-    () => isAcapPlaying,
-  );
-  const { syncCrtVideo } = crtSync;
-
-  const mpcRoot = buildMpcDom();
-  sectionElement.appendChild(mpcRoot);
-
-  // Responsive scale — ajuste la taille au viewport
-  const MPC_NATURAL_W = 388; // 372 + 2 * 8px padding body
-  const MPC_NATURAL_H = 356; // hauteur naturelle approximative
-  const applyScale = () => {
-    const availW = sectionElement.clientWidth * 0.9;
-    const availH = sectionElement.clientHeight * 0.85;
-    const scale = Math.min(availW / MPC_NATURAL_W, availH / MPC_NATURAL_H, 1.8); // cap à 180% pour éviter un agrandissement excessif sur très grand écran
-    mpcRoot.style.setProperty('--mpc-scale', scale.toFixed(3)); // CSS variable utilisée dans le transform: scale() du root pour un rendu net (vs scale calculé dans JS qui serait plus flou)
-  };
-  const ro = new ResizeObserver(applyScale);
-  ro.observe(sectionElement);
-  applyScale();
-
-  const waveformCanvas = mpcRoot.querySelector<HTMLCanvasElement>('.mpc-waveform-canvas');
-  const stopWaveform = waveformCanvas ? startWaveform(waveformCanvas) : null;
-
-  const cleanupFns: (() => void)[] = [];
-
-  // Loop buttons — toggle on/off avec fade-in/fade-out audio
+/** Câble les trois boutons de boucle (KICK / SNARE / HI-HAT) avec toggle audio. */
+const setupLoopButtons = (
+  mpcRoot: HTMLElement,
+  audioManager: { lockMusicLayer: (i: number) => void; unlockMusicLayer: (i: number) => void },
+): (() => void) => {
+  const cleanups: (() => void)[] = [];
   mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-loop-btn').forEach((btn) => {
     const layer = Number(btn.dataset.layer);
     const onClick = () => {
@@ -262,193 +227,280 @@ const initBeatmakerSection: SectionInitializer = (context) => {
       }
     };
     btn.addEventListener('click', onClick);
-    cleanupFns.push(() => btn.removeEventListener('click', onClick));
+    cleanups.push(() => btn.removeEventListener('click', onClick));
   });
+  return () => cleanups.forEach((fn) => fn());
+};
 
+/**
+ * Câble le bouton PLAY : démarre / arrête la cappella (layer 5 = ACAP-luv-resval).
+ * @param acapLayer     Index de la layer a cappella dans audioManager (5 = ACAP-luv-resval)
+ * @param isAcapPlayingRef  Référence partagée indiquant si la cappella est en cours de lecture
+ * @param syncCrtVideo  Fonction qui synchronise la vidéo du CRT avec l'état de lecture
+ */
+const setupPlayButton = (
+  mpcRoot: HTMLElement,
+  audioManager: { lockMusicLayer: (i: number) => void; unlockMusicLayer: (i: number) => void },
+  acapLayer: number,
+  isAcapPlayingRef: { value: boolean },
+  syncCrtVideo: (active: boolean) => void,
+): (() => void) => {
   const playBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-play-btn');
+  if (!playBtn) return () => {};
 
-  if (playBtn) {
-    const onPlayClick = () => {
-      if (!isAcapPlaying) {
-        audioManager.unlockMusicLayer(ACAP_LAYER);
-        isAcapPlaying = true;
-        playBtn.classList.add('mpc-play-btn--active');
-        playBtn.setAttribute('aria-label', 'Arrêt');
-        syncCrtVideo(true);
-      } else {
-        audioManager.lockMusicLayer(ACAP_LAYER);
-        isAcapPlaying = false;
-        playBtn.classList.remove('mpc-play-btn--active');
-        playBtn.setAttribute('aria-label', 'Lecture');
-        syncCrtVideo(false);
-      }
-    };
-    playBtn.addEventListener('click', onPlayClick);
-    cleanupFns.push(() => playBtn.removeEventListener('click', onPlayClick));
-  }
+  const onPlayClick = () => {
+    if (!isAcapPlayingRef.value) {
+      audioManager.unlockMusicLayer(acapLayer);
+      isAcapPlayingRef.value = true;
+      playBtn.classList.add('mpc-play-btn--active');
+      playBtn.setAttribute('aria-label', 'Arrêt');
+      syncCrtVideo(true);
+    } else {
+      audioManager.lockMusicLayer(acapLayer);
+      isAcapPlayingRef.value = false;
+      playBtn.classList.remove('mpc-play-btn--active');
+      playBtn.setAttribute('aria-label', 'Lecture');
+      syncCrtVideo(false);
+    }
+  };
 
-  // Sons des pads — déclarés tôt pour être accessibles dans updateKnob
+  playBtn.addEventListener('click', onPlayClick);
+  return () => playBtn.removeEventListener('click', onPlayClick);
+};
+
+/**
+ * Câble le potard de volume : drag vertical (haut = +volume) et molette.
+ * @param padSounds  Sons des pads percussifs — leur volume suit également le potard
+ */
+const setupVolumeKnob = (
+  mpcRoot: HTMLElement,
+  audioManager: { setMusicVolume: (v: number) => void },
+  padSounds: Howl[],
+): (() => void) => {
   const PAD_BASE_VOLUME = 0.9;
-  const padSounds = PADS.map(({ file }) =>
-    new Howl({ src: [publicUrl(`audio/pads/${file}`)], volume: PAD_BASE_VOLUME, pool: 2, preload: true }),
-  );
-
-  // Volume knob — drag vertical (haut = + volume)
   const knob = mpcRoot.querySelector<HTMLElement>('.mpc-knob');
   const knobRing = mpcRoot.querySelector<HTMLElement>('.mpc-knob-ring');
+  if (!knob || !knobRing) return () => {};
+
   let isDragging = false;
   let dragStartY = 0;
   let currentVolume = 1; // 0–1
 
   const volumeToAngle = (vol: number) => vol * 270 - 135; // -135° (min) → +135° (max)
 
-  if (knob && knobRing) {
-    const updateKnob = (vol: number) => {
-      currentVolume = Math.max(0, Math.min(1, vol));
-      knobRing.style.setProperty('--knob-angle', `${volumeToAngle(currentVolume)}deg`);
-      audioManager.setMusicVolume(currentVolume);
-      padSounds.forEach((sound) => sound.volume(currentVolume * PAD_BASE_VOLUME));
-      knob.setAttribute('aria-valuenow', String(Math.round(currentVolume * 100)));
-    };
-    updateKnob(1);
+  const updateKnob = (vol: number) => {
+    currentVolume = Math.max(0, Math.min(1, vol));
+    knobRing.style.setProperty('--knob-angle', `${volumeToAngle(currentVolume)}deg`);
+    audioManager.setMusicVolume(currentVolume);
+    padSounds.forEach((sound) => sound.volume(currentVolume * PAD_BASE_VOLUME));
+    knob.setAttribute('aria-valuenow', String(Math.round(currentVolume * 100)));
+  };
+  updateKnob(1);
 
-    const onKnobMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      dragStartY = e.clientY;
-      e.preventDefault();
-    };
-    const onKnobMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const deltaY = dragStartY - e.clientY; // drag up = volume +
-      dragStartY = e.clientY;
-      updateKnob(currentVolume + deltaY * 0.005);
-    };
-    const onKnobMouseUp = () => { isDragging = false; };
+  const onMouseDown = (e: MouseEvent) => {
+    isDragging = true;
+    dragStartY = e.clientY;
+    e.preventDefault();
+  };
+  const onMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const deltaY = dragStartY - e.clientY; // drag up = volume +
+    dragStartY = e.clientY;
+    updateKnob(currentVolume + deltaY * 0.005);
+  };
+  const onMouseUp = () => { isDragging = false; };
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    updateKnob(currentVolume - e.deltaY * 0.001);
+  };
 
-    const onKnobWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      updateKnob(currentVolume - e.deltaY * 0.001);
-    };
+  knob.addEventListener('mousedown', onMouseDown);
+  knob.addEventListener('wheel', onWheel, { passive: false });
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
 
-    knob.addEventListener('mousedown', onKnobMouseDown);
-    knob.addEventListener('wheel', onKnobWheel, { passive: false });
-    document.addEventListener('mousemove', onKnobMouseMove);
-    document.addEventListener('mouseup', onKnobMouseUp);
-    cleanupFns.push(() => {
-      knob.removeEventListener('mousedown', onKnobMouseDown);
-      knob.removeEventListener('wheel', onKnobWheel);
-      document.removeEventListener('mousemove', onKnobMouseMove);
-      document.removeEventListener('mouseup', onKnobMouseUp);
-    });
-  }
+  return () => {
+    knob.removeEventListener('mousedown', onMouseDown);
+    knob.removeEventListener('wheel', onWheel);
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+};
 
-  // Mute button — toggle + sync. Gère aussi la touche M directement pour éviter
-  // tout problème d'ordre d'exécution des listeners (document vs window).
+/** Câble le bouton MUTE et synchronise l'état avec la touche M. */
+const setupMuteButton = (
+  mpcRoot: HTMLElement,
+  audioManager: { isMuted: () => boolean; toggleMute: () => void },
+): (() => void) => {
   const muteBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-mute-btn');
-  if (muteBtn) {
-    const syncMuteBtn = () => {
-      const muted = audioManager.isMuted();
-      muteBtn.classList.toggle('mpc-mute-btn--active', muted);
-      muteBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Désactiver le son');
-    };
-    const onMuteClick = () => { audioManager.toggleMute(); syncMuteBtn(); };
-    // Sync-only : main.ts a déjà appelé toggleMute() (listener window enregistré avant).
-    // On écoute aussi sur window pour garantir que notre listener s'exécute après le sien
-    // (les listeners window se déclenchent dans l'ordre d'enregistrement).
-    const onMuteKey = (e: KeyboardEvent) => {
-      if ((e.key === 'm' || e.key === 'M') && !e.repeat) syncMuteBtn();
-    };
-    muteBtn.addEventListener('click', onMuteClick);
-    window.addEventListener('keydown', onMuteKey);
-    cleanupFns.push(() => {
-      muteBtn.removeEventListener('click', onMuteClick);
-      window.removeEventListener('keydown', onMuteKey);
-    });
-  }
+  if (!muteBtn) return () => {};
 
-  // Stop button — freeze/unfreeze les boucles actives + redémarre à 0
+  const syncMuteBtn = () => {
+    const muted = audioManager.isMuted();
+    muteBtn.classList.toggle('mpc-mute-btn--active', muted);
+    muteBtn.setAttribute('aria-label', muted ? 'Activer le son' : 'Désactiver le son');
+  };
+  const onMuteClick = () => { audioManager.toggleMute(); syncMuteBtn(); };
+  // Sync-only : main.ts a déjà appelé toggleMute() (listener window enregistré avant).
+  // On écoute aussi sur window pour garantir que notre listener s'exécute après le sien
+  // (les listeners window se déclenchent dans l'ordre d'enregistrement).
+  const onMuteKey = (e: KeyboardEvent) => {
+    if ((e.key === 'm' || e.key === 'M') && !e.repeat) syncMuteBtn();
+  };
+
+  muteBtn.addEventListener('click', onMuteClick);
+  window.addEventListener('keydown', onMuteKey);
+  return () => {
+    muteBtn.removeEventListener('click', onMuteClick);
+    window.removeEventListener('keydown', onMuteKey);
+  };
+};
+
+/** Gèle toutes les boucles actives et la cappella. */
+const freezePlayback = (
+  mpcRoot: HTMLElement,
+  audioManager: { lockMusicLayer: (i: number) => void },
+  acapLayer: number,
+  isAcapPlayingRef: { value: boolean },
+  syncCrtVideo: (active: boolean) => void,
+  frozenLayersRef: { value: number[] },
+  wasAcapPlayingRef: { value: boolean },
+  stopBtn: HTMLButtonElement,
+  playBtn: HTMLButtonElement | null,
+) => {
+  frozenLayersRef.value = [];
+  mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-loop-btn--active').forEach((btn) => {
+    const layer = Number(btn.dataset.layer);
+    frozenLayersRef.value.push(layer);
+    btn.classList.remove('mpc-loop-btn--active');
+    audioManager.lockMusicLayer(layer);
+  });
+  audioManager.lockMusicLayer(0); // SAMPLE de fond
+  wasAcapPlayingRef.value = isAcapPlayingRef.value;
+  if (isAcapPlayingRef.value) {
+    audioManager.lockMusicLayer(acapLayer);
+    isAcapPlayingRef.value = false;
+    playBtn?.classList.remove('mpc-play-btn--active');
+    playBtn?.setAttribute('aria-label', 'Lecture');
+    syncCrtVideo(false);
+  }
+  stopBtn.classList.add('mpc-stop-btn--active');
+  stopBtn.setAttribute('aria-label', 'Relancer les boucles');
+  mpcRoot.dataset.stopped = 'true';
+};
+
+/** Reprend les boucles gelées depuis le début. */
+const resumePlayback = (
+  mpcRoot: HTMLElement,
+  audioManager: {
+    seekMusicLayer: (i: number, t: number) => void;
+    unlockMusicLayer: (i: number) => void;
+    setMusicVolume: (v: number) => void;
+  },
+  acapLayer: number,
+  currentVolume: number,
+  isAcapPlayingRef: { value: boolean },
+  syncCrtVideo: (active: boolean) => void,
+  frozenLayersRef: { value: number[] },
+  wasAcapPlayingRef: { value: boolean },
+  stopBtn: HTMLButtonElement,
+  playBtn: HTMLButtonElement | null,
+) => {
+  frozenLayersRef.value.forEach((layer) => {
+    const btn = mpcRoot.querySelector<HTMLButtonElement>(`.mpc-loop-btn[data-layer="${layer}"]`);
+    btn?.classList.add('mpc-loop-btn--active');
+    audioManager.seekMusicLayer(layer, 0);
+    audioManager.unlockMusicLayer(layer);
+  });
+  audioManager.seekMusicLayer(0, 0);
+  audioManager.unlockMusicLayer(0); // SAMPLE de fond
+  if (wasAcapPlayingRef.value) {
+    audioManager.seekMusicLayer(acapLayer, 0);
+    audioManager.unlockMusicLayer(acapLayer);
+    isAcapPlayingRef.value = true;
+    playBtn?.classList.add('mpc-play-btn--active');
+    playBtn?.setAttribute('aria-label', 'Arrêt');
+    syncCrtVideo(true);
+  }
+  audioManager.setMusicVolume(currentVolume); // ré-applique le volume du potard
+  stopBtn.classList.remove('mpc-stop-btn--active');
+  stopBtn.setAttribute('aria-label', 'Arrêt des boucles');
+  delete mpcRoot.dataset.stopped;
+};
+
+/**
+ * Câble le bouton STOP : alterne entre gel et reprise de toutes les boucles + cappella.
+ * @param isStopActiveRef  Référence partagée indiquant si le STOP est actif (partagée avec setupKeyboardShortcuts)
+ * @param getVolume        Fonction qui lit le volume courant du potard, pour le réappliquer à la reprise
+ */
+const setupStopButton = (
+  mpcRoot: HTMLElement,
+  audioManager: {
+    lockMusicLayer: (i: number) => void;
+    seekMusicLayer: (i: number, t: number) => void;
+    unlockMusicLayer: (i: number) => void;
+    setMusicVolume: (v: number) => void;
+  },
+  acapLayer: number,
+  isAcapPlayingRef: { value: boolean },
+  syncCrtVideo: (active: boolean) => void,
+  getVolume: () => number,
+  isStopActiveRef: { value: boolean },
+): (() => void) => {
   const stopBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-stop-btn');
-  let isStopActive = false;
-  let frozenLayers: number[] = [];
-  let wasAcapPlayingBeforeStop = false;
+  if (!stopBtn) return () => {};
 
-  if (stopBtn) {
-    const onStopClick = () => {
-      if (!isStopActive) {
-        // Gel : mémoriser + couper les boucles actives
-        isStopActive = true;
-        frozenLayers = [];
-        mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-loop-btn--active').forEach((btn) => {
-          const layer = Number(btn.dataset.layer);
-          frozenLayers.push(layer);
-          btn.classList.remove('mpc-loop-btn--active');
-          audioManager.lockMusicLayer(layer);
-        });
-        audioManager.lockMusicLayer(0); // SAMPLE de fond
-        wasAcapPlayingBeforeStop = isAcapPlaying;
-        if (isAcapPlaying) {
-          audioManager.lockMusicLayer(ACAP_LAYER);
-          isAcapPlaying = false;
-          playBtn?.classList.remove('mpc-play-btn--active');
-          playBtn?.setAttribute('aria-label', 'Lecture');
-          syncCrtVideo(false);
-        }
-        stopBtn.classList.add('mpc-stop-btn--active');
-        stopBtn.setAttribute('aria-label', 'Relancer les boucles');
-        mpcRoot.dataset.stopped = 'true';
-      } else {
-        // Dégel : relancer depuis 0 les boucles gelées
-        isStopActive = false;
-        frozenLayers.forEach((layer) => {
-          const btn = mpcRoot.querySelector<HTMLButtonElement>(`.mpc-loop-btn[data-layer="${layer}"]`);
-          btn?.classList.add('mpc-loop-btn--active');
-          audioManager.seekMusicLayer(layer, 0);
-          audioManager.unlockMusicLayer(layer);
-        });
-        audioManager.seekMusicLayer(0, 0);
-        audioManager.unlockMusicLayer(0); // SAMPLE de fond
-        if (wasAcapPlayingBeforeStop) {
-          audioManager.seekMusicLayer(ACAP_LAYER, 0);
-          audioManager.unlockMusicLayer(ACAP_LAYER);
-          isAcapPlaying = true;
-          playBtn?.classList.add('mpc-play-btn--active');
-          playBtn?.setAttribute('aria-label', 'Arrêt');
-          syncCrtVideo(true);
-        }
-        audioManager.setMusicVolume(currentVolume); // ré-applique le volume du potard
-        stopBtn.classList.remove('mpc-stop-btn--active');
-        stopBtn.setAttribute('aria-label', 'Arrêt des boucles');
-        delete mpcRoot.dataset.stopped;
-      }
-    };
-    stopBtn.addEventListener('click', onStopClick);
-    cleanupFns.push(() => stopBtn.removeEventListener('click', onStopClick));
-  }
+  const playBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-play-btn');
+  const frozenLayersRef = { value: [] as number[] };
+  const wasAcapPlayingRef = { value: false };
 
-  // Record button — capture audio → téléchargement .wav
+  const onStopClick = () => {
+    if (!isStopActiveRef.value) {
+      isStopActiveRef.value = true;
+      freezePlayback(mpcRoot, audioManager, acapLayer, isAcapPlayingRef, syncCrtVideo, frozenLayersRef, wasAcapPlayingRef, stopBtn, playBtn);
+    } else {
+      isStopActiveRef.value = false;
+      resumePlayback(mpcRoot, audioManager, acapLayer, getVolume(), isAcapPlayingRef, syncCrtVideo, frozenLayersRef, wasAcapPlayingRef, stopBtn, playBtn);
+    }
+  };
+
+  stopBtn.addEventListener('click', onStopClick);
+  return () => stopBtn.removeEventListener('click', onStopClick);
+};
+
+/** Câble le bouton RECORD : capture audio → téléchargement .wav. */
+const setupRecordButton = (
+  mpcRoot: HTMLElement,
+): (() => void) => {
   const recordBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-record-btn');
-  if (recordBtn) {
-    const recorder = createRecorder(Howler.ctx as AudioContext, Howler.masterGain as GainNode);
-    const onRecordClick = () => {
-      if (!recorder.isActive()) {
-        recorder.start();
-        recordBtn.classList.add('is-recording');
-        recordBtn.setAttribute('aria-label', "Arrêter l'enregistrement");
-      } else {
-        recorder.stop();
-        recordBtn.classList.remove('is-recording');
-        recordBtn.setAttribute('aria-label', "Démarrer l'enregistrement");
-      }
-    };
-    recordBtn.addEventListener('click', onRecordClick);
-    cleanupFns.push(() => {
-      recordBtn.removeEventListener('click', onRecordClick);
-      if (recorder.isActive()) recorder.stop();
-    });
-  }
+  if (!recordBtn) return () => {};
 
-  // Pads — feedback visuel + son dédié
+  const recorder = createRecorder(Howler.ctx as AudioContext, Howler.masterGain as GainNode);
+  const onRecordClick = () => {
+    if (!recorder.isActive()) {
+      recorder.start();
+      recordBtn.classList.add('is-recording');
+      recordBtn.setAttribute('aria-label', "Arrêter l'enregistrement");
+    } else {
+      recorder.stop();
+      recordBtn.classList.remove('is-recording');
+      recordBtn.setAttribute('aria-label', "Démarrer l'enregistrement");
+    }
+  };
+  recordBtn.addEventListener('click', onRecordClick);
+  return () => {
+    recordBtn.removeEventListener('click', onRecordClick);
+    if (recorder.isActive()) recorder.stop();
+  };
+};
+
+/** Câble les 6 pads : feedback visuel + son dédié au clic. */
+const setupPads = (
+  mpcRoot: HTMLElement,
+  padSounds: Howl[],
+): (() => void) => {
   const padButtons = mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-pad-wrapper');
+  const cleanups: (() => void)[] = [];
 
   const triggerPad = (i: number) => {
     const btn = padButtons[i];
@@ -461,8 +513,22 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   padButtons.forEach((btn, i) => {
     const onClick = () => triggerPad(i);
     btn.addEventListener('click', onClick);
-    cleanupFns.push(() => btn.removeEventListener('click', onClick));
+    cleanups.push(() => btn.removeEventListener('click', onClick));
   });
+
+  return () => cleanups.forEach((fn) => fn());
+};
+
+/**
+ * Câble les raccourcis clavier : R/T/Y → loops (via click), U/I/O / J/K/L → pads.
+ * @param isStopActiveRef  Référence partagée avec setupStopButton — désactive les touches quand STOP est actif
+ */
+const setupKeyboardShortcuts = (
+  mpcRoot: HTMLElement,
+  padSounds: Howl[],
+  isStopActiveRef: { value: boolean },
+): (() => void) => {
+  const padButtons = mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-pad-wrapper');
 
   // Mapping clavier → loops (R/T/Y + Numpad7/8/9)
   const KEY_LOOP_MAP: Record<string, number> = {
@@ -479,27 +545,115 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     Numpad4: 0, Numpad5: 1, Numpad6: 2,
     Numpad1: 3, Numpad2: 4, Numpad3: 5,
   };
+
+  const triggerPad = (i: number) => {
+    const btn = padButtons[i];
+    if (!btn) return;
+    btn.classList.add('mpc-pad-wrapper--active');
+    padSounds[i]?.play();
+    setTimeout(() => btn.classList.remove('mpc-pad-wrapper--active'), 150);
+  };
+
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.repeat) return;
     const loopLayer = KEY_LOOP_MAP[e.code];
-    if (loopLayer !== undefined && !isStopActive) {
+    if (loopLayer !== undefined && !isStopActiveRef.value) {
       const btn = mpcRoot.querySelector<HTMLButtonElement>(`.mpc-loop-btn[data-layer="${loopLayer}"]`);
       btn?.click();
       return;
     }
     const idx = KEY_PAD_MAP[e.code];
-    if (idx !== undefined && !isStopActive) triggerPad(idx);
+    if (idx !== undefined && !isStopActiveRef.value) triggerPad(idx);
   };
+
   document.addEventListener('keydown', onKeyDown);
-  cleanupFns.push(() => document.removeEventListener('keydown', onKeyDown));
+  return () => document.removeEventListener('keydown', onKeyDown);
+};
+
+// ── Section initializer ───────────────────────────────────────────────────────
+
+const initBeatmakerSection: SectionInitializer = (context) => {
+  const { audioManager, scrollManager, crtManager } = context;
+  const sectionElement = document.querySelector(getSectionSelector(SECTION_IDS.MPC));
+
+  if (!(sectionElement instanceof HTMLElement)) {
+    return { update: () => {}, dispose: () => {} };
+  }
+
+  sectionElement.dataset.state = 'active';
+
+  const ACAP_LAYER = 5;
+
+  // ── Sync vidéo Grünt ↔ CRT (ScrollTrigger + VideoTexture) ────────────────
+  const isAcapPlayingRef = { value: false };
+  const crtSync = createMpcCrtSync(
+    sectionElement,
+    scrollManager,
+    audioManager,
+    crtManager,
+    ACAP_LAYER,
+    () => isAcapPlayingRef.value,
+  );
+  const { syncCrtVideo } = crtSync;
+
+  const mpcRoot = buildMpcDom();
+  sectionElement.appendChild(mpcRoot);
+
+  // Responsive scale — ajuste la taille au viewport.
+  // CSS variable utilisée dans le transform: scale() du root pour un rendu net
+  // (un scale CSS est plus précis qu'un recalcul de layout en JS).
+  const MPC_NATURAL_W = 388; // 372 + 2 * 8px padding body
+  const MPC_NATURAL_H = 356; // hauteur naturelle approximative
+  const applyScale = () => {
+    const availW = sectionElement.clientWidth * 0.9;
+    const availH = sectionElement.clientHeight * 0.85;
+    const scale = Math.min(availW / MPC_NATURAL_W, availH / MPC_NATURAL_H, 1.8);
+    mpcRoot.style.setProperty('--mpc-scale', scale.toFixed(3));
+  };
+  const ro = new ResizeObserver(applyScale);
+  ro.observe(sectionElement);
+  applyScale();
+
+  const waveformCanvas = mpcRoot.querySelector<HTMLCanvasElement>('.mpc-waveform-canvas');
+  const stopWaveform = waveformCanvas ? startWaveform(waveformCanvas) : null;
+
+  // Sons des pads — déclarés avant setupVolumeKnob qui en a besoin
+  const PAD_BASE_VOLUME = 0.9;
+  const padSounds = PADS.map(({ file }) =>
+    new Howl({ src: [publicUrl(`audio/pads/${file}`)], volume: PAD_BASE_VOLUME, pool: 2, preload: true }),
+  );
+
+  // Volume courant partagé entre setupVolumeKnob et setupStopButton
+  let currentVolume = 1;
+
+  // État stop partagé avec setupKeyboardShortcuts
+  const isStopActiveRef = { value: false };
+
+  // ── Câblage des contrôles ─────────────────────────────────────────────────
+  const cleanupLoops    = setupLoopButtons(mpcRoot, audioManager);
+  const cleanupPlay     = setupPlayButton(mpcRoot, audioManager, ACAP_LAYER, isAcapPlayingRef, syncCrtVideo);
+  const cleanupKnob     = setupVolumeKnob(mpcRoot, { setMusicVolume: (v) => { currentVolume = v; audioManager.setMusicVolume(v); } }, padSounds);
+  const cleanupMute     = setupMuteButton(mpcRoot, audioManager);
+  const cleanupStop     = setupStopButton(mpcRoot, audioManager, ACAP_LAYER, isAcapPlayingRef, syncCrtVideo, () => currentVolume, isStopActiveRef);
+  const cleanupRecord   = setupRecordButton(mpcRoot);
+  const cleanupPads     = setupPads(mpcRoot, padSounds);
+  const cleanupKeyboard = setupKeyboardShortcuts(mpcRoot, padSounds, isStopActiveRef);
 
   return {
+    // Toute la logique est event-driven — aucun traitement nécessaire par frame.
     update: () => {},
     dispose: () => {
       crtSync.dispose();
       stopWaveform?.();
       ro.disconnect();
-      cleanupFns.forEach((fn) => fn());
+      cleanupLoops();
+      cleanupPlay();
+      cleanupKnob();
+      cleanupMute();
+      cleanupStop();
+      cleanupRecord();
+      cleanupPads();
+      cleanupKeyboard();
       padSounds.forEach((s) => s.unload());
       mpcRoot.remove();
       delete sectionElement.dataset.state;
