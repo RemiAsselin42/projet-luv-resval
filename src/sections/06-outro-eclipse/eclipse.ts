@@ -1,3 +1,8 @@
+// Section finale "L'Eclipse" : conclusion de l'expérience.
+// La vidéo Grünt #45 s'affiche sur le CRT, puis le glitch s'intensifie progressivement
+// sur ~20 secondes jusqu'au "crash" de l'écran avec un message d'erreur 403.
+// L'utilisateur peut ensuite redémarrer l'expérience ou voir plus de contenu.
+
 import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';

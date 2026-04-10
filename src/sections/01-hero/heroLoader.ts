@@ -1,3 +1,8 @@
+// Contrôleur de l'animation de chargement affichée sur l'écran CRT.
+// Orchestre : l'animation d'allumage de la TV (power-on), la barre de progression
+// qui se remplit sur ~4 secondes, puis l'attente du clic sur le bouton PLAY.
+// Un clic n'importe où accélère la barre ; seul le clic sur PLAY déclenche la suite.
+
 import gsap from 'gsap';
 import { easeOutCubic, easeInOutSine, easeOutQuad, easeInOutQuad, easeOutExpo } from '../../utils/math';
 

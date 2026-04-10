@@ -1,6 +1,6 @@
-/**
- * DOM utility functions for common element selection patterns.
- */
+// Fonctions utilitaires pour trouver des éléments HTML de section dans la page.
+// Fournit un raccourci pour chercher un élément par son attribut data-section,
+// utilisé partout dans le code pour cibler les sections du site.
 
 /**
  * Returns a CSS attribute selector string for a section element by its data-section id.

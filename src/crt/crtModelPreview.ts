@@ -1,3 +1,8 @@
+// Injecte la prévisualisation d'un modèle 3D dans le shader CRT.
+// Quand l'utilisateur survole un item du menu, ce module transmet la texture
+// du modèle rendu (casque, caméra, MPC...) au shader pour l'afficher
+// dans la zone droite de l'écran CRT.
+
 import * as THREE from 'three';
 import { clamp01 } from '../utils/math';
 

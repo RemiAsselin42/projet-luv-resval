@@ -1,3 +1,8 @@
+// Système de mesure interne de l'application.
+// Émet des événements (CustomEvent) pour signaler qu'une section s'est chargée,
+// qu'une erreur est survenue, ou qu'une opération a pris du temps.
+// Ces données peuvent être captées par des outils de debug ou d'analyse.
+
 export type TelemetryStatus = 'success' | 'error' | 'info';
 
 export interface TelemetryEvent {

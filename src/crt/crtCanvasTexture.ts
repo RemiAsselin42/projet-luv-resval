@@ -1,3 +1,8 @@
+// Dessine l'interface 2D affichée sur l'écran CRT via un canvas HTML.
+// Gère trois états visuels : l'écran de chargement (barre + bouton PLAY),
+// le titre "LUV RESVAL" (hero), et le menu de navigation.
+// Le canvas est ensuite utilisé comme texture Three.js sur le mesh CRT.
+
 import * as THREE from 'three';
 import { easeInOutSine } from '../utils/math';
 import {

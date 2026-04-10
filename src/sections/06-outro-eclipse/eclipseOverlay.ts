@@ -1,3 +1,8 @@
+// Boutons HTML accessibles de l'écran d'erreur 403 (fin de l'Eclipse).
+// Les boutons [RESTART] et [SEE MORE] sont des éléments HTML vrais superposés
+// au canvas CRT, positionnés mathématiquement pour correspondre exactement
+// à leur rendu visuel (en tenant compte de la déformation de l'écran bombé).
+
 import type { ScrollManager } from '../../core/scrollManager';
 import type { BtnLayout } from './eclipse403Canvas';
 import { SECTION_IDS } from '../definitions';

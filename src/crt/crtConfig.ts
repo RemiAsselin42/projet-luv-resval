@@ -1,3 +1,8 @@
+// Constantes de configuration de l'écran CRT.
+// Regroupe toutes les valeurs utilisées pour positionner et dimensionner
+// les éléments de l'interface : menu, barre de chargement, titre, bouton PLAY,
+// breakpoints responsives et taille du plan 3D.
+
 import { crtMenuItems } from '../sections/definitions';
 
 /**

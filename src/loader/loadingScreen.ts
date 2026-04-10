@@ -1,3 +1,8 @@
+// Écran de chargement affiché avant le début de l'expérience.
+// Montre une barre de progression, attend que les modèles 3D soient téléchargés,
+// puis affiche le bouton PLAY. Un clic dessus déclenche la musique et
+// lance la transition vers la section héro.
+
 import * as THREE from 'three';
 import { CRT_MODEL_PREVIEW_ASPECT } from '../crt/crtShader';
 import { applyCrtModelPreview } from '../crt/crtModelPreview';

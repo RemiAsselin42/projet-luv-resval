@@ -1,3 +1,8 @@
+// Synchronise la vidéo Grünt #45 avec l'écran CRT pendant la section MPC.
+// Quand l'utilisateur lance la cappella, la vidéo du rappeur apparaît sur la télévision,
+// synchronisée avec la position audio. Gère aussi le flou du CRT et la restauration
+// de l'écran quand on quitte ou revient dans la section.
+
 import type { VideoTexture } from 'three';
 import type { ScrollManager } from '../../core/scrollManager';
 import type { AudioManager } from '../../audio/types';

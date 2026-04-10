@@ -1,3 +1,8 @@
+// Dessine l'écran d'erreur terminal affiché sur le CRT à la fin de l'Eclipse.
+// Affiche les lignes "> SIGNAL CORRUPTED / ERROR 403 / ACCESS DENIED"
+// lettre par lettre (effet machine à écrire), puis un curseur clignotant
+// et deux boutons [RESTART] et [SEE MORE].
+
 import * as THREE from 'three';
 
 const CANVAS_W = 1024;

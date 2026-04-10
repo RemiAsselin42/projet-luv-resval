@@ -1,3 +1,8 @@
+// Gère les prévisualisations 3D du menu CRT (casque Vador, caméra CCTV, MPC, cassette).
+// Chaque modèle est rendu dans une mini-scène isolée avec un effet "dessin au trait".
+// La texture produite est ensuite injectée dans le shader CRT pour apparaître
+// à l'intérieur de l'écran quand l'utilisateur survole un item du menu.
+
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';

@@ -1,3 +1,7 @@
+// Point d'entrée de l'application.
+// Ce fichier démarre tout : il crée la scène 3D, branche l'audio, configure le scroll,
+// affiche l'écran de chargement, puis initialise chaque section du site dans l'ordre.
+
 import './style.scss';
 import { addDefaultLights } from './core/lights';
 import { createThreeViewport, getRecommendedPixelRatio } from './core/scene';

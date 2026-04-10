@@ -1,6 +1,6 @@
-/**
- * Fonctions mathématiques utilitaires.
- */
+// Fonctions mathématiques utilitaires réutilisées dans tout le projet.
+// Inclut : blocage de valeur (clamp), interpolation (lerp), remappage de plage (mapRange),
+// et plusieurs courbes d'accélération/décélération (easing) pour les animations.
 
 /**
  * Bloque une valeur entre un minimum et un maximum.

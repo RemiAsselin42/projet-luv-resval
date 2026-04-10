@@ -1,7 +1,7 @@
-/**
- * Constantes partagées entre mpc3d.ts et eclipse.ts concernant la vidéo Grünt.
- * Source unique de vérité pour éviter la duplication.
- */
+// Constantes partagées relatives à la vidéo Grünt #45.
+// Chemin du fichier, durée totale et offset de départ dans la chanson.
+// Centralisées ici pour que la section MPC et la section Eclipse
+// utilisent exactement les mêmes valeurs.
 
 /** Chemin relatif (public/) de la vidéo Grünt — sans préfixe base. */
 export const GRUNT_VIDEO_URL = 'video/grunt-45.mp4';

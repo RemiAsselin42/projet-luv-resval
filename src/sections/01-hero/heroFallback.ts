@@ -1,3 +1,7 @@
+// Version de secours de la section hero pour les navigateurs sans WebGL.
+// Si le navigateur ne supporte pas la 3D, affiche simplement le titre
+// "LUV RESVAL" en CSS avec une animation de scroll basique.
+
 import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';

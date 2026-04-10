@@ -1,3 +1,7 @@
+// Ajoute les lumières par défaut à la scène 3D.
+// Trois sources de lumière (ambiante + deux directionnelles) éclairent
+// les modèles 3D de façon réaliste depuis différents angles.
+
 import * as THREE from 'three';
 
 export const addDefaultLights = (scene: THREE.Scene): void => {

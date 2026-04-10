@@ -1,3 +1,8 @@
+// Section MPC : beatmaker interactif inspiré d'une vraie machine à rythmes.
+// L'utilisateur peut activer des boucles (kick, snare, hihat), jouer des pads percussifs,
+// lancer la cappella de Luv Resval, régler le volume, couper le son et enregistrer.
+// Affiche aussi une visualisation de la forme d'onde audio en temps réel.
+
 import { Howl, Howler } from 'howler';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';

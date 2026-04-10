@@ -1,3 +1,9 @@
+// Gère toute la musique du site.
+// Six pistes audio jouent en boucle de façon synchronisée.
+// La piste de base est toujours active ; les autres (kick, snare, hihat, cappella)
+// se débloquent progressivement via les boutons de la MPC.
+// Gère aussi le volume global, le mute (touche M) et les effets sonores de l'interface.
+
 import { Howl, Howler } from 'howler';
 import type { AudioManager } from './types';
 import { publicUrl } from '../utils/publicUrl';

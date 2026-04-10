@@ -1,4 +1,6 @@
-// Pipeline de rendu Three.js : encapsule le rendu de la scène 3D dans une interface simple.
+// Pipeline de rendu Three.js.
+// Encapsule l'appel de rendu de la scène 3D en une interface simple (render / dispose).
+// Point central depuis lequel la boucle d'animation dans main.ts déclenche chaque frame.
 
 import * as THREE from 'three';
 

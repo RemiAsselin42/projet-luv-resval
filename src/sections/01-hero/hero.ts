@@ -1,3 +1,8 @@
+// Section hero : la première chose que voit l'utilisateur après le chargement.
+// Gère les interactions avec la télévision CRT : clic pour scroller vers le menu,
+// survol des items du menu (prévisualisations 3D + navigation), et animation
+// du titre au fil du scroll. Récupère le menuPreview préparé pendant le chargement.
+
 import type { SectionInitializer } from '../types';
 import { applyCrtModelPreview } from '../../crt/crtModelPreview';
 import { clamp01 } from '../../utils/math';

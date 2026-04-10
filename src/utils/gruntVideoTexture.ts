@@ -1,3 +1,8 @@
+// Crée la texture vidéo Three.js pour le clip Grünt #45.
+// Cette vidéo est utilisée à deux endroits différents : dans la section MPC
+// (quand la cappella est lancée) et dans la section Eclipse (pendant le glitch).
+// Ce fichier centralise la création pour éviter la duplication.
+
 import * as THREE from 'three';
 import { publicUrl } from './publicUrl';
 import { GRUNT_VIDEO_URL } from '../constants/grunt';

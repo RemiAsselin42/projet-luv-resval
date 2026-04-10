@@ -1,3 +1,7 @@
+// Définit les types TypeScript partagés entre toutes les sections du site.
+// SectionContext : tout ce qu'une section reçoit pour fonctionner (scène, caméra, audio...).
+// SectionLifecycle : ce qu'une section doit fournir (update chaque frame + dispose).
+
 import * as THREE from 'three';
 import type { ScrollManager } from '../core/scrollManager';
 import type { AssetLoader } from '../core/assetLoader';

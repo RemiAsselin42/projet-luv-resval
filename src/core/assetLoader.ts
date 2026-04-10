@@ -1,5 +1,6 @@
-// Cache d'imports : garantit que chaque section n'est chargée qu'une seule fois,
-// même si elle est demandée plusieurs fois simultanément.
+// Système de cache pour le chargement des sections.
+// Garantit que le code JavaScript de chaque section n'est téléchargé et exécuté
+// qu'une seule fois, même si plusieurs parties du code en font la demande en même temps.
 
 export interface AssetLoader {
   preloadSectionOnce: <T>(key: string, importer: () => Promise<T>) => Promise<T>;

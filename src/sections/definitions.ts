@@ -1,3 +1,8 @@
+// Liste officielle de toutes les sections du site (hero, MPC, eclipse...).
+// Chaque section y est décrite : son titre, son identifiant, si elle est visible,
+// si elle apparaît dans le menu CRT, et comment charger son code JavaScript.
+// C'est ici qu'on ajoute ou désactive une section pour tout le projet.
+
 import type { SectionInitializer, SectionLoader } from './types';
 
 export type SectionId =

@@ -1,3 +1,8 @@
+// Génère les URL correctes pour les fichiers du dossier /public.
+// En développement, les fichiers sont à la racine (/). En production sur GitHub Pages,
+// ils sont dans un sous-dossier (/projet-luv-resval/). Cette fonction ajoute
+// automatiquement le bon préfixe pour éviter les erreurs 404.
+
 /**
  * Utility for resolving URLs to files in the /public directory.
  *

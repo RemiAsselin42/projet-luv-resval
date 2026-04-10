@@ -1,3 +1,8 @@
+// Détecte où se trouve la souris sur le mesh CRT en 3D.
+// Permet de savoir sur quel item du menu l'utilisateur pointe,
+// et si un clic touche bien l'écran de la télévision.
+// Technique utilisée : "raycasting" (envoi d'un rayon depuis la caméra).
+
 import * as THREE from 'three';
 import { CRT_MENU_CONFIG, getCrtMenuStartY } from '../../crt/crtConfig';
 

@@ -1,4 +1,7 @@
-// Ensures fonts are loaded before drawing on canvas to prevent fallback rendering.
+// Précharge les polices personnalisées du CRT avant tout dessin sur canvas.
+// Les polices Silvermist (titre) et Futura (menu, labels) doivent être disponibles
+// avant d'afficher le texte, sinon le navigateur utiliserait une police de secours
+// et le rendu serait incorrect.
 const preloadFonts = async (): Promise<void> => {
   const silvermistItalicUrl = new URL('../assets/fonts/Silvermist-Italic.otf', import.meta.url).href;
   const silvermistRegularUrl = new URL('../assets/fonts/Silvermist-Regular.otf', import.meta.url).href;

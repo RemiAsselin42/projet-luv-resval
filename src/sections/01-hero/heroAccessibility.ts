@@ -1,3 +1,8 @@
+// Crée des boutons HTML invisibles correspondant aux items du menu CRT.
+// Le menu est visuellement rendu sur canvas (dans l'écran CRT), mais pour
+// l'accessibilité (lecteurs d'écran, navigation clavier), de vrais boutons HTML
+// sont superposés aux mêmes positions pour permettre la navigation.
+
 import { CRT_MENU_CONFIG } from '../../crt/crtConfig';
 
 export interface AccessibilityMenu {

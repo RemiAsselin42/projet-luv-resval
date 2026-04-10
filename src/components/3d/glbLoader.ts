@@ -1,3 +1,8 @@
+// Charge un fichier 3D au format GLB (modèles compressés).
+// Utilise le décodeur DRACO pour les modèles optimisés.
+// Si le décodeur local est indisponible, bascule automatiquement sur
+// des serveurs de secours (CDN Google) pour garantir le chargement.
+
 import * as THREE from 'three';
 import { publicUrl } from '../../utils/publicUrl';
 

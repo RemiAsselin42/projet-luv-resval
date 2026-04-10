@@ -1,3 +1,7 @@
+// Code source des shaders GLSL de l'écran CRT.
+// Le vertex shader positionne le plan 3D ; le fragment shader crée tous les effets visuels :
+// déformation bombée (barrel distortion), scanlines, bruit, aberration chromatique,
+// glitch, flou, mosaïque, allumage progressif et vignette.
 // Note : le code des shaders est écrit en GLSL (langage de programmation graphique).
 // Le GLSL est une convention internationale et ses mots-clés (vec2, uniform, smoothstep…)
 // Chaque notion clé est accompagnée d'une explication en français.

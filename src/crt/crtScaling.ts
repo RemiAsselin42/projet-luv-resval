@@ -1,3 +1,7 @@
+// Calcule la mise à l'échelle du mesh CRT selon la taille de l'écran.
+// Sur grand écran (16:9 et plus large), le CRT occupe toute la hauteur du viewport.
+// Sur écran plus étroit (mobile, tablette), il réduit pour rester entièrement visible.
+
 // ── Constantes de scaling CRT ──────────────────────────────────────────────────
 
 /** Seuil de largeur viewport (px) séparant desktop et mobile pour le calcul du CRT scale. */

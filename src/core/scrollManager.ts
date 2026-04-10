@@ -1,3 +1,8 @@
+// Gère le défilement de toute la page.
+// Utilise Lenis pour un scroll fluide et GSAP ScrollTrigger pour les animations au scroll.
+// Implémente aussi un "snap" : quand l'utilisateur scrolle vers une section,
+// la page se cale automatiquement dessus.
+
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';

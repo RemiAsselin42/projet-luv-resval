@@ -1,3 +1,7 @@
+// Animations de parallax de la section hero au scroll.
+// Au fil du défilement, la télévision CRT recule progressivement dans la scène 3D
+// pour créer un effet de profondeur et laisser place au menu.
+
 import gsap from 'gsap';
 import * as THREE from 'three';
 

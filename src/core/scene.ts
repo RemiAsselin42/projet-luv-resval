@@ -1,3 +1,7 @@
+// Initialise la scène 3D Three.js : caméra, renderer et scène principale.
+// Adapte automatiquement la résolution de rendu selon les capacités du matériel
+// (smartphones peu puissants vs ordinateurs de bureau).
+
 import * as THREE from 'three';
 
 interface ThreeViewport {

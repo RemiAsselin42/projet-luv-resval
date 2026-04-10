@@ -1,3 +1,8 @@
+// Définit l'interface du gestionnaire audio.
+// Décrit toutes les actions possibles sur la musique (démarrer, muter, régler le volume,
+// activer une boucle...) sans détailler leur implémentation.
+// Les sections du site utilisent ce contrat pour interagir avec l'audio.
+
 export interface AudioManager {
   /** Lance les 4 layers musicaux synchronisés. Idempotent. */
   startExperience(): void;

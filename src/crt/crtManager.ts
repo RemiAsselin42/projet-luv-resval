@@ -1,3 +1,8 @@
+// Gestionnaire principal de l'écran CRT (la vieille télévision 3D au centre du site).
+// Fournit une interface haut niveau pour contrôler tous les effets visuels :
+// allumage, glitch, flou, blackout, fondu, menu interactif, prévisualisation des modèles 3D.
+// Persiste toute la durée du site et est partagé entre toutes les sections.
+
 import * as THREE from 'three';
 import { createCrtScreen } from './crtShader';
 import type { CrtScreen, CrtUniforms } from './crtTypes';

@@ -1,3 +1,8 @@
+// Processeur audio qui tourne dans un thread dédié du navigateur (AudioWorklet).
+// Reçoit les échantillons audio stéréo en temps réel et les envoie au thread
+// principal pour les assembler en fichier WAV.
+// Ce fichier est chargé séparément par le navigateur comme un "worker" audio.
+
 // TypeScript n'a pas de lib dédiée à AudioWorkletGlobalScope — déclarations minimales.
 declare abstract class AudioWorkletProcessor {
   readonly port: MessagePort;

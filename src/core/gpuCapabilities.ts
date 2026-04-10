@@ -1,7 +1,7 @@
-/**
- * Détection des capacités du GPU pour l'optimisation adaptative des performances.
- * Identifie le niveau du GPU afin d'ajuster la qualité de rendu et d'éviter les ralentissements.
- */
+// Détecte les capacités graphiques de l'appareil de l'utilisateur.
+// Classe le GPU en trois niveaux (faible, moyen, puissant) pour adapter
+// automatiquement la qualité des effets visuels et éviter les ralentissements
+// sur les smartphones ou les ordinateurs peu performants.
 
 export type GpuTier = 'low' | 'medium' | 'high';
 

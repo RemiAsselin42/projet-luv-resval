@@ -1,3 +1,7 @@
+// Enregistrement audio en temps réel depuis la MPC.
+// Capture tout ce qui sort de la MPC (boucles, pads, cappella) et encode
+// le résultat en fichier WAV téléchargeable directement par l'utilisateur.
+
 import recorderProcessorUrl from './recorder-processor.ts?worker&url';
 
 export interface Recorder {

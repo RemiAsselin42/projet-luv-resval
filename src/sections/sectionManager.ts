@@ -1,3 +1,8 @@
+// Gère le cycle de vie de toutes les sections du site.
+// Son rôle : initialiser chaque section au bon moment (dès le départ ou quand elle
+// devient visible à l'écran), appeler leur mise à jour à chaque frame, et les nettoyer
+// proprement quand l'expérience se termine.
+
 import type { SectionContext, SectionLifecycle, SectionLoader } from './types';
 import { emitTelemetry } from '../core/telemetry';
 import { querySectionElement } from '../utils/dom';

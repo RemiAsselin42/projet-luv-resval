@@ -1,3 +1,7 @@
+// Types TypeScript internes du système CRT.
+// Décrit la structure des "uniforms" (paramètres envoyés au shader GLSL)
+// et l'interface basse couche CrtScreen utilisée par crtShader.ts.
+
 import * as THREE from 'three';
 
 export interface CrtUniforms {

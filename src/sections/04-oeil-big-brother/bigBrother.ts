@@ -1,3 +1,7 @@
+// Section "L'Œil de Big Brother" — actuellement non développée.
+// Réserve un emplacement dans le site mais ne fait rien pour le moment
+// (section marquée hidden dans definitions.ts).
+
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
 

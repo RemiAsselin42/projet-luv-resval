@@ -1,3 +1,7 @@
+// Crée le mesh 3D de l'écran CRT avec son shader et ses paramètres.
+// Assemble le plan géométrique, les uniforms (variables envoyées au GPU)
+// et expose les méthodes pour modifier l'affichage (allumage, glitch, préview 3D...).
+
 import * as THREE from 'three';
 import { ensureFontsLoaded } from './crtFonts';
 import { vertexShader, fragmentShader } from './crtShaders';
