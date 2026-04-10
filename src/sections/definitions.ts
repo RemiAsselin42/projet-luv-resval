@@ -16,13 +16,17 @@ export interface SectionDefinition {
   screenReaderOnlyHeading?: boolean;
   scrollHeight?: string;
   interactionMode?: 'auto' | 'none';
-  /** Section masquée : exclue du DOM, du menu CRT et des loaders. */
+  /**
+   * Section masquée : quand `hidden: true`, la section est complètement ignorée au démarrage.
+   * Elle n'est pas injectée dans le DOM, n'apparaît pas dans le menu CRT,
+   * et son code JavaScript n'est jamais chargé. Utilisé pour les sections en cours de développement.
+   */
   hidden?: boolean;
   includeInCrtMenu?: boolean;
   crtMenuLabel?: string;
-  /** Sections without a loader (e.g. spacers) omit this field. */
+  /** Sections sans lifecycle JavaScript (ex. : spacers de scroll) omettent ce champ. */
   load?: () => Promise<SectionInitializer>;
-  /** A spacer section reserves scroll height but has no JS lifecycle. Default: 'section'. */
+  /** Une section spacer réserve de la hauteur de scroll mais n'a pas de lifecycle JS. Valeur par défaut : 'section'. */
   type?: 'section' | 'spacer';
 }
 
@@ -83,23 +87,13 @@ const sectionDefinitions = [
 export const sections: SectionDefinition[] = [...sectionDefinitions];
 
 /**
- * Canonical section identifiers used for DOM queries, scroll navigation, and scroll manager.
+ * Identifiants canoniques des sections — utilisés pour les requêtes DOM,
+ * la navigation au scroll et le scroll manager.
  *
- * Canonical keys (single, preferred name per section):
  *   HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, OUTRO_ECLIPSE
- *
- * Legacy aliases (kept for backwards-compat, do not use in new code):
- *   MENU          → HUB_CENTRAL  (ancien nom utilisé dans hero.ts)
- *   FACE_VADER    → RELIQUES     (ancien nom de la section reliques)
- *   THEMATIC_OBJECTS → RELIQUES  (idem, nom de travail)
- *   OEIL_BIG_BROTHER → BIG_BROTHER
- *   MPC_BEATMAKER → MPC
- *   MPC_3D        → MPC
- *   STAR_WARS_CRAWL → OUTRO_ECLIPSE
- *   GRUNT         → OUTRO_ECLIPSE
  */
 export const SECTION_IDS = {
-  // ── Canonical names ──────────────────────────────────────────────────────────
+  // ── Noms canoniques — correspondent aux attributs data-section dans le HTML ──
   HERO: 'hero',
   HUB_CENTRAL: 'hub-central',
   RELIQUES: 'reliques',
@@ -107,23 +101,6 @@ export const SECTION_IDS = {
   MPC: 'mpc',
   OUTRO_ECLIPSE: 'outro-eclipse',
 
-  // ── Legacy aliases — do not use in new code ──────────────────────────────────
-  /** @deprecated Use HUB_CENTRAL */
-  MENU: 'hub-central',
-  /** @deprecated Use RELIQUES */
-  FACE_VADER: 'reliques',
-  /** @deprecated Use RELIQUES */
-  THEMATIC_OBJECTS: 'reliques',
-  /** @deprecated Use BIG_BROTHER */
-  OEIL_BIG_BROTHER: 'oeil-big-brother',
-  /** @deprecated Use MPC */
-  MPC_BEATMAKER: 'mpc',
-  /** @deprecated Use MPC */
-  MPC_3D: 'mpc',
-  /** @deprecated Use OUTRO_ECLIPSE */
-  STAR_WARS_CRAWL: 'outro-eclipse',
-  /** @deprecated Use OUTRO_ECLIPSE */
-  GRUNT: 'outro-eclipse',
 } as const;
 
 type LoadableSection = SectionDefinition & { load: () => Promise<SectionInitializer> };

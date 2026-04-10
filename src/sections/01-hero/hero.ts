@@ -67,7 +67,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
     getSectionSelector(SECTION_IDS.HERO),
   );
   const menuElement = document.querySelector(
-    getSectionSelector(SECTION_IDS.MENU),
+    getSectionSelector(SECTION_IDS.HUB_CENTRAL),
   );
 
   const { heroTimeline } = createHeroScrollTimelines(
@@ -162,7 +162,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
     }
 
     // Dans la section hero : tout clic sur la TV scroll vers le menu.
-    context.scrollManager.scrollToSection(SECTION_IDS.MENU, BASELINE_VIEWPORT_HEIGHT);
+    context.scrollManager.scrollToSection(SECTION_IDS.HUB_CENTRAL, BASELINE_VIEWPORT_HEIGHT);
   };
 
   window.addEventListener('mousemove', onMouseMove);
