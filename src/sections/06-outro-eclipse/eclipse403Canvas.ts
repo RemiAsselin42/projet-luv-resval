@@ -59,9 +59,10 @@ const drawBtn = (
   hovered: boolean,
   fontSize: number,
 ) => {
+  const displayLabel = hovered ? `> ${label}` : label;
   ctx.font = `500 ${fontSize}px 'Futura-Medium'`;
   if (hovered) {
-    const w = ctx.measureText(label).width;
+    const w = ctx.measureText(displayLabel).width;
     const pad = 8;
     const rectX = TEXT_CENTERED ? x - w / 2 - pad : x - pad;
     ctx.fillStyle = WHITE;
@@ -70,7 +71,7 @@ const drawBtn = (
   } else {
     ctx.fillStyle = WHITE;
   }
-  ctx.fillText(label, x, y);
+  ctx.fillText(displayLabel, x, y);
 };
 
 /**
@@ -82,7 +83,7 @@ const drawTextLines = (
   charsToShow: number,
 ): number => {
   const lineH = CANVAS_H / 10;
-  let y = CANVAS_H * 0.16;
+  let y = CANVAS_H * 0.33;
   let rem = charsToShow;
 
   ctx.textAlign = TEXT_CENTERED ? 'center' : 'left';

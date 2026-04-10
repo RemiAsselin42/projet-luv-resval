@@ -4,6 +4,34 @@ import { SECTION_IDS } from '../definitions';
 
 const YOUTUBE_URL = 'https://youtu.be/G02QEhmleYA';
 
+// Synchronisé avec crtShaders.ts : barrelDistortion(vUv, 0.8)
+const BARREL_STRENGTH = 0.8;
+
+/**
+ * Inverse de la distorsion en barillet du shader CRT.
+ * Convertit des ratios canvas (0–1) en ratios viewport pour le positionnement CSS.
+ *
+ * La distorsion forward est : c_out = c_in · (1 + r² · strength)
+ * où r² = c_x² + c_y² et c = coordonnée centrée sur 0.5.
+ * La direction est préservée → k = c_x/c_y constant → on résout en 1D (Newton-Raphson).
+ * Convergence garantie en < 5 itérations.
+ */
+const invBarrelRatio = (canvasYRatio: number, canvasXRatio: number): { x: number; y: number } => {
+  const cy_c = canvasYRatio - 0.5;
+  if (cy_c === 0) return { x: canvasXRatio, y: 0.5 };
+  const cx_c = canvasXRatio - 0.5;
+  const k = cx_c / cy_c;
+  const factor = (k * k + 1) * BARREL_STRENGTH;
+  // Résout : cy + factor·cy³ = cy_c
+  let cy = cy_c;
+  for (let i = 0; i < 10; i++) {
+    const f = cy + factor * cy * cy * cy - cy_c;
+    const df = 1 + 3 * factor * cy * cy;
+    cy -= f / df;
+  }
+  return { x: k * cy + 0.5, y: cy + 0.5 };
+};
+
 export interface EclipseOverlay {
   show: () => void;
   hide: () => void;
@@ -30,13 +58,14 @@ export const createEclipseOverlay = (
   // Chaque bouton est positionné individuellement en fixed pour correspondre
   // exactement à son homologue dessiné sur le canvas CRT.
   const positionBtn = (btn: HTMLButtonElement, xRatio: number) => {
+    const vp = invBarrelRatio(btnLayout.yRatio, xRatio);
     btn.style.position = 'fixed';
-    btn.style.bottom = `${(1 - btnLayout.yRatio) * 100}%`;
+    btn.style.bottom = `${(1 - vp.y) * 100}%`;
     if (btnLayout.centered) {
-      btn.style.left = `${xRatio * 100}%`;
+      btn.style.left = `${vp.x * 100}%`;
       btn.style.transform = 'translateX(-50%)';
     } else {
-      btn.style.left = `${xRatio * 100}%`;
+      btn.style.left = `${vp.x * 100}%`;
     }
   };
 

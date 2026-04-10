@@ -795,8 +795,8 @@ button.mpc-record-btn {
   border: none;
   color: transparent;
   font-family: Futura-Medium, sans-serif;
-  font-size: clamp(0.75rem, 1.5vw, 1rem);
-  padding: 0.8em 2em;
+  font-size: clamp(0.875rem, 3.125vw, 3rem); /* 32px / 1024px canvas = 3.125vw */
+  padding: 0.8em 0.5em;
   cursor: pointer;
   outline: none;
 }
