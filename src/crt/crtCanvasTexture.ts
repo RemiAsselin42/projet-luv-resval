@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { easeInOutSine } from '../utils/math';
 import {
   CRT_MENU_CONFIG,
   CRT_TITLE_CONFIG,
@@ -16,47 +17,47 @@ export interface CrtCanvasTexture {
   dispose: () => void;
 }
 
-// ── Layout constants ───────────────────────────────────────────────────────────
+// ── Constantes de mise en page ─────────────────────────────────────────────────
 
-// Loader label minimum and base sizes (px, before scale)
+// Taille minimale et de base du texte du loader (px, avant mise à l'échelle)
 const LOADER_LABEL_MIN_SIZE_PX = 25;
 const LOADER_LABEL_BASE_SIZE_PX = 30;
-// Gradient mid-stop position for the progress bar fill
+// Position du point de couleur intermédiaire dans le dégradé de la barre de progression
 const BAR_GRADIENT_MID_STOP = 0.55;
-// Minimum bar fill width (px) before showing the highlight gleam
+// Largeur minimale de remplissage (px) avant d'afficher le reflet lumineux
 const BAR_HIGHLIGHT_MIN_WIDTH_PX = 8;
 
-// Title resting vertical anchor (0–1, canvas space) when scroll = 0
+// Ancrage vertical du titre au repos (0–1, espace canvas) quand scroll = 0
 const TITLE_VERTICAL_ANCHOR = 0.45;
-// Title vertical travel distance during hero scroll (0–1, canvas space)
+// Distance verticale parcourue par le titre pendant le scroll du héro (0–1, espace canvas)
 const TITLE_SCROLL_TRAVEL = 0.65;
-// Subtitle top position as a ratio of the title font size
+// Position du sous-titre exprimée en proportion de la taille de police du titre
 const SUBTITLE_BASELINE_RATIO = 0.68;
 
-// Menu left margin (0–1, canvas space)
+// Marge gauche du menu (0–1, espace canvas)
 const MENU_HORIZONTAL_MARGIN_RATIO = 0.08;
-// Menu minimum font size (px, before scale)
+// Taille de police minimale du menu (px, avant mise à l'échelle)
 const MENU_FONT_MIN_SIZE_PX = 36;
-// Hover item text opacity multiplier
+// Opacité du texte sur l'élément survolé
 const HOVER_ITEM_OPACITY = 0.9;
 
-// Play button font
+// Police du bouton PLAY
 const PLAY_BUTTON_FONT_WEIGHT = '500';
 const PLAY_BUTTON_FONT_FAMILY = 'Futura-Medium';
-// Gap between the bottom of the loading bar and the play button text center (canvas ratio)
+// Espace entre le bas de la barre de chargement et le centre du bouton PLAY (ratio canvas)
 const PLAY_BUTTON_GAP_RATIO = 0.022;
-// Horizontal padding for the hover background (px, before resScale)
+// Marge horizontale du fond de survol (px, avant resScale)
 const PLAY_BUTTON_PAD_X_PX = 14;
-// Vertical top/bottom padding for the hover background (px, before resScale)
+// Marge verticale haut/bas du fond de survol (px, avant resScale)
 const PLAY_BUTTON_PAD_Y_TOP_PX = 12;
 const PLAY_BUTTON_PAD_Y_BOTTOM_PX = 6;
 
 /**
- * True when the PLAY button should be pulsing (bar complete, transition not yet started).
- * Bypasses the dirty-flag optimisation so the button animates every frame.
- * - loadingProgress = 1  → bar complete, waiting for PLAY click → pulse
- * - loadingProgress > 1  → transition running (1→2)             → no pulse
- * - loadingProgress < 1  → bar still filling                    → no pulse
+ * Vrai quand le bouton PLAY doit pulser (barre complète, transition pas encore déclenchée).
+ * Court-circuite l'optimisation dirty-flag pour que le bouton s'anime à chaque frame.
+ * - loadingProgress = 1  → barre complète, en attente du clic PLAY → pulse
+ * - loadingProgress > 1  → transition en cours (1→2)               → pas de pulse
+ * - loadingProgress < 1  → barre encore en train de se remplir      → pas de pulse
  */
 export const isPlayButtonPulsing = (loadingProgress: number): boolean => {
   const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
@@ -308,7 +309,7 @@ export const createTextCanvasTexture = (
 
     // Fondu croisé loader → héro : 0-1 = loader seul, 1-2 = transition (easeInOutSine), ≥2 = héro seul.
     const transitionBlend = Math.min(Math.max(loadingProgress - 1, 0), 1);
-    const easedBlend = -(Math.cos(Math.PI * transitionBlend) - 1) / 2;
+    const easedBlend = easeInOutSine(transitionBlend);
     const loaderOpacity = loadingProgress <= 1 ? 1 : 1 - easedBlend;
     const heroOpacity = loadingProgress <= 1 ? 0 : easedBlend;
 

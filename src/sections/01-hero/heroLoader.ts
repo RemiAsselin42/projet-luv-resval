@@ -1,17 +1,11 @@
 import gsap from 'gsap';
+import { easeOutCubic, easeInOutSine, easeOutQuad, easeInOutQuad, easeOutExpo } from '../../utils/math';
 
-// ── Constantes du loader (réexportées par hero.ts pour la compatibilité des tests) ──
+// ── Constantes et contrôleur du loading screen ───────────────────────────────
 
 export const LOADER_TOTAL_DURATION_SECONDS = 3.8;
 /** Durée du fondu croisé entre l'écran de chargement et le contenu héro. */
 export const LOADER_TRANSITION_SECONDS = 0.6;
-
-const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
-const easeInOutSine = (t: number): number => -(Math.cos(Math.PI * t) - 1) / 2;
-const easeOutQuad = (t: number): number => 1 - (1 - t) * (1 - t);
-const easeInOutQuad = (t: number): number =>
-  t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-const easeOutExpo = (t: number): number => (t === 1 ? 1 : 1 - 2 ** (-10 * t));
 
 export const computeLoadingProgress = (elapsedSeconds: number): number => {
   const t = Math.max(elapsedSeconds, 0);

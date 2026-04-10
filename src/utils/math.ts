@@ -1,46 +1,46 @@
 /**
- * Mathematical utility functions for common operations.
+ * Fonctions mathématiques utilitaires.
  */
 
 /**
- * Clamps a value between a minimum and maximum.
- * @param value The value to clamp
- * @param min Minimum bound
- * @param max Maximum bound
- * @returns The clamped value
+ * Bloque une valeur entre un minimum et un maximum.
+ * @param value La valeur à bloquer
+ * @param min Borne minimale
+ * @param max Borne maximale
+ * @returns La valeur bloquée dans l'intervalle [min, max]
  */
 export const clamp = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max);
 };
 
 /**
- * Clamps a value between 0 and 1.
- * @param value The value to clamp
- * @returns The clamped value in range [0, 1]
+ * Bloque une valeur entre 0 et 1.
+ * @param value La valeur à bloquer
+ * @returns La valeur bloquée dans l'intervalle [0, 1]
  */
 export const clamp01 = (value: number): number => {
   return clamp(value, 0, 1);
 };
 
 /**
- * Linear interpolation between two values.
- * @param a Start value
- * @param b End value
- * @param t Interpolation factor (0 = a, 1 = b)
- * @returns Interpolated value
+ * Interpolation linéaire entre deux valeurs.
+ * @param a Valeur de départ
+ * @param b Valeur d'arrivée
+ * @param t Facteur d'interpolation (0 = a, 1 = b)
+ * @returns La valeur interpolée
  */
 export const lerp = (a: number, b: number, t: number): number => {
   return a + (b - a) * clamp01(t);
 };
 
 /**
- * Maps a value from one range to another.
- * @param value The input value
- * @param inMin Input range minimum
- * @param inMax Input range maximum
- * @param outMin Output range minimum
- * @param outMax Output range maximum
- * @returns The mapped value
+ * Convertit une valeur d'une plage vers une autre.
+ * @param value La valeur d'entrée
+ * @param inMin Minimum de la plage d'entrée
+ * @param inMax Maximum de la plage d'entrée
+ * @param outMin Minimum de la plage de sortie
+ * @param outMax Maximum de la plage de sortie
+ * @returns La valeur convertie dans la nouvelle plage
  */
 export const mapRange = (
   value: number,
@@ -51,3 +51,21 @@ export const mapRange = (
 ): number => {
   return ((value - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 };
+
+// ── Fonctions d'easing ────────────────────────────────────────────────────────
+
+/** Décélération cubique : rapide au départ, ralentit à l'arrivée. */
+export const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
+
+/** Accélération/décélération en cosinus (doux des deux côtés). */
+export const easeInOutSine = (t: number): number => -(Math.cos(Math.PI * t) - 1) / 2;
+
+/** Décélération quadratique. */
+export const easeOutQuad = (t: number): number => 1 - (1 - t) * (1 - t);
+
+/** Accélération/décélération quadratique. */
+export const easeInOutQuad = (t: number): number =>
+  t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+
+/** Décélération exponentielle : très rapide au départ, quasi-immobile à l'arrivée. */
+export const easeOutExpo = (t: number): number => (t === 1 ? 1 : 1 - 2 ** (-10 * t));
