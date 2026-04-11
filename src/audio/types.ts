@@ -6,6 +6,8 @@
 export interface AudioManager {
   /** Lance les 4 layers musicaux synchronisés. Idempotent. */
   startExperience(): void;
+  /** Réinitialise l'expérience audio pour permettre un redémarrage complet depuis 0. */
+  resetExperienceAudio(): void;
   /** Débloque une layer musicale (index 0-5) avec un fade-in. Appelé par la MPC. */
   unlockMusicLayer(index: number): void;
   /** Débloque une layer musicale avec un fade-in progressif sur durationMs ms. */

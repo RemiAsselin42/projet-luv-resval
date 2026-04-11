@@ -73,7 +73,7 @@ describe('createHeroScrollTimelines', () => {
     expect(heroTimeline).not.toBeNull();
   });
 
-  it('heroTimeline animates crt.mesh.position with z: -2.5', () => {
+  it('heroTimeline animates crt.mesh.position with z: -1', () => {
     const toSpy = vi.fn().mockReturnThis();
     (gsap.timeline as ReturnType<typeof vi.fn>).mockReturnValueOnce({
       to: toSpy,
@@ -89,7 +89,7 @@ describe('createHeroScrollTimelines', () => {
 
     expect(toSpy).toHaveBeenCalledWith(
       crt.mesh.position,
-      expect.objectContaining({ z: -2.5 }),
+      expect.objectContaining({ z: -1 }),
     );
   });
 });

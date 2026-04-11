@@ -61,6 +61,19 @@ export const createAudioManager = (): AudioManager => {
     _musicLayers[0]?.fade(0, MUSIC_LAYER_VOLUME, LAYER_FADE_DURATION_MS);
   };
 
+  const resetExperienceAudio = (): void => {
+    _musicLayers.forEach((layer, index) => {
+      layer.stop();
+      layer.seek(0);
+      layer.volume(0);
+      if (index !== 0) {
+        _lockedLayers.add(index);
+      }
+    });
+    _lockedLayers.delete(0);
+    _experienceStarted = false;
+  };
+
   const unlockMusicLayer = (index: number): void => {
     const layer = _musicLayers[index];
     if (!layer) return;
@@ -126,6 +139,7 @@ export const createAudioManager = (): AudioManager => {
 
   return {
     startExperience,
+    resetExperienceAudio,
     unlockMusicLayer,
     fadeMusicLayerIn,
     lockMusicLayer,

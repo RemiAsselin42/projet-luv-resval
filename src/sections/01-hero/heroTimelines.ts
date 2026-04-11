@@ -28,7 +28,7 @@ export const createHeroScrollTimelines = (
       : null;
 
   if (heroTimeline) {
-    heroTimeline.to(crt.mesh.position, { z: -2.5, ease: 'none' });
+    heroTimeline.to(crt.mesh.position, { z: -1.0, ease: 'none' });
   }
 
   return { heroTimeline };

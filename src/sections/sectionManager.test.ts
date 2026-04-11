@@ -75,6 +75,7 @@ const createTestContext = () => {
     },
     audioManager: {
       startExperience: vi.fn(),
+      resetExperienceAudio: vi.fn(),
       unlockMusicLayer: vi.fn(),
       fadeMusicLayerIn: vi.fn(),
       lockMusicLayer: vi.fn(),

@@ -6,6 +6,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const makeHowlInstance = () => ({
   play: vi.fn(),
+  stop: vi.fn(),
   fade: vi.fn(),
   volume: vi.fn(() => 0),
   seek: vi.fn(),
@@ -93,6 +94,50 @@ describe('createAudioManager — startExperience()', () => {
     // play ne doit être appelé qu'une seule fois par layer
     for (let i = 0; i < TRACKS_COUNT; i++) {
       expect(howlInstances[i]?.play).toHaveBeenCalledOnce();
+    }
+  });
+});
+
+describe('createAudioManager — resetExperienceAudio()', () => {
+  it('stoppe, seek à 0 et mute les 6 layers', () => {
+    const manager = createAudioManager();
+    manager.startExperience();
+
+    manager.resetExperienceAudio();
+
+    for (let i = 0; i < TRACKS_COUNT; i++) {
+      expect(howlInstances[i]?.stop).toHaveBeenCalledOnce();
+      expect(howlInstances[i]?.seek).toHaveBeenCalledWith(0);
+      expect(howlInstances[i]?.volume).toHaveBeenCalledWith(0);
+    }
+  });
+
+  it('permet de relancer startExperience() après reset', () => {
+    const manager = createAudioManager();
+
+    manager.startExperience();
+    manager.resetExperienceAudio();
+    manager.startExperience();
+
+    for (let i = 0; i < TRACKS_COUNT; i++) {
+      expect(howlInstances[i]?.play).toHaveBeenCalledTimes(2);
+    }
+    expect(howlInstances[0]?.fade).toHaveBeenCalledTimes(2);
+  });
+
+  it('re-verrouille les layers 1..5 comme au démarrage', () => {
+    const manager = createAudioManager();
+
+    manager.startExperience();
+    manager.unlockMusicLayer(1);
+    manager.resetExperienceAudio();
+    manager.setMusicVolume(0.7);
+
+    // La layer 0 reste pilotable par setMusicVolume.
+    expect(howlInstances[0]?.volume).toHaveBeenCalledWith(0.7);
+    // Les layers 1..5 restent verrouillées après reset (pas de setMusicVolume).
+    for (let i = 1; i < TRACKS_COUNT; i++) {
+      expect(howlInstances[i]?.volume).not.toHaveBeenCalledWith(0.7);
     }
   });
 });

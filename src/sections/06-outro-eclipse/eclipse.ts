@@ -59,7 +59,13 @@ const initGruntSection: SectionInitializer = (context) => {
     // L'overlay se cache lui-même avant d'appeler ce callback
   };
 
-  const overlay = createEclipseOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, resetState);
+  const handleRestart = () => {
+    resetState();
+    audioManager.resetExperienceAudio();
+    audioManager.startExperience();
+  };
+
+  const overlay = createEclipseOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart);
 
   // ── État du glitch ────────────────────────────────────────────────────────
   type GlitchPhase = 'idle' | 'ramping' | 'crashed';

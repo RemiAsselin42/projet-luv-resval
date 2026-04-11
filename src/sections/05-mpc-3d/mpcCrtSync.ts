@@ -94,7 +94,6 @@ export const createMpcCrtSync = (
       isMpcInViewport = true;
       crtManager.setFade(0.3);
       crtManager.setBlur(0.85);
-      crtManager.mesh.position.z = -2.5;
       // Restaurer la vidéo si la cappella était active
       if (getIsAcapPlaying()) {
         syncCrtVideo(true);

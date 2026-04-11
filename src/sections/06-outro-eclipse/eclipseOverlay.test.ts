@@ -190,14 +190,16 @@ describe('createEclipseOverlay', () => {
     btns.forEach((btn) => expect(btn.style.position).toBe('fixed'));
   });
 
-  it('le bouton [RESTART] est placé à left: 30% (BTN_LAYOUT.restartXRatio = 0.3)', () => {
+  it('le bouton [RESTART] est placé selon la correction de distorsion (≈32.11%)', () => {
     const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
-    expect(btns[0]?.style.left).toBe('30%');
+    const leftPercent = Number.parseFloat(btns[0]?.style.left ?? 'NaN');
+    expect(leftPercent).toBeCloseTo(32.1112, 3);
   });
 
-  it('le bouton [SEE MORE] est placé à left: 70% (BTN_LAYOUT.seeMoreXRatio = 0.7)', () => {
+  it('le bouton [SEE MORE] est placé selon la correction de distorsion (≈67.89%)', () => {
     const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
-    expect(btns[1]?.style.left).toBe('70%');
+    const leftPercent = Number.parseFloat(btns[1]?.style.left ?? 'NaN');
+    expect(leftPercent).toBeCloseTo(67.8888, 3);
   });
 
   it('centered=true applique transform translateX(-50%) sur les boutons', () => {
