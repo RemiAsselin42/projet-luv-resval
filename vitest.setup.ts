@@ -118,3 +118,12 @@ HTMLCanvasElement.prototype.getContext = vi.fn(function (
 
   return null;
 }) as typeof HTMLCanvasElement.prototype.getContext;
+
+// jsdom n'implémente pas scrollTo ; le mock évite un bruit stderr dans certains tests.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'scrollTo', {
+    value: vi.fn(),
+    writable: true,
+    configurable: true,
+  });
+}

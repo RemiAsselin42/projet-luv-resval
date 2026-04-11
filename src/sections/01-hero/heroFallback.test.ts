@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SectionLifecycle } from '../types';
 
 vi.mock('gsap', () => ({
@@ -25,6 +25,11 @@ const buildHeroDom = (): { hero: HTMLElement; content: HTMLElement } => {
 describe('initHeroFallback', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('when hero section element is missing', () => {

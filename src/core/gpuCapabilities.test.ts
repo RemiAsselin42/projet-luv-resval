@@ -14,6 +14,14 @@ const mockWebGLContext = () => {
 };
 
 describe('gpuCapabilities', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('hasWebGLSupport', () => {
     it('returns true when WebGL is available', () => {
       const originalGetContext = HTMLCanvasElement.prototype.getContext;
