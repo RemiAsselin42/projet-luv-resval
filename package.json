@@ -17,7 +17,7 @@
     "typecheck": "cross-env NODE_OPTIONS= tsc --noEmit",
     "test": "cross-env NODE_OPTIONS= vitest run",
     "test:coverage": "cross-env NODE_OPTIONS= vitest run --coverage",
-    "validate": "npm run lf:check && npm run lint && npm run lint:style && npm run typecheck && npm run build"
+    "validate": "npm run lf:check && npm run format:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "gsap": "^3.14.2",
