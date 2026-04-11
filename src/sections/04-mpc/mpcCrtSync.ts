@@ -81,7 +81,7 @@ export const createMpcCrtSync = (
       crtManager.resetEffects();
       crtManager.setFade(0.3);
       crtManager.setBlur(0.85);
-      // z reste à -2.5 (hérité du parallax hero→hub) — eclipse le ramènera à 0
+      // z reste à -2.5 (hérité du parallax hero→hub) — crash outro le ramènera à 0
     },
     onLeaveBack: () => {
       isMpcInViewport = false;
@@ -101,7 +101,7 @@ export const createMpcCrtSync = (
     },
     onLeave: () => {
       isMpcInViewport = false;
-      // Note : on ne reset pas le blur ici — eclipse.onEnter fera resetEffects()
+      // Note : on ne reset pas le blur ici — crashOutro.onEnter fera resetEffects()
     },
   });
 

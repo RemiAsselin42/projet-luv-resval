@@ -1,4 +1,4 @@
-// Liste officielle de toutes les sections du site (hero, MPC, eclipse...).
+// Liste officielle de toutes les sections du site (hero, MPC, crash outro...).
 // Chaque section y est décrite : son titre, son identifiant, si elle est visible,
 // si elle apparaît dans le menu CRT, et comment charger son code JavaScript.
 // C'est ici qu'on ajoute ou désactive une section pour tout le projet.
@@ -11,7 +11,7 @@ export type SectionId =
   | 'reliques'
   | 'oeil-big-brother'
   | 'mpc'
-  | 'outro-eclipse';
+  | 'crash-outro';
 
 export interface SectionDefinition {
   id: SectionId;
@@ -59,7 +59,7 @@ const sectionDefinitions = [
     screenReaderOnlyHeading: true,
     hidden: true,
     includeInCrtMenu: false,
-    load: async () => (await import('./03-les-reliques/reliques')).default,
+    load: async () => (await import('./02-les-reliques/reliques')).default,
   },
   {
     id: 'oeil-big-brother',
@@ -69,7 +69,7 @@ const sectionDefinitions = [
     hidden: true,
     includeInCrtMenu: false,
     load: async () =>
-      (await import('./04-oeil-big-brother/bigBrother')).default,
+      (await import('./03-oeil-big-brother/bigBrother')).default,
   },
   {
     id: 'mpc',
@@ -77,15 +77,15 @@ const sectionDefinitions = [
     screenReaderOnlyHeading: true,
     includeInCrtMenu: true,
     crtMenuLabel: 'SECTION MPC',
-    load: async () => (await import('./05-mpc-3d/mpc3d')).default,
+    load: async () => (await import('./04-mpc/mpc')).default,
   },
   {
-    id: 'outro-eclipse',
-    heading: "L'Eclipse",
+    id: 'crash-outro',
+    heading: 'Section 05 - Crash Outro',
     screenReaderOnlyHeading: true,
     includeInCrtMenu: true,
-    crtMenuLabel: "L'ECLIPSE",
-    load: async () => (await import('./06-outro-eclipse/eclipse')).default,
+    crtMenuLabel: 'CRASH OUTRO',
+    load: async () => (await import('./05-crash-outro/crashOutro')).default,
   },
 ] as const satisfies readonly SectionDefinition[];
 
@@ -95,7 +95,7 @@ export const sections: SectionDefinition[] = [...sectionDefinitions];
  * Identifiants canoniques des sections — utilisés pour les requêtes DOM,
  * la navigation au scroll et le scroll manager.
  *
- *   HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, OUTRO_ECLIPSE
+*   HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, CRASH_OUTRO
  */
 export const SECTION_IDS = {
   // ── Noms canoniques — correspondent aux attributs data-section dans le HTML ──
@@ -104,7 +104,7 @@ export const SECTION_IDS = {
   RELIQUES: 'reliques',
   BIG_BROTHER: 'oeil-big-brother',
   MPC: 'mpc',
-  OUTRO_ECLIPSE: 'outro-eclipse',
+  CRASH_OUTRO: 'crash-outro',
 
 } as const;
 

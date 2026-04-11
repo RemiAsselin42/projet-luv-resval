@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
 import * as THREE from 'three';
-import { createError403Canvas, BTN_LAYOUT } from './eclipse403Canvas';
+import { createError403Canvas, BTN_LAYOUT } from './crashOutro403Canvas';
 
 describe('BTN_LAYOUT', () => {
   it('expose les ratios des boutons comme source unique de vérité', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createEclipseOverlay } from './eclipseOverlay';
-import type { BtnLayout } from './eclipse403Canvas';
+import { createCrashOutroOverlay } from './crashOutroOverlay';
+import type { BtnLayout } from './crashOutro403Canvas';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -29,17 +29,17 @@ const makeScrollManager = () => ({
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('createEclipseOverlay', () => {
+describe('createCrashOutroOverlay', () => {
   let scrollManager: ReturnType<typeof makeScrollManager>;
   let onHoverChange: ReturnType<typeof vi.fn>;
   let onRestart: ReturnType<typeof vi.fn>;
-  let overlay: ReturnType<typeof createEclipseOverlay>;
+  let overlay: ReturnType<typeof createCrashOutroOverlay>;
 
   beforeEach(() => {
     scrollManager = makeScrollManager();
     onHoverChange = vi.fn();
     onRestart = vi.fn();
-    overlay = createEclipseOverlay(scrollManager, onHoverChange, BTN_LAYOUT, onRestart);
+    overlay = createCrashOutroOverlay(scrollManager, onHoverChange, BTN_LAYOUT, onRestart);
   });
 
   afterEach(() => {
@@ -50,28 +50,28 @@ describe('createEclipseOverlay', () => {
 
   // ── Structure DOM ───────────────────────────────────────────────────────────
 
-  it('ajoute un container .eclipse-overlay au document.body', () => {
-    const container = document.body.querySelector('.eclipse-overlay');
+  it('ajoute un container .crash-outro-overlay au document.body', () => {
+    const container = document.body.querySelector('.crash-outro-overlay');
     expect(container).not.toBeNull();
   });
 
   it('crée deux boutons dans le container', () => {
-    const btns = document.body.querySelectorAll('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll('.crash-outro-overlay__btn');
     expect(btns).toHaveLength(2);
   });
 
   it('le premier bouton contient le label [RESTART]', () => {
-    const btns = document.body.querySelectorAll('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll('.crash-outro-overlay__btn');
     expect(btns[0]?.textContent).toBe('[RESTART]');
   });
 
   it('le second bouton contient le label [SEE MORE]', () => {
-    const btns = document.body.querySelectorAll('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll('.crash-outro-overlay__btn');
     expect(btns[1]?.textContent).toBe('[SEE MORE]');
   });
 
   it('les boutons sont initialement non-tabulables (tabIndex = -1)', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns.forEach((btn) => expect(btn.tabIndex).toBe(-1));
   });
 
@@ -79,13 +79,13 @@ describe('createEclipseOverlay', () => {
 
   it('show() ajoute la classe is-visible au container', () => {
     overlay.show();
-    const container = document.body.querySelector('.eclipse-overlay');
+    const container = document.body.querySelector('.crash-outro-overlay');
     expect(container?.classList.contains('is-visible')).toBe(true);
   });
 
   it('show() rend les boutons tabulables (tabIndex = 0)', () => {
     overlay.show();
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns.forEach((btn) => expect(btn.tabIndex).toBe(0));
   });
 
@@ -94,14 +94,14 @@ describe('createEclipseOverlay', () => {
   it('hide() supprime la classe is-visible du container', () => {
     overlay.show();
     overlay.hide();
-    const container = document.body.querySelector('.eclipse-overlay');
+    const container = document.body.querySelector('.crash-outro-overlay');
     expect(container?.classList.contains('is-visible')).toBe(false);
   });
 
   it('hide() remet les boutons non-tabulables (tabIndex = -1)', () => {
     overlay.show();
     overlay.hide();
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns.forEach((btn) => expect(btn.tabIndex).toBe(-1));
   });
 
@@ -109,44 +109,44 @@ describe('createEclipseOverlay', () => {
 
   it('dispose() supprime le container du DOM', () => {
     overlay.dispose();
-    const container = document.body.querySelector('.eclipse-overlay');
+    const container = document.body.querySelector('.crash-outro-overlay');
     expect(container).toBeNull();
   });
 
   // ── Hover callbacks ──────────────────────────────────────────────────────────
 
   it('mouseenter sur [RESTART] appelle onHoverChange("restart")', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new MouseEvent('mouseenter'));
     expect(onHoverChange).toHaveBeenCalledWith('restart');
   });
 
   it('mouseenter sur [SEE MORE] appelle onHoverChange("see-more")', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[1]?.dispatchEvent(new MouseEvent('mouseenter'));
     expect(onHoverChange).toHaveBeenCalledWith('see-more');
   });
 
   it('mouseleave sur un bouton appelle onHoverChange(null)', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new MouseEvent('mouseleave'));
     expect(onHoverChange).toHaveBeenCalledWith(null);
   });
 
   it('focus sur [RESTART] appelle onHoverChange("restart")', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new FocusEvent('focus'));
     expect(onHoverChange).toHaveBeenCalledWith('restart');
   });
 
   it('focus sur [SEE MORE] appelle onHoverChange("see-more")', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[1]?.dispatchEvent(new FocusEvent('focus'));
     expect(onHoverChange).toHaveBeenCalledWith('see-more');
   });
 
   it('blur sur un bouton appelle onHoverChange(null)', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new FocusEvent('blur'));
     expect(onHoverChange).toHaveBeenCalledWith(null);
   });
@@ -154,13 +154,13 @@ describe('createEclipseOverlay', () => {
   // ── Click [RESTART] ──────────────────────────────────────────────────────────
 
   it('click sur [RESTART] appelle onRestart()', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new MouseEvent('click'));
     expect(onRestart).toHaveBeenCalledOnce();
   });
 
   it('click sur [RESTART] appelle scrollManager.start() puis scrollManager.scrollToSection()', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new MouseEvent('click'));
     expect(scrollManager.start).toHaveBeenCalledOnce();
     expect(scrollManager.scrollToSection).toHaveBeenCalledOnce();
@@ -168,17 +168,17 @@ describe('createEclipseOverlay', () => {
 
   it('click sur [RESTART] cache l\'overlay (retire is-visible)', () => {
     overlay.show();
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns[0]?.dispatchEvent(new MouseEvent('click'));
-    const container = document.body.querySelector('.eclipse-overlay');
+    const container = document.body.querySelector('.crash-outro-overlay');
     expect(container?.classList.contains('is-visible')).toBe(false);
   });
 
   // ── onRestart optionnel ──────────────────────────────────────────────────────
 
   it('click sur [RESTART] sans onRestart ne lève pas d\'erreur', () => {
-    const overlayNoRestart = createEclipseOverlay(scrollManager, onHoverChange, BTN_LAYOUT);
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const overlayNoRestart = createCrashOutroOverlay(scrollManager, onHoverChange, BTN_LAYOUT);
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     expect(() => btns[0]?.dispatchEvent(new MouseEvent('click'))).not.toThrow();
     overlayNoRestart.dispose();
   });
@@ -186,32 +186,32 @@ describe('createEclipseOverlay', () => {
   // ── Positionnement ───────────────────────────────────────────────────────────
 
   it('les boutons sont positionnés en fixed', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns.forEach((btn) => expect(btn.style.position).toBe('fixed'));
   });
 
   it('le bouton [RESTART] est placé selon la correction de distorsion (≈32.11%)', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     const leftPercent = Number.parseFloat(btns[0]?.style.left ?? 'NaN');
     expect(leftPercent).toBeCloseTo(32.1112, 3);
   });
 
   it('le bouton [SEE MORE] est placé selon la correction de distorsion (≈67.89%)', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     const leftPercent = Number.parseFloat(btns[1]?.style.left ?? 'NaN');
     expect(leftPercent).toBeCloseTo(67.8888, 3);
   });
 
   it('centered=true applique transform translateX(-50%) sur les boutons', () => {
-    const btns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const btns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     btns.forEach((btn) => expect(btn.style.transform).toBe('translateX(-50%)'));
   });
 
   it('centered=false n\'applique pas de transform translateX', () => {
     const nonCenteredLayout: BtnLayout = { ...BTN_LAYOUT, centered: false };
-    const overlayNC = createEclipseOverlay(scrollManager, onHoverChange, nonCenteredLayout);
+    const overlayNC = createCrashOutroOverlay(scrollManager, onHoverChange, nonCenteredLayout);
     // Tous les boutons ajoutés au DOM (les anciens + les nouveaux)
-    const allBtns = document.body.querySelectorAll<HTMLButtonElement>('.eclipse-overlay__btn');
+    const allBtns = document.body.querySelectorAll<HTMLButtonElement>('.crash-outro-overlay__btn');
     // Prendre les 2 derniers (ceux du nouvel overlay)
     const lastTwo = Array.from(allBtns).slice(-2);
     lastTwo.forEach((btn) => expect(btn.style.transform).not.toBe('translateX(-50%)'));

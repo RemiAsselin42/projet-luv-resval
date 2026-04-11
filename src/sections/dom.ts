@@ -1,5 +1,5 @@
 // Construit et insère les éléments HTML des sections dans la page.
-// Chaque section visible du site (hero, MPC, eclipse...) obtient ici son bloc <section>
+// Chaque section visible du site (hero, MPC, crash outro...) obtient ici son bloc <section>
 // avec son titre, ses attributs d'accessibilité et sa hauteur de scroll.
 
 import type { SectionDefinition, SectionId } from './definitions';

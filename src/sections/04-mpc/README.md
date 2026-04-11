@@ -1,4 +1,4 @@
-# Section 05 — MPC 3D (Beatmaker)
+# Section 04 — MPC 3D (Beatmaker)
 
 ## Description
 
@@ -6,7 +6,7 @@ Interface de beatmaker interactive inspirée d'une MPC physique : 6 pads de perc
 
 ## Architecture
 
-Tout le module est contenu dans `mpc3d.ts` et exporté via `initBeatmakerSection` (`SectionInitializer`).
+Tout le module est contenu dans `mpc.ts` et exporté via `initBeatmakerSection` (`SectionInitializer`).
 
 | Fonction / Constante     | Rôle                                                                               |
 |--------------------------|------------------------------------------------------------------------------------|
@@ -38,7 +38,7 @@ Le bouton `.mpc-play-btn` (élément `<button>` natif, accessible clavier) contr
 - `aria-label` mis à jour dynamiquement (`"Lecture"` / `"Arrêt"`).
 
 ```typescript
-// Exemple interne (mpc3d.ts)
+// Exemple interne (mpc.ts)
 const ACAP_LAYER = 5;
 audioManager.unlockMusicLayer(ACAP_LAYER); // démarre la cappella
 audioManager.lockMusicLayer(ACAP_LAYER);   // coupe la cappella

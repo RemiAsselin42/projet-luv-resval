@@ -29,7 +29,7 @@ const MENU_PREVIEW_TARGET_DIMENSIONS = {
   RELIQUES: 2.5,
   BIG_BROTHER: 1.62,
   MPC: 1.6,
-  ECLIPSE: 1.5,
+  CRASH_OUTRO: 1.5,
 } as const;
 
 // ── Public interface ───────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export const createLoadingScreen = async (
       {
         menuIndex: 3,
         modelUrl: tapeUrl,
-        targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.ECLIPSE,
+        targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.CRASH_OUTRO,
       },
     ],
     menuPreviewQuality,

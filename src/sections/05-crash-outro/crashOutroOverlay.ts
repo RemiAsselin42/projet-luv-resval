@@ -1,10 +1,10 @@
-// Boutons HTML accessibles de l'écran d'erreur 403 (fin de l'Eclipse).
+// Boutons HTML accessibles de l'écran d'erreur 403 (fin de la section Crash Outro).
 // Les boutons [RESTART] et [SEE MORE] sont des éléments HTML vrais superposés
 // au canvas CRT, positionnés mathématiquement pour correspondre exactement
 // à leur rendu visuel (en tenant compte de la déformation de l'écran bombé).
 
 import type { ScrollManager } from '../../core/scrollManager';
-import type { BtnLayout } from './eclipse403Canvas';
+import type { BtnLayout } from './crashOutro403Canvas';
 import { SECTION_IDS } from '../definitions';
 
 const YOUTUBE_URL = 'https://youtu.be/G02QEhmleYA';
@@ -37,7 +37,7 @@ const invBarrelRatio = (canvasYRatio: number, canvasXRatio: number): { x: number
   return { x: k * cy + 0.5, y: cy + 0.5 };
 };
 
-export interface EclipseOverlay {
+export interface CrashOutroOverlay {
   show: () => void;
   hide: () => void;
   dispose: () => void;
@@ -46,19 +46,19 @@ export interface EclipseOverlay {
 /**
  * Crée les boutons [RESTART] et [SEE MORE] comme éléments HTML accessibles
  * positionnés derrière le canvas Three.js (z-index inférieur).
- * L'apparence visuelle est rendue sur le canvas 403 (eclipse403Canvas.ts).
+ * L'apparence visuelle est rendue sur le canvas 403 (crashOutro403Canvas.ts).
  *
  * btnLayout  : source unique de vérité pour les positions (issues du canvas).
  * onHoverChange : met à jour le canvas quand la souris survole un bouton.
  */
-export const createEclipseOverlay = (
+export const createCrashOutroOverlay = (
   scrollManager: ScrollManager,
   onHoverChange: (which: 'restart' | 'see-more' | null) => void,
   btnLayout: BtnLayout,
   onRestart?: () => void,
-): EclipseOverlay => {
+): CrashOutroOverlay => {
   const container = document.createElement('div');
-  container.className = 'eclipse-overlay';
+  container.className = 'crash-outro-overlay';
 
   // Chaque bouton est positionné individuellement en fixed pour correspondre
   // exactement à son homologue dessiné sur le canvas CRT.
@@ -81,7 +81,7 @@ export const createEclipseOverlay = (
     onClick: () => void,
   ): HTMLButtonElement => {
     const btn = document.createElement('button');
-    btn.className = 'eclipse-overlay__btn';
+    btn.className = 'crash-outro-overlay__btn';
     btn.textContent = label;
     btn.tabIndex = -1;
     positionBtn(btn, xRatio);

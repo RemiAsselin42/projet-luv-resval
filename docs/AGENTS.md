@@ -20,7 +20,7 @@ The website is in french only, and will include (in this specific order) :
 
 - Section 3 - La MPC 3D: interactive 9-pad drum machine; keyboard and click interactions trigger stems including lead vocal and ad-libs; all pads rebuild the full track.
 
-- Section Outro - L'Eclipse: return to darkness, 4 stage spotlights from original video, final wheel movement tilts lights down then turns them off one by one.
+- Section 05 - Crash Outro: return to darkness, 4 stage spotlights from original video, final wheel movement tilts lights down then turns them off one by one.
 
 - Global interface: persistent corner button "Retour au Hub" for instant jump back to CRT menu.
 
@@ -100,7 +100,7 @@ Inspiration for design and interactivity:
 - Naming remains consistent with existing codebase conventions.
 - Keep modules focused and small: one feature/section per file group.
 - Distinguish clearly between current implementation and target architecture in docs.
-- Use canonical `SECTION_IDS` keys (HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, OUTRO_ECLIPSE). Do not use deprecated aliases (MENU, FACE_VADER, MPC_3D, etc.) in new code.
+- Use canonical `SECTION_IDS` keys (HERO, HUB_CENTRAL, RELIQUES, BIG_BROTHER, MPC, CRASH_OUTRO). Do not use deprecated aliases (MENU, FACE_VADER, MPC_3D, etc.) in new code.
 - Use `querySectionElement(id)` from `src/utils/dom.ts` for DOM queries on sections instead of inline `document.querySelector`.
 
 ## TypeScript development checklist:

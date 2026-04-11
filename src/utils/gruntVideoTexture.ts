@@ -1,6 +1,6 @@
 // Crée la texture vidéo Three.js pour le clip Grünt #45.
 // Cette vidéo est utilisée à deux endroits différents : dans la section MPC
-// (quand la cappella est lancée) et dans la section Eclipse (pendant le glitch).
+// (quand la cappella est lancée) et dans la section Crash Outro (pendant le glitch).
 // Ce fichier centralise la création pour éviter la duplication.
 
 import * as THREE from 'three';
@@ -17,7 +17,7 @@ export interface GruntVideoTexture {
 /**
  * Crée l'élément <video> et la VideoTexture Three.js pour la vidéo Grünt.
  *
- * Source unique de vérité partagée entre mpcCrtSync.ts et eclipse.ts :
+ * Source unique de vérité partagée entre mpcCrtSync.ts et crashOutro.ts :
  * les deux sections affichent la même vidéo sur le CRT à des moments différents.
  *
  * La vidéo est muette (muted), en boucle (loop) et en lecture inline (playsInline).

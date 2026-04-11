@@ -212,7 +212,7 @@ export const createScrollManager = (): ScrollManager => {
       ScrollTrigger.update();
     },
     lock: () => {
-      // Gèle le scroll sans réinitialiser la position (usage : état crash eclipse).
+      // Gèle le scroll sans réinitialiser la position (usage : état crash outro).
       document.body.style.overflow = 'hidden';
       lenis.stop();
     },

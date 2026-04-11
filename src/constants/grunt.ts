@@ -1,6 +1,6 @@
 // Constantes partagées relatives à la vidéo Grünt #45.
 // Chemin du fichier, durée totale et offset de départ dans la chanson.
-// Centralisées ici pour que la section MPC et la section Eclipse
+// Centralisées ici pour que la section MPC et la section Crash Outro
 // utilisent exactement les mêmes valeurs.
 
 /** Chemin relatif (public/) de la vidéo Grünt — sans préfixe base. */

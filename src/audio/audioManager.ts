@@ -86,7 +86,7 @@ export const createAudioManager = (): AudioManager => {
     if (!layer) return;
     _lockedLayers.delete(index);
     // Partir du volume courant pour éviter une coupure brutale si la layer
-    // est déjà active (ex. : re-entrée dans la section eclipse après un
+    // est déjà active (ex. : re-entrée dans la section crash outro après un
     // onLeaveBack). Howl.volume() retourne la valeur courante sans argument.
     const currentVol = layer.volume() as number;
     if (currentVol >= MUSIC_LAYER_VOLUME) return; // déjà au max, rien à faire

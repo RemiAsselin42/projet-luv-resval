@@ -76,10 +76,11 @@ const init = async (): Promise<void> => {
     extras: { menuPreview },
   });
 
-  // Hero est exclu du pre-init : son onClick (scroll vers menu, resize TV) et ses
-  // timelines GSAP ne doivent pas être actifs pendant le loading. Il sera initialisé
-  // juste après le clic PLAY — c'est rapide, aucun asset lourd à charger.
-  const initPromise = sectionManager.initialize(sectionLoaders.filter((l) => l.id !== 'hero'));
+  // Hero et menu sont exclus du pre-init : leurs interactions CRT (clic/hover)
+  // ne doivent pas être actives pendant l'écran de loading (bouton PLAY).
+  const initPromise = sectionManager.initialize(
+    sectionLoaders.filter((l) => l.id !== 'hero' && l.id !== 'menu'),
+  );
 
   // ── Render loop (démarre dès que le CRT est prêt) ──────────────────────────
   const renderLoop = (time: number): void => {
@@ -90,7 +91,7 @@ const init = async (): Promise<void> => {
     loadingScreen.update(deltaSeconds, time / 1000);
     scrollManager.update(time);
     // crtManager.update() est centralisé ici — les sections ne doivent PAS l'appeler.
-    // Cela évite la double mise à jour de uTime si deux sections (hero + eclipse) sont
+    // Cela évite la double mise à jour de uTime si deux sections (hero + crash outro) sont
     // actives simultanément pendant une transition scroll.
     crtManager?.update(time / 1000);
     if (sectionManagerActive) sectionManager?.update(deltaSeconds, time / 1000);

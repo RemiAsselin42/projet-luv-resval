@@ -33,10 +33,10 @@ export const fragmentShader = /* glsl */ `
   uniform float uFade;          // 1 → 0 : fondu de sortie
   uniform vec2  uResolution;
   uniform float uGlitch;        // 0 → 1 : intensité du glitch (0 = comportement hero normal)
-  uniform float uBlackout;      // 0 ou 1 : flash écran noir (eclipse uniquement)
-  uniform float uShiftX;        // décalage UV horizontal global (eclipse uniquement)
-  uniform float uShiftY;        // décalage UV vertical global (eclipse uniquement)
-  uniform float uMosaic;        // 0 ou 1 : mosaïque 3×3 (eclipse uniquement)
+  uniform float uBlackout;      // 0 ou 1 : flash écran noir (crash outro uniquement)
+  uniform float uShiftX;        // décalage UV horizontal global (crash outro uniquement)
+  uniform float uShiftY;        // décalage UV vertical global (crash outro uniquement)
+  uniform float uMosaic;        // 0 ou 1 : mosaïque 3×3 (crash outro uniquement)
   uniform float uBlur;          // 0 → 1 : flou du contenu (section MPC)
 
   varying vec2 vUv;
@@ -87,7 +87,7 @@ export const fragmentShader = /* glsl */ `
       return;
     }
 
-    // Décalage global XY (eclipse : flash de déplacement, wrap avec fract)
+    // Décalage global XY (crash outro : flash de déplacement, wrap avec fract)
     uv = fract(uv + vec2(uShiftX, uShiftY));
 
     // --- Aberration chromatique (amplifiée par uGlitch) ---
@@ -109,7 +109,7 @@ export const fragmentShader = /* glsl */ `
     // Clamp pour éviter les débordements
     glitchedUv.x = fract(glitchedUv.x);
 
-    // Mosaïque 3×3 (eclipse : tiling de la vidéo)
+    // Mosaïque 3×3 (crash outro : tiling de la vidéo)
     vec2 sampledUv = mix(glitchedUv, fract(glitchedUv * 3.0), step(0.5, uMosaic));
 
     // Séparation RGB exacerbée sur les zones glitchées (et par uGlitch)
@@ -234,7 +234,7 @@ export const fragmentShader = /* glsl */ `
     float residualLine = exp(-abs(vUv.y - 0.5) / 0.02) * (1.0 - imagePhase) * 0.5;
     color += vec3(0.7, 0.85, 1.0) * residualLine;
 
-    // Blackout flash (eclipse : écran noir brutal)
+    // Blackout flash (crash outro : écran noir brutal)
     color = mix(color, vec3(0.0), uBlackout);
 
     gl_FragColor = vec4(color, uFade);

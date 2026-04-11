@@ -1,4 +1,4 @@
-// Section finale "L'Eclipse" : conclusion de l'expérience.
+// Section 05 "Crash Outro" : conclusion de l'expérience.
 // La vidéo Grünt #45 s'affiche sur le CRT, puis le glitch s'intensifie progressivement
 // sur ~20 secondes jusqu'au "crash" de l'écran avec un message d'erreur 403.
 // L'utilisateur peut ensuite redémarrer l'expérience ou voir plus de contenu.
@@ -6,8 +6,8 @@
 import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
-import { createError403Canvas, BTN_LAYOUT } from './eclipse403Canvas';
-import { createEclipseOverlay } from './eclipseOverlay';
+import { createError403Canvas, BTN_LAYOUT } from './crashOutro403Canvas';
+import { createCrashOutroOverlay } from './crashOutroOverlay';
 import { createGruntVideoTexture } from '../../utils/gruntVideoTexture';
 import { CLIP_DURATION_SECONDS, CLIP_START_IN_SONG_SECONDS } from '../../constants/grunt';
 
@@ -32,7 +32,7 @@ const initGruntSection: SectionInitializer = (context) => {
   const { audioManager, scrollManager, crtManager } = context;
 
   const sectionElement = document.querySelector(
-    getSectionSelector(SECTION_IDS.OUTRO_ECLIPSE),
+    getSectionSelector(SECTION_IDS.CRASH_OUTRO),
   );
   if (!(sectionElement instanceof HTMLElement)) {
     return { update: () => {}, dispose: () => {} };
@@ -65,7 +65,7 @@ const initGruntSection: SectionInitializer = (context) => {
     audioManager.startExperience();
   };
 
-  const overlay = createEclipseOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart);
+  const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart);
 
   // ── État du glitch ────────────────────────────────────────────────────────
   type GlitchPhase = 'idle' | 'ramping' | 'crashed';

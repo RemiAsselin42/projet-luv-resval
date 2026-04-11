@@ -8,7 +8,7 @@ describe('getSectionDataSelector', () => {
 
   it('handles hyphenated section ids', () => {
     expect(getSectionDataSelector('hub-central')).toBe('[data-section="hub-central"]');
-    expect(getSectionDataSelector('outro-eclipse')).toBe('[data-section="outro-eclipse"]');
+    expect(getSectionDataSelector('crash-outro')).toBe('[data-section="crash-outro"]');
   });
 
   it('wraps the id in double quotes inside the selector', () => {

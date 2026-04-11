@@ -40,10 +40,10 @@ src/
 │   │   ├── crtModelPreview.ts    ← aperçu 3D du menu central dans le CRT
 │   │   └── crtTypes.ts           ← types liés au CRT (config, state, etc.)
 │   ├── 02-hub-central-menu/
-│   ├── 03-les-reliques/
-│   ├── 04-oeil-big-brother/
-│   ├── 05-mpc-3d/
-│   └── 06-outro-eclipse/
+│   ├── 02-les-reliques/
+│   ├── 03-oeil-big-brother/
+│   ├── 04-mpc/
+│   └── 05-crash-outro/
 ├── components/
 │   └── 3d/
 │       ├── glbLoader.ts

@@ -28,10 +28,10 @@ export default defineConfig({
         // Re-export with no logic
         'src/sections/registry.ts',
         // Stub sections — no implementation yet (test when implemented)
-        'src/sections/03-les-reliques/reliques.ts',
-        'src/sections/04-oeil-big-brother/bigBrother.ts',
-        'src/sections/05-mpc-3d/mpc3d.ts',
-        'src/sections/06-outro-eclipse/eclipse.ts',
+        'src/sections/02-les-reliques/reliques.ts',
+        'src/sections/03-oeil-big-brother/bigBrother.ts',
+        'src/sections/04-mpc/mpc.ts',
+        'src/sections/05-crash-outro/crashOutro.ts',
         // Three.js scene bootstrapping — WebGLRenderer not testable in jsdom
         // (testable logic: getRecommendedPixelRatio is covered via scene.test.ts)
         'src/core/scene.ts',

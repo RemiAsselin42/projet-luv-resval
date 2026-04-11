@@ -2,7 +2,7 @@
 @use "./styles/variables" as *;
 @use "./styles/mixins" as *;
 @use "./styles/responsive";
-@use "./sections/03-les-reliques/reliques";
+@use "./sections/02-les-reliques/reliques";
 
 // Font faces
 @font-face {
@@ -778,11 +778,11 @@ button.mpc-record-btn {
   border: 0;
 }
 
-// ── Section Eclipse (06-outro-eclipse) ────────────────────────────────────────
+// ── Section Crash Outro (05-crash-outro) ────────────────────────────────────
 // Boutons accessibles invisibles positionnés SOUS le canvas Three.js.
 // Les positions individuelles (left/bottom/transform) sont gérées en JS
-// depuis BTN_LAYOUT (eclipse403Canvas.ts) — source unique de vérité.
-.eclipse-overlay {
+// depuis BTN_LAYOUT (crashOutro403Canvas.ts) — source unique de vérité.
+.crash-outro-overlay {
   pointer-events: none;
 
   &.is-visible {
@@ -790,7 +790,7 @@ button.mpc-record-btn {
   }
 }
 
-.eclipse-overlay__btn {
+.crash-outro-overlay__btn {
   background: transparent;
   border: none;
   color: transparent;

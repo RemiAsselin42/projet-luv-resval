@@ -141,7 +141,7 @@ SECTION_IDS.HUB_CENTRAL    // 'hub-central'
 SECTION_IDS.RELIQUES       // 'reliques'
 SECTION_IDS.BIG_BROTHER    // 'oeil-big-brother'
 SECTION_IDS.MPC            // 'mpc'
-SECTION_IDS.OUTRO_ECLIPSE  // 'outro-eclipse'
+SECTION_IDS.CRASH_OUTRO    // 'crash-outro'
 ```
 
 Les aliases (`MENU`, `FACE_VADER`, `MPC_3D`, etc.) sont conservés pour la rétrocompatibilité mais marqués `@deprecated`.
