@@ -151,3 +151,4 @@ vite.config.ts.timestamp-*
 entities.json
 graphify-out/
 .mempalace/
+conversations/
