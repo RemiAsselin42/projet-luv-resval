@@ -1,0 +1,45 @@
+wing: projet_luv_resval
+rooms:
+- name: conversations
+  description: Files from conversations/
+  keywords:
+  - conversations
+  - conversations
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: public
+  description: Files from public/
+  keywords:
+  - public
+  - public
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: src
+  description: Files from src/
+  keywords:
+  - src
+  - src
+- name: temp
+  description: Files from temp/
+  keywords:
+  - temp
+  - temp
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: frontend
+  description: Files from components/
+  keywords:
+  - frontend
+  - components
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []
