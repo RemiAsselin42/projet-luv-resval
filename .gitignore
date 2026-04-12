@@ -146,3 +146,8 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Memory tools caches
+entities.json
+graphify-out/
+.mempalace/
