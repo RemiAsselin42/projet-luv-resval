@@ -152,3 +152,9 @@ entities.json
 graphify-out/
 .mempalace/
 conversations/
+
+# Dev
+mempalace.yaml
+CLAUDE.md
+docs/
+.claude/
