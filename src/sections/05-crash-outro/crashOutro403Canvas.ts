@@ -166,7 +166,14 @@ export const createError403Canvas = (): {
   let blinkIntervalId: ReturnType<typeof setInterval> | null = null;
   let typingIntervalId: ReturnType<typeof setInterval> | null = null;
 
+  // Indique si le canvas a besoin d'être redessiné à la prochaine frame.
+  // Évite les appels GPU inutiles quand ni le texte ni le hover n'ont changé.
+  let dirty = true;
+
   const draw = () => {
+    if (!dirty) return;
+    dirty = false;
+
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
@@ -187,6 +194,7 @@ export const createError403Canvas = (): {
     typingIntervalId = setInterval(() => {
       if (charsToShow < TOTAL_CHARS) {
         charsToShow++;
+        dirty = true;
         draw();
       } else {
         if (typingIntervalId !== null) {
@@ -195,9 +203,11 @@ export const createError403Canvas = (): {
         }
         textComplete = true;
         onComplete?.();
+        dirty = true;
         draw();
         blinkIntervalId = setInterval(() => {
           blinkVisible = !blinkVisible;
+          dirty = true;
           draw();
         }, BLINK_INTERVAL_MS);
       }
@@ -221,12 +231,14 @@ export const createError403Canvas = (): {
     textComplete = false;
     blinkVisible = true;
     hoveredButton = null;
+    dirty = true;
     draw();
   };
 
   const setHovered = (which: 'restart' | 'see-more' | null) => {
     if (!textComplete || hoveredButton === which) return;
     hoveredButton = which;
+    dirty = true;
     draw();
   };
 
