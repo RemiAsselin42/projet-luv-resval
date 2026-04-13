@@ -310,6 +310,37 @@ describe('createScrollManager — snap (getSectionIndexAtViewportAnchor)', () =>
     sm.dispose();
     vi.restoreAllMocks();
   });
+
+  it("ne saute pas la section precedente lors d'un scroll rapide vers le haut", () => {
+    const hero = buildSectionEl('hero', 0, 768);
+    const hub = buildSectionEl('hub-central', 768, 2304);
+    const reliques = buildSectionEl('reliques', 3072, 768);
+    const mpc = buildSectionEl('mpc', 3840, 768);
+
+    const startTime = 1000;
+    vi.spyOn(window.performance, 'now').mockReturnValue(startTime);
+
+    const sm = createScrollManager();
+    sm.registerSection(hero);
+    sm.registerSection(hub);
+    sm.registerSection(reliques);
+    sm.registerSection(mpc);
+
+    // Initialiser la section active sur la MPC.
+    lenisInstance.emit(3900);
+
+    // Sortie du cooldown pour autoriser un nouveau snap.
+    vi.spyOn(window.performance, 'now').mockReturnValue(startTime + 500);
+
+    // Gros scroll vers le haut : l'ancre tombe dans hub-central,
+    // mais le snap doit d'abord revenir sur reliques.
+    lenisInstance.emit(2000);
+
+    expect(lenisInstance.scroll).toBe(3072);
+
+    sm.dispose();
+    vi.restoreAllMocks();
+  });
 });
 
 describe('createScrollManager — scrollToSection', () => {

@@ -79,6 +79,26 @@ const getSectionIndexAtViewportAnchor = (
   return sectionElements.length - 1;
 };
 
+const getAdjacentSectionIndex = (
+  targetIndex: number,
+  activeSectionIndex: number,
+  isScrollingDown: boolean,
+): number => {
+  if (activeSectionIndex === -1) {
+    return targetIndex;
+  }
+
+  if (isScrollingDown && targetIndex > activeSectionIndex + 1) {
+    return activeSectionIndex + 1;
+  }
+
+  if (!isScrollingDown && targetIndex < activeSectionIndex - 1) {
+    return activeSectionIndex - 1;
+  }
+
+  return targetIndex;
+};
+
 const createSectionTimeline = (options: SectionTimelineOptions): gsap.core.Timeline | null => {
   const sectionElement = querySectionElement(options.sectionId);
 
@@ -129,7 +149,17 @@ export const createScrollManager = (): ScrollManager => {
       return;
     }
 
-    const sectionIndex = getSectionIndexAtViewportAnchor(sectionElements, currentScrollY, isScrollingDown);
+    const rawSectionIndex = getSectionIndexAtViewportAnchor(
+      sectionElements,
+      currentScrollY,
+      isScrollingDown,
+    );
+
+    const sectionIndex = getAdjacentSectionIndex(
+      rawSectionIndex,
+      activeSectionIndex,
+      isScrollingDown,
+    );
 
     if (sectionIndex === -1) {
       return;
