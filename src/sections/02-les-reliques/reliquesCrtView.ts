@@ -30,8 +30,6 @@ export const CELL_HALF_V = 52.5 / 576; // (105 / 2) / 576
 
 const COLOR_BG = '#000000';
 const COLOR_TITLE = '#ffffff';
-const COLOR_LABEL = 'rgba(255, 255, 255, 0.85)';
-const COLOR_LABEL_DIM = 'rgba(255, 255, 255, 0.45)';
 const COLOR_SELECTED_BORDER = '#d64bff';
 const COLOR_SELECTED_BG = 'rgba(180, 60, 255, 0.18)';
 const COLOR_DEFAULT_BORDER = 'rgba(255, 255, 255, 0.3)';
@@ -48,7 +46,6 @@ const COLOR_KEYWORD = '#ff5fa8';
 
 const FONT_TITLE = '500 38px Futura-CondensedExtraBold, Futura, sans-serif';
 const FONT_LABEL_LG = '500 22px Futura-Medium, Futura, sans-serif';
-const FONT_LABEL_SM = '500 16px Futura-Medium, Futura, sans-serif';
 const FONT_STAT = '500 15px Futura-Medium, Futura, sans-serif';
 const FONT_STATUS = '500 18px Futura-Medium, Futura, sans-serif';
 const FONT_TICKER = 'italic 500 28px Futura-Medium, Futura, sans-serif';
@@ -89,6 +86,14 @@ const TICKER_SPEED = 75;       // px/s
 const TICKER_SEPARATOR = '   ·   ';
 const TICKER_FADE_W = 70;
 const COLOR_TICKER_BG = 'rgba(0, 0, 0, 0.55)';
+
+// ── Types internes ────────────────────────────────────────────────────────────
+
+/** Variantes pré-tintées d'une icône SVG (normale et sélectionnée). */
+interface IconVariants {
+  normal: HTMLCanvasElement;
+  selected: HTMLCanvasElement;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -147,7 +152,7 @@ export interface ReliquesCrtView {
   dispose: () => void;
 }
 
-export const createReliquesCrtView = (): ReliquesCrtView => {
+export const createReliquesCrtView = (iconUrls: string[]): ReliquesCrtView => {
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
@@ -159,6 +164,58 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
 
+  // ── Pré-chargement des icônes SVG ────────────────────────────────────────────
+  // Les SVG contiennent des <pattern>+<use xlink:href> avec PNG base64 embarqués.
+  // drawImage(img) échoue silencieusement sur cette structure (taint + rasteriseur).
+  // Solution : fetch → blob → ObjectURL → Image → rasterisation sur canvas bitmap.
+  // On pré-calcule deux variantes tintées (normale et sélectionnée) pour éviter
+  // de recréer des canvas temporaires à chaque frame.
+
+  const iconVariants = new Map<string, IconVariants>();
+  const objectUrls: string[] = [];
+
+  const makeTintedBitmap = (img: HTMLImageElement, tintColor: string, tintAlpha: number): HTMLCanvasElement => {
+    const bmp = document.createElement('canvas');
+    bmp.width = CELL_W;
+    bmp.height = CELL_H;
+    const bctx = bmp.getContext('2d')!;
+    bctx.drawImage(img, 0, 0, CELL_W, CELL_H);
+    // Teinte : ne déborde pas hors des pixels opaques de l'image
+    bctx.globalCompositeOperation = 'source-atop';
+    bctx.globalAlpha = tintAlpha;
+    bctx.fillStyle = tintColor;
+    bctx.fillRect(0, 0, CELL_W, CELL_H);
+    return bmp;
+  };
+
+  const preloadIcon = (url: string): void => {
+    fetch(url)
+      .then((r) => r.blob())
+      .then((blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
+        const img = new Image();
+        img.onload = () => {
+          iconVariants.set(url, {
+            normal:   makeTintedBitmap(img, COLOR_DEFAULT_BORDER, 0.55),
+            selected: makeTintedBitmap(img, COLOR_SELECTED_BORDER, 0.7),
+          });
+          texture.needsUpdate = true;
+        };
+        img.onerror = () => { /* pas de bitmap — la cellule reste vide */ };
+        img.src = objectUrl;
+      })
+      .catch((err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn(`[ReliquesCrtView] Échec du chargement de l'icône ${url} :`, err);
+      });
+  };
+
+  // Pré-charger toutes les icônes à l'initialisation
+  for (const url of iconUrls) {
+    preloadIcon(url);
+  }
+
   // ── État scroll du ticker ────────────────────────────────────────────────────
 
   let tickerOffset = 0;
@@ -166,42 +223,64 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
 
   // ── Helper : texte avec mot-clé mis en évidence ───────────────────────────
 
-  const drawTickerText = (text: string, keyword: string, startX: number, y: number): void => {
-    if (!keyword) {
-      ctx.font = FONT_TICKER;
-      ctx.fillStyle = COLOR_LYRICS;
-      ctx.fillText(text, startX, y);
-      return;
-    }
+  /** Un segment du texte ticker : portion normale ou mot-clé à mettre en évidence. */
+  interface TickerSegment {
+    text: string;
+    isKeyword: boolean;
+  }
 
+  /**
+   * Découpe `text` en segments alternant portions normales et occurrences du mot-clé
+   * (comparaison insensible à la casse). Factorisé pour éviter la duplication entre
+   * le calcul de largeur et le rendu.
+   */
+  const parseSegments = (text: string, keyword: string): TickerSegment[] => {
+    if (!keyword) return [{ text, isKeyword: false }];
+
+    const segments: TickerSegment[] = [];
     const lower = text.toLowerCase();
     const lowerKw = keyword.toLowerCase();
-    let x = startX;
     let from = 0;
 
     while (from <= text.length) {
       const idx = lower.indexOf(lowerKw, from);
-
-      // Segment avant le mot-clé (ou reste si absent)
       const endOfNormal = idx === -1 ? text.length : idx;
+
       if (endOfNormal > from) {
-        ctx.font = FONT_TICKER;
-        ctx.fillStyle = COLOR_LYRICS;
-        const segment = text.slice(from, endOfNormal);
-        ctx.fillText(segment, x, y);
-        x += ctx.measureText(segment).width;
+        segments.push({ text: text.slice(from, endOfNormal), isKeyword: false });
       }
 
       if (idx === -1) break;
 
-      // Mot-clé mis en évidence
-      ctx.font = FONT_TICKER_BOLD;
-      ctx.fillStyle = COLOR_KEYWORD;
-      const kw = text.slice(idx, idx + keyword.length);
-      ctx.fillText(kw, x, y);
-      x += ctx.measureText(kw).width;
-
+      segments.push({ text: text.slice(idx, idx + keyword.length), isKeyword: true });
       from = idx + keyword.length;
+    }
+
+    return segments;
+  };
+
+  /**
+   * Mesure la largeur réelle du texte ticker en tenant compte du changement de police
+   * pour le mot-clé (FONT_TICKER_BOLD), qui est plus large que FONT_TICKER normal.
+   * Utilisé pour calculer textWidth afin d'aligner correctement les deux copies
+   * du texte défilant en boucle.
+   */
+  const measureTickerTextWidth = (text: string, keyword: string): number => {
+    let width = 0;
+    for (const seg of parseSegments(text, keyword)) {
+      ctx.font = seg.isKeyword ? FONT_TICKER_BOLD : FONT_TICKER;
+      width += ctx.measureText(seg.text).width;
+    }
+    return width;
+  };
+
+  const drawTickerText = (text: string, keyword: string, startX: number, y: number): void => {
+    let x = startX;
+    for (const seg of parseSegments(text, keyword)) {
+      ctx.font = seg.isKeyword ? FONT_TICKER_BOLD : FONT_TICKER;
+      ctx.fillStyle = seg.isKeyword ? COLOR_KEYWORD : COLOR_LYRICS;
+      ctx.fillText(seg.text, x, y);
+      x += ctx.measureText(seg.text).width;
     }
   };
 
@@ -237,12 +316,16 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.stroke();
 
-      // Label du personnage
-      ctx.font = FONT_LABEL_SM;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = isSelected ? COLOR_LABEL : COLOR_LABEL_DIM;
-      ctx.fillText(char.label, x + CELL_W / 2, y + CELL_H / 2);
+      // Icône SVG du personnage (variante pré-tintée selon l'état de sélection)
+      const variants = iconVariants.get(char.iconUrl);
+      if (variants) {
+        const padding = 8;
+        const bitmap = isSelected ? variants.selected : variants.normal;
+        ctx.save();
+        ctx.globalAlpha = isSelected ? 1 : 0.6;
+        ctx.drawImage(bitmap, x + padding, y + padding, CELL_W - padding * 2, CELL_H - padding * 2);
+        ctx.restore();
+      }
     }
 
     // ── Nom du personnage sélectionné ─────────────────────────────────────────
@@ -314,9 +397,9 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
         prevSelectedIndex = selectedIndex;
       }
 
-      ctx.font = FONT_TICKER;
       const loopedText = selected.lyrics + TICKER_SEPARATOR;
-      const textWidth = ctx.measureText(loopedText).width;
+      const keyword = selected.tickerKeyword;
+      const textWidth = measureTickerTextWidth(loopedText, keyword);
 
       // Avancer l'offset et boucler
       tickerOffset = (tickerOffset + TICKER_SPEED * deltaSeconds) % textWidth;
@@ -334,7 +417,6 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       const textY = TICKER_Y + TICKER_H / 2;
-      const keyword = selected.tickerKeyword;
       const startX = TICKER_X - tickerOffset;
       drawTickerText(loopedText, keyword, startX, textY);
       drawTickerText(loopedText, keyword, startX + textWidth, textY);
@@ -374,6 +456,9 @@ export const createReliquesCrtView = (): ReliquesCrtView => {
     draw,
     getTexture: () => texture,
     getCellUVs,
-    dispose: () => texture.dispose(),
+    dispose: () => {
+      texture.dispose();
+      for (const u of objectUrls) URL.revokeObjectURL(u);
+    },
   };
 };
