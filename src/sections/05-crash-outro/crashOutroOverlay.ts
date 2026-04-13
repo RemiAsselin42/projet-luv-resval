@@ -100,7 +100,6 @@ export const createCrashOutroOverlay = (
     return btn;
   };
 
-  // Les boutons sont créés directement avec const pour éviter les réassignations
   const restartBtn = makeBtn('[RESTART]', btnLayout.restartXRatio, 'restart', () => {
     hide();
     onRestart?.();

@@ -247,7 +247,14 @@ const showEntry = (entry: ModelEntry): void => {
   });
 };
 
-/** Rend la mini-scène dans le render target en sauvegardant/restaurant l'état du renderer. */
+/**
+ * Rend la mini-scène dans le render target en sauvegardant/restaurant l'état du renderer.
+ *
+ * @param renderer - Renderer WebGL principal
+ * @param scene - Mini-scène isolée à rendre
+ * @param camera - Caméra perspective de la mini-scène
+ * @param renderTarget - Cible de rendu dans laquelle écrire la texture
+ */
 const renderMiniScene = (
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
@@ -269,7 +276,12 @@ const renderMiniScene = (
   renderer.setClearColor(prevClearColor, prevClearAlpha);
 };
 
-/** Nettoie une entrée modèle : annule les tweens, dispose les géométries/matériaux, retire de la scène. */
+/**
+ * Nettoie une entrée modèle : annule les tweens, dispose les géométries/matériaux, retire de la scène.
+ *
+ * @param entry - Entrée modèle à nettoyer
+ * @param scene - Scène THREE.js dont retirer le groupe
+ */
 const disposeModelEntry = (entry: ModelEntry, scene: THREE.Scene): void => {
   entry.loadVersion += 1;
   entry.tween?.kill();
@@ -327,6 +339,18 @@ const createMiniScene = (renderTargetSize: number, cameraAspect: number): MiniSc
 
 // ── Factory principale ─────────────────────────────────────────────────────────
 
+/**
+ * Crée un gestionnaire de prévisualisations 3D pour les items du menu CRT.
+ *
+ * Chaque modèle est rendu dans une mini-scène isolée avec un effet "dessin au trait"
+ * (arêtes blanches sur fond noir). La texture résultante est injectée dans le shader
+ * CRT pour apparaître à l'intérieur de l'écran lors du survol d'un item.
+ *
+ * @param renderer - Renderer WebGL principal (partagé avec la scène principale)
+ * @param items - Liste des items de menu avec leur modèle GLB associé
+ * @param quality - Options de qualité (taille render target, fréquence de rendu, etc.)
+ * @returns Interface MenuPreview3D permettant de piloter les prévisualisations
+ */
 export const createMenuPreview3D = (
   renderer: THREE.WebGLRenderer,
   items: MenuPreviewItem[],

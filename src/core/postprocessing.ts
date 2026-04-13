@@ -9,6 +9,17 @@ export interface RenderPipeline {
   dispose: () => void;
 }
 
+/**
+ * Crée le pipeline de rendu Three.js.
+ *
+ * Encapsule l'appel de rendu en une interface simple (render / dispose).
+ * Point central depuis lequel la boucle d'animation dans main.ts déclenche chaque frame.
+ *
+ * @param renderer - Renderer WebGL (créé par createThreeViewport)
+ * @param scene - Scène principale Three.js
+ * @param camera - Caméra perspective principale
+ * @returns Interface RenderPipeline { render, dispose }
+ */
 export const createRenderPipeline = (
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,

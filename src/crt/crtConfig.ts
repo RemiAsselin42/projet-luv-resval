@@ -6,33 +6,33 @@
 import { crtMenuItems } from '../sections/definitions';
 
 /**
- * Baseline viewport height used for scroll-driven hero/menu timing.
+ * Hauteur de viewport de référence pour le timing hero/menu piloté par le scroll.
  *
- * Note: this constant no longer drives CRT text scale.
- * Text scale is now width-based via getResponsiveTextScale() to keep
- * a stable desktop look between HD and WQHD displays.
+ * Note : cette constante ne pilote plus l'échelle de texte CRT.
+ * L'échelle du texte est désormais basée sur la largeur via getResponsiveTextScale()
+ * afin de conserver un rendu stable entre les résolutions HD et WQHD.
  *
  * @example
- * // Title animation (consistent speed on all screens)
- * const heroProgress = scrollY / BASELINE_VIEWPORT_HEIGHT; // 0–1 as user scrolls
+ * // Animation du titre (vitesse constante sur tous les écrans)
+ * const heroProgress = scrollY / BASELINE_VIEWPORT_HEIGHT; // 0–1 pendant le scroll
  */
 export const BASELINE_VIEWPORT_HEIGHT = 1080;
 
-/**
- * Responsive text scaling for CRT content.
- *
- * Goal: keep a consistent visual size across desktop resolutions (e.g. 1080p vs 1440p)
- * so layout does not drift between screens with different pixel heights.
- *
- * We intentionally avoid height-based scaling here and only apply small, explicit
- * reductions on narrow viewports for readability.
- *
- * @returns Computed text scale factor (1.0 on desktop/tablet)
- */
 const TEXT_SCALE_MOBILE = 0.9;
 const TEXT_SCALE_TABLET_SM = 0.95;
 const TEXT_SCALE_DEFAULT = 1;
 
+/**
+ * Mise à l'échelle responsive du texte pour le contenu CRT.
+ *
+ * Objectif : conserver une taille visuelle homogène entre les résolutions desktop
+ * (ex. 1080p vs 1440p) afin que la mise en page ne dérive pas selon la hauteur de l'écran.
+ *
+ * On évite intentionnellement le scaling basé sur la hauteur ; seules de petites
+ * réductions explicites sont appliquées sur les viewports étroits pour la lisibilité.
+ *
+ * @returns Facteur d'échelle du texte calculé (1.0 sur desktop/tablette)
+ */
 export const getResponsiveTextScale = (): number => {
   const viewportWidth = Math.max(window.innerWidth, 1);
 
@@ -48,8 +48,8 @@ export const getResponsiveTextScale = (): number => {
 };
 
 /**
- * Mobile-first media query breakpoints for CRT responsive adjustments.
- * Used to expose different font sizes and configurations based on screen size.
+ * Points de rupture responsive pour les ajustements CRT.
+ * Utilisés pour exposer différentes tailles de police et configurations selon la taille de l'écran.
  */
 export const RESPONSIVE_BREAKPOINTS = {
   /** Mobile: ≤480px (phones) */
@@ -63,7 +63,9 @@ export const RESPONSIVE_BREAKPOINTS = {
 } as const;
 
 /**
- * Get current breakpoint category based on viewport width.
+ * Retourne la catégorie de breakpoint courante selon la largeur du viewport.
+ *
+ * @returns Clé du breakpoint actif parmi RESPONSIVE_BREAKPOINTS
  */
 export const getCurrentBreakpoint = (): keyof typeof RESPONSIVE_BREAKPOINTS => {
   const width = window.innerWidth;
@@ -74,8 +76,8 @@ export const getCurrentBreakpoint = (): keyof typeof RESPONSIVE_BREAKPOINTS => {
 };
 
 /**
- * Configuration constants for the CRT screen UI layout.
- * Centralized to avoid duplication between hero.ts and crtShader.ts.
+ * Constantes de configuration de la mise en page de l'interface écran CRT.
+ * Centralisées pour éviter la duplication entre hero.ts et crtShader.ts.
  */
 
 export const CRT_MENU_CONFIG = {
@@ -109,6 +111,15 @@ export const CRT_MENU_CONFIG = {
   ITEM_VERTICAL_OFFSET: 2,
 } as const;
 
+/**
+ * Calcule la position Y de départ du menu CRT selon l'opacité de l'animation de reveal.
+ *
+ * Combine la position de base Y_START avec un décalage vers le bas proportionnel à
+ * (1 - opacité) pour créer un effet de glissement vers le haut lors de l'apparition.
+ *
+ * @param menuOpacity - Opacité courante du menu (0 = masqué en bas, 1 = position finale)
+ * @returns Position Y de départ du menu en espace canvas (0–1)
+ */
 export const getCrtMenuStartY = (menuOpacity: number): number => {
   const clampedOpacity = Math.min(Math.max(menuOpacity, 0), 1);
   const totalMenuHeight = CRT_MENU_CONFIG.MENU_COUNT * CRT_MENU_CONFIG.LINE_HEIGHT;
@@ -128,9 +139,9 @@ export const CRT_LOADER_CONFIG = {
 } as const;
 
 /**
- * Play button pulse animation constants.
+ * Constantes d'animation de pulsation du bouton PLAY.
  * opacity = PLAY_BUTTON_PULSE_BASE + PLAY_BUTTON_PULSE_AMP * sin(t / PLAY_BUTTON_PULSE_PERIOD_MS)
- * Range: [BASE - AMP, BASE + AMP] — must stay within (0, 1].
+ * Plage : [BASE - AMP, BASE + AMP] — doit rester dans (0, 1].
  */
 /** Base opacity of the PLAY button pulse (idle state) */
 export const PLAY_BUTTON_PULSE_BASE = 0.72;
@@ -140,20 +151,21 @@ export const PLAY_BUTTON_PULSE_AMP = 0.28;
 export const PLAY_BUTTON_PULSE_PERIOD_MS = 380;
 
 /**
- * UV bounds of the PLAY button hit zone on the CRT mesh (UV space, y=0 at bottom).
+ * Limites UV de la zone de clic du bouton PLAY sur le mesh CRT (espace UV, y=0 en bas).
  *
- * These values are derived from the loader panel layout in crtCanvasTexture.ts:
- *   - Panel top  ≈ PANEL_Y_RATIO (0.48) + PANEL_HEIGHT_RATIO (~0.058) + gap (~0.022) = ~0.56
- *   - Button label height ≈ 0.07 (label ~30px / canvas height 576px at 1024×576)
- *   - Button center canvas-Y ≈ 0.56 + 0.035 ≈ 0.595 → label bottom canvas-Y ≈ 0.63
- *   - Canvas-Y → UV.y: uv.y = 1 - canvas-Y
- *     → UV.y center ≈ 0.405, zone ± 0.09 → [0.315, 0.495] padded to [0.20, 0.38] for tolerance
- *   - Horizontal zone is wide (centred text, tolerant hit area): [0.20, 0.80]
+ * Ces valeurs sont dérivées de la mise en page du panneau de chargement dans crtCanvasTexture.ts :
+ *   - Bas du panneau ≈ PANEL_Y_RATIO (0.48) + PANEL_HEIGHT_RATIO (~0.058) + gap (~0.022) = ~0.56
+ *   - Hauteur du label bouton ≈ 0.07 (label ~30px / hauteur canvas 576px à 1024×576)
+ *   - Centre canvas-Y du bouton ≈ 0.56 + 0.035 ≈ 0.595 → bas du label canvas-Y ≈ 0.63
+ *   - Canvas-Y → UV.y : uv.y = 1 - canvas-Y
+ *     → Centre UV.y ≈ 0.405, zone ± 0.09 → [0.315, 0.495] élargie à [0.20, 0.38] par tolérance
+ *   - Zone horizontale large (texte centré, zone de clic tolérante) : [0.20, 0.80]
  *
- * If the loader panel layout is adjusted (PANEL_Y_RATIO, PANEL_HEIGHT_RATIO, gap, font size),
- * update the constants below and the corresponding tests in crtConfig.test.ts.
+ * Si la mise en page du panneau de chargement est modifiée (PANEL_Y_RATIO, PANEL_HEIGHT_RATIO,
+ * gap, taille de police), mettre à jour les constantes ci-dessous et les tests associés dans
+ * crtConfig.test.ts.
  *
- * @returns Object with UV bounds { xMin, xMax, yMin, yMax } in UV space (y=0 at bottom).
+ * @returns Objet avec les bornes UV { xMin, xMax, yMin, yMax } en espace UV (y=0 en bas).
  */
 export const getPlayButtonUVBounds = (): {
   xMin: number;

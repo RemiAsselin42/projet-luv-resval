@@ -25,6 +25,16 @@ const MUSIC_TRACKS = [
   `${MUSIC_BASE_PATH}ACAP-luv-resval.wav`,
 ] as const;
 
+/**
+ * Crée le gestionnaire audio central du site.
+ *
+ * Démarre six pistes synchronisées (sample de fond, kick, snare, hihat, evil sample,
+ * a cappella). La piste de base (layer 0) est toujours active ; les autres se débloquent
+ * via lockMusicLayer / unlockMusicLayer (boutons MPC, progression de l'expérience).
+ * Gère aussi le volume global, le mute (touche M) et les effets sonores de l'interface.
+ *
+ * @returns Interface AudioManager pour piloter la lecture, le volume et le mute
+ */
 export const createAudioManager = (): AudioManager => {
   let _isMuted = false;
   let _experienceStarted = false;

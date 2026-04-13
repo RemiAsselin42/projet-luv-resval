@@ -361,7 +361,29 @@ const setupMuteButton = (
   };
 };
 
-/** Gèle toutes les boucles actives et la cappella. */
+/**
+ * Gèle toutes les boucles actives, le sample de fond (layer 0) et la cappella.
+ *
+ * Effets de bord :
+ * - Toutes les layers de boucle visiblement actives (.mpc-loop-btn--active) sont
+ *   lockées et leur index mémorisé dans frozenLayersRef pour la reprise.
+ * - La layer 0 (SAMPLE de fond) est lockée explicitement car elle ne possède pas
+ *   de bouton UI dédié — elle tourne en continu depuis l'entrée dans la section.
+ * - Si la cappella (acapLayer) était active, elle est lockée et wasAcapPlayingRef
+ *   est mémorisé pour la restaurer lors de resumePlayback.
+ * - Le bouton STOP passe à l'état actif et mpcRoot.dataset.stopped est positionné
+ *   à "true" pour permettre aux raccourcis clavier de détecter l'état gelé.
+ *
+ * @param mpcRoot           - Racine DOM de la MPC (contient les boutons de boucle)
+ * @param audioManager      - Interface audio (lockMusicLayer)
+ * @param acapLayer         - Index de la layer a cappella (5 = ACAP-luv-resval)
+ * @param isAcapPlayingRef  - Référence partagée indiquant si la cappella joue
+ * @param syncCrtVideo      - Synchronise la vidéo CRT avec l'état de lecture
+ * @param frozenLayersRef   - Sortie : indices des layers gelées (pour resumePlayback)
+ * @param wasAcapPlayingRef - Sortie : état de la cappella avant gel (pour resumePlayback)
+ * @param stopBtn           - Bouton STOP (mis à jour visuellement)
+ * @param playBtn           - Bouton PLAY (mis à jour si cappella était active)
+ */
 const freezePlayback = (
   mpcRoot: HTMLElement,
   audioManager: { lockMusicLayer: (i: number) => void },
@@ -380,7 +402,8 @@ const freezePlayback = (
     btn.classList.remove('mpc-loop-btn--active');
     audioManager.lockMusicLayer(layer);
   });
-  audioManager.lockMusicLayer(0); // SAMPLE de fond
+  // Layer 0 = SAMPLE de fond : sans bouton UI dédié, elle doit être gelée explicitement.
+  audioManager.lockMusicLayer(0);
   wasAcapPlayingRef.value = isAcapPlayingRef.value;
   if (isAcapPlayingRef.value) {
     audioManager.lockMusicLayer(acapLayer);
@@ -394,7 +417,31 @@ const freezePlayback = (
   mpcRoot.dataset.stopped = 'true';
 };
 
-/** Reprend les boucles gelées depuis le début. */
+/**
+ * Reprend les boucles gelées par freezePlayback depuis le début (seek à 0).
+ *
+ * Effets de bord :
+ * - Chaque layer mémorisée dans frozenLayersRef est seekée à 0 puis déverrouillée ;
+ *   son bouton UI est remis à l'état actif.
+ * - La layer 0 (SAMPLE de fond) est seekée à 0 et déverrouillée explicitement,
+ *   symétrique de son traitement dans freezePlayback.
+ * - Si wasAcapPlayingRef indique que la cappella jouait avant le gel, elle est
+ *   également seekée à 0 et relancée, et le bouton PLAY est restauré.
+ * - Le volume du potard est réappliqué via setMusicVolume car lockMusicLayer peut
+ *   remettre le volume interne à zéro selon l'implémentation de l'audioManager.
+ * - Le bouton STOP repasse à l'état inactif et mpcRoot.dataset.stopped est supprimé.
+ *
+ * @param mpcRoot           - Racine DOM de la MPC
+ * @param audioManager      - Interface audio (seek, unlock, setVolume)
+ * @param acapLayer         - Index de la layer a cappella (5 = ACAP-luv-resval)
+ * @param currentVolume     - Volume courant du potard à réappliquer (0–1)
+ * @param isAcapPlayingRef  - Référence partagée indiquant si la cappella joue
+ * @param syncCrtVideo      - Synchronise la vidéo CRT avec l'état de lecture
+ * @param frozenLayersRef   - Entrée : indices des layers à reprendre (rempli par freezePlayback)
+ * @param wasAcapPlayingRef - Entrée : état de la cappella avant gel (rempli par freezePlayback)
+ * @param stopBtn           - Bouton STOP (mis à jour visuellement)
+ * @param playBtn           - Bouton PLAY (mis à jour si cappella doit reprendre)
+ */
 const resumePlayback = (
   mpcRoot: HTMLElement,
   audioManager: {
@@ -418,7 +465,8 @@ const resumePlayback = (
     audioManager.unlockMusicLayer(layer);
   });
   audioManager.seekMusicLayer(0, 0);
-  audioManager.unlockMusicLayer(0); // SAMPLE de fond
+  // Layer 0 = SAMPLE de fond : déverrouillée explicitement, symétrique de freezePlayback.
+  audioManager.unlockMusicLayer(0);
   if (wasAcapPlayingRef.value) {
     audioManager.seekMusicLayer(acapLayer, 0);
     audioManager.unlockMusicLayer(acapLayer);
@@ -577,6 +625,19 @@ const setupKeyboardShortcuts = (
 
 // ── Section initializer ───────────────────────────────────────────────────────
 
+/**
+ * Initialise la section beatmaker MPC (section 04).
+ *
+ * Construit et monte le DOM de la MPC (boutons de boucle, pads, potard volume,
+ * mute, stop, record), câble tous les contrôles et démarre la visualisation waveform.
+ * La logique est entièrement event-driven : aucun traitement par frame n'est nécessaire.
+ *
+ * Effets de bord au montage :
+ * - Injecte mpcRoot dans sectionElement
+ * - Démarre un ResizeObserver pour adapter l'échelle CSS de la MPC au viewport
+ * - Lance la visualisation waveform via requestAnimationFrame
+ * - Précharge les sons des pads (Howl avec preload: true)
+ */
 const initBeatmakerSection: SectionInitializer = (context) => {
   const { audioManager, scrollManager, crtManager } = context;
   const sectionElement = document.querySelector(getSectionSelector(SECTION_IDS.MPC));

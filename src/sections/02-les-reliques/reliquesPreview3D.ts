@@ -83,6 +83,17 @@ export interface ReliquesPreview3D {
 
 // ── Factory ────────────────────────────────────────────────────────────────────
 
+/**
+ * Crée le gestionnaire de rendu 3D des personnages pour la section Reliques.
+ *
+ * Les personnages sont rendus dans une mini-scène isolée avec leurs textures et
+ * matériaux d'origine. Les groupes THREE.js sont persistants entre les visites —
+ * seul dispose() libère les buffers GPU.
+ *
+ * @param renderer - Renderer WebGL principal (partagé avec la scène principale)
+ * @param characters - Liste de tous les personnages de la section Reliques
+ * @returns Interface ReliquesPreview3D permettant de piloter l'affichage des personnages
+ */
 export const createReliquesPreview3D = (
   renderer: THREE.WebGLRenderer,
   characters: ReliquesCharacterData[],

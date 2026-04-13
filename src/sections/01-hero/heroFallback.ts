@@ -7,8 +7,8 @@ import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
 
 /**
- * Fallback HTML/CSS implementation of the hero section
- * for browsers without WebGL support.
+ * Implémentation HTML/CSS de secours de la section hero
+ * pour les navigateurs sans support WebGL.
  */
 const initHeroFallback: SectionInitializer = (_context) => {
   const heroElement = document.querySelector(getSectionSelector(SECTION_IDS.HERO));
@@ -20,7 +20,6 @@ const initHeroFallback: SectionInitializer = (_context) => {
     };
   }
 
-  // Create fallback title element
   const titleContainer = document.createElement('div');
   titleContainer.className = 'hero-fallback-title';
   titleContainer.style.cssText = `
@@ -44,7 +43,6 @@ const initHeroFallback: SectionInitializer = (_context) => {
     contentDiv.appendChild(titleContainer);
   }
 
-  // Animate title on scroll
   const timeline = gsap.timeline({
     scrollTrigger: {
       trigger: heroElement,

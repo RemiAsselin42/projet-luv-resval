@@ -14,32 +14,32 @@ export const HEIGHT_LOCK_ASPECT_MOBILE = 1.2;
 export const SAFE_MIN_VALUE = 0.0001;
 
 /**
- * Compute CRT mesh scale to fit the viewport responsively.
+ * Calcule l'échelle du mesh CRT pour s'adapter au viewport de manière responsive.
  *
- * Strategy: Lock to viewport height on widescreen displays (≥16:9 aspect ratio).
- * On narrower screens (tablets, older monitors), scale down to "contain" fit
- * to avoid cutting off left/right content.
+ * Stratégie : verrouillage sur la hauteur du viewport pour les écrans larges (ratio ≥ 16:9).
+ * Sur les écrans plus étroits (tablettes, anciens moniteurs), réduction en mode "contain"
+ * pour éviter de couper le contenu gauche/droit.
  *
- * The aspect ratio breakpoint is dynamically computed from viewport width:
- * - Desktop (>=1366px): Use 1.6 (accommodates 16:10, MacBook, common ultrawide monitors)
- * - Mobile/Tablet (<1366px): Use 1.2 (responsive to portrait/landscape transitions)
+ * Le seuil de ratio d'aspect est calculé dynamiquement depuis la largeur du viewport :
+ * - Desktop (>=1366px) : 1.6 (couvre 16:10, MacBook, ultrawide courants)
+ * - Mobile/Tablette (<1366px) : 1.2 (responsive aux transitions portrait/paysage)
  *
- * This ensures:
- * 1. CRT height is stable (no vertical black bars)
- * 2. CRT width scales naturally with viewport
- * 3. Menu and content remain accessible on all aspect ratios
+ * Cela garantit :
+ * 1. La hauteur CRT est stable (pas de bandes noires verticales)
+ * 2. La largeur CRT s'adapte naturellement au viewport
+ * 3. Le menu et le contenu restent accessibles à tous les ratios d'aspect
  *
  * @example
- * - 1920×1080 (16:9): heightLockedScale
- * - 1440×900 (16:10): min(heightLockedScale, containScale) → slight shrink
- * - iPhone 15 (390×844, 9:19.6): strong contain fit → CRT much smaller
+ * - 1920×1080 (16:9) : heightLockedScale
+ * - 1440×900 (16:10) : min(heightLockedScale, containScale) → légère réduction
+ * - iPhone 15 (390×844, 9:19.6) : contain fort → CRT beaucoup plus petit
  *
- * @param visibleHeight - Visible world-space height from camera FOV
+ * @param visibleHeight - Hauteur visible en espace monde depuis le FOV caméra
  * @param viewportAspectRatio - window.innerWidth / window.innerHeight
- * @param basePlaneWidth - Base CRT mesh width (constant 6.222)
- * @param basePlaneHeight - Base CRT mesh height (see CRT_PLANE_HEIGHT in crtConfig.ts)
- * @param viewportWidth - Viewport width in pixels (default: window.innerWidth)
- * @returns Scale multiplier for the CRT mesh
+ * @param basePlaneWidth - Largeur de base du mesh CRT (constante 6.222)
+ * @param basePlaneHeight - Hauteur de base du mesh CRT (voir CRT_PLANE_HEIGHT dans crtConfig.ts)
+ * @param viewportWidth - Largeur du viewport en pixels (défaut : window.innerWidth)
+ * @returns Multiplicateur d'échelle pour le mesh CRT
  */
 export const computeCrtScale = (
   visibleHeight: number,

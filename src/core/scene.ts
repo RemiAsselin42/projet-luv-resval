@@ -33,6 +33,16 @@ export const getRecommendedPixelRatio = (): number => {
   return Math.min(window.devicePixelRatio, getAdaptivePixelRatioCap());
 };
 
+/**
+ * Crée et monte la scène Three.js principale (scène, caméra, renderer).
+ *
+ * Le renderer est configuré avec un DPR adaptatif : plafonné à 1.25 sur les appareils
+ * peu puissants (≤4 Go RAM ou ≤4 cœurs CPU) et à 2.0 sur les appareils performants,
+ * afin d'éviter un surcoût de rendu inutile sur les écrans Retina d'appareils mobiles.
+ *
+ * @param container - Élément HTML dans lequel injecter le canvas WebGL
+ * @returns Objet { scene, camera, renderer } prêt pour la boucle d'animation
+ */
 export const createThreeViewport = (container: HTMLElement): ThreeViewport => {
   const scene = new THREE.Scene();
 

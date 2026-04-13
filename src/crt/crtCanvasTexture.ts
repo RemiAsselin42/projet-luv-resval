@@ -260,6 +260,20 @@ const drawMenu = (
 
 // ── Factory ────────────────────────────────────────────────────────────────────
 
+/**
+ * Crée la texture canvas 2D affichée sur le mesh CRT (titre, menu, barre de chargement).
+ *
+ * La texture est mise à jour à chaque frame uniquement si les valeurs ont changé
+ * (dirty flag) pour éviter les redraws inutiles. Elle intègre :
+ * - Titre animé au scroll (titleProgress 0→1)
+ * - Menu avec highlight de survol (hoverIndex, menuOpacity)
+ * - Barre de chargement (loadingProgress 0→2, phase > 1 = transition croisée)
+ *
+ * @param text   - Texte principal du titre (ex. "LUV RESVAL")
+ * @param width  - Largeur du canvas en pixels
+ * @param height - Hauteur du canvas en pixels
+ * @returns Interface CrtCanvasTexture permettant de mettre à jour et accéder à la texture
+ */
 export const createTextCanvasTexture = (
   text: string,
   width: number,

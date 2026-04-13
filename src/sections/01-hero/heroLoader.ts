@@ -12,6 +12,35 @@ export const LOADER_TOTAL_DURATION_SECONDS = 3.8;
 /** Durée du fondu croisé entre l'écran de chargement et le contenu héro. */
 export const LOADER_TRANSITION_SECONDS = 0.6;
 
+/**
+ * Calcule la progression visuelle de la barre de chargement (0..1) en fonction
+ * du temps écoulé depuis le démarrage du loader.
+ *
+ * Les paliers sont des valeurs empiriques calées pour simuler un vrai chargement :
+ * une montée rapide initiale donne l'impression de réactivité, puis la barre ralentit
+ * et s'étire sur les phases intermédiaires — mimant les temps d'attente réseau —
+ * avant de sprinter vers 100 % en fin d'animation.
+ *
+ * Découpage temporel (total : 3.8 s) :
+ *
+ *  [0 s – 0.6 s]   → 0 %  → 18 %  — palier de démarrage rapide (easeOutCubic) :
+ *                              la barre bondit pour signaler l'activité immédiate.
+ *
+ *  [0.6 s – 1.45 s] → 18 % → 47 %  — progression régulière (easeInOutSine) :
+ *                              rythme de croisière, simule le chargement des assets principaux.
+ *
+ *  [1.45 s – 2.3 s] → 47 % → 76 %  — accélération modérée (easeOutQuad) :
+ *                              phase "presque là", la barre semble de plus en plus proche.
+ *
+ *  [2.3 s – 3.05 s] → 76 % → 93 %  — ralentissement volontaire (easeInOutQuad) :
+ *                              la barre "coince" avant la fin, tension visuelle classique.
+ *
+ *  [3.05 s – 3.8 s] → 93 % → 100 % — sprint final (easeOutExpo) :
+ *                              accélération soudaine vers 100 % ; débloque le bouton PLAY.
+ *
+ * @param elapsedSeconds - Temps écoulé en secondes depuis le début du chargement (≥ 0)
+ * @returns Progression de la barre dans [0, 1]
+ */
 export const computeLoadingProgress = (elapsedSeconds: number): number => {
   const t = Math.max(elapsedSeconds, 0);
 
@@ -19,26 +48,31 @@ export const computeLoadingProgress = (elapsedSeconds: number): number => {
     return 1;
   }
 
+  // Phase 1 : démarrage rapide (0 → 18 %)
   if (t < 0.6) {
     const localT = t / 0.6;
     return 0.18 * easeOutCubic(localT);
   }
 
+  // Phase 2 : progression régulière (18 → 47 %)
   if (t < 1.45) {
     const localT = (t - 0.6) / 0.85;
     return 0.18 + (0.47 - 0.18) * easeInOutSine(localT);
   }
 
+  // Phase 3 : accélération modérée (47 → 76 %)
   if (t < 2.3) {
     const localT = (t - 1.45) / 0.85;
     return 0.47 + (0.76 - 0.47) * easeOutQuad(localT);
   }
 
+  // Phase 4 : ralentissement volontaire (76 → 93 %)
   if (t < 3.05) {
     const localT = (t - 2.3) / 0.75;
     return 0.76 + (0.93 - 0.76) * easeInOutQuad(localT);
   }
 
+  // Phase 5 : sprint final vers 100 % (93 → 100 %)
   const localT = (t - 3.05) / (LOADER_TOTAL_DURATION_SECONDS - 3.05);
   return 0.93 + (1 - 0.93) * easeOutExpo(localT);
 };

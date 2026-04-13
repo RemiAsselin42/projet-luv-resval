@@ -122,6 +122,18 @@ const createDeferredSectionObserver = (
 
 // ── Factory ────────────────────────────────────────────────────────────────────
 
+/**
+ * Crée le gestionnaire de cycle de vie de toutes les sections du site.
+ *
+ * Distingue deux modes d'initialisation :
+ * - Sections immédiates (pas d'élément HTML) : initialisées au démarrage.
+ * - Sections différées (element data-section) : initialisées via IntersectionObserver
+ *   quand elles entrent dans le viewport (rootMargin 120%), pour éviter de charger
+ *   des sections qui ne seront peut-être jamais visitées.
+ *
+ * @param context - Contexte partagé entre les sections (renderer, audio, scroll, etc.)
+ * @returns Interface SectionManager { initialize, update, dispose }
+ */
 export const createSectionManager = (context: SectionContext): SectionManager => {
   const lifecycles: SectionLifecycle[] = [];
   const initializedSectionIds = new Set<string>();
