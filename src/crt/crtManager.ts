@@ -53,6 +53,7 @@ export interface CrtManager {
     hoverIndex: number,
     loadingProgress?: number,
     playHover?: boolean,
+    elapsedMs?: number,
   ): void;
 
   // ── Responsive ──
@@ -133,8 +134,9 @@ export const createCrtManager = async (
       hoverIndex: number,
       loadingProgress = 1,
       playHover = false,
+      elapsedMs = 0,
     ) => {
-      crt.setUiProgress(titleProgress, menuOpacity, hoverIndex, loadingProgress, playHover);
+      crt.setUiProgress(titleProgress, menuOpacity, hoverIndex, loadingProgress, playHover, elapsedMs);
     },
 
     fitToViewport: (camera: THREE.PerspectiveCamera) => {
@@ -152,7 +154,9 @@ export const createCrtManager = async (
       crt.uniforms.uShiftX.value = 0;
       crt.uniforms.uShiftY.value = 0;
       crt.uniforms.uMosaic.value = 0;
-      crt.uniforms.uModelColorMode.value = 0;
+      // uModelColorMode intentionnellement exclu : ce n'est pas un effet transitoire
+      // mais un mode de rendu géré explicitement via setModelColorMode().
+      // L'inclure ici causait des conflits avec les callbacks ScrollTrigger adjacents.
     },
 
     dispose: () => {

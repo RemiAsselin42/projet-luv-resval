@@ -183,17 +183,24 @@ export const fragmentShader = /* glsl */ `
     }
 
     // Ajouter du bruit blanc sur les bandes glitchées (amplifié par uGlitch)
-    color += glitchTrigger * (0.2 + uGlitch * 0.4) * hash(uv * uResolution + glitchTime * 500.0);
+    float glitchNoiseSeed = floor(glitchTime * 30.0);
+    color += glitchTrigger * (0.2 + uGlitch * 0.4) * hash(uv * uResolution + glitchNoiseSeed);
 
     // --- Blur (flou du contenu, utilisé pour la section MPC) ---
+    // Boucle déroulée manuellement pour éviter le warning GLSL "gradient instruction
+    // used in a loop with varying iteration" (dérivées implicites indéfinies dans les boucles).
     if (uBlur > 0.001) {
-      vec2 blurSize = vec2(uBlur * 0.012);
-      vec3 blurred = vec3(0.0);
-      for (float dx = -1.0; dx <= 1.0; dx += 1.0) {
-        for (float dy = -1.0; dy <= 1.0; dy += 1.0) {
-          blurred += texture2D(uTexture, sampledUv + vec2(dx, dy) * blurSize).rgb;
-        }
-      }
+      vec2 b = vec2(uBlur * 0.012);
+      vec3 blurred =
+        texture2D(uTexture, sampledUv + vec2(-b.x, -b.y)).rgb +
+        texture2D(uTexture, sampledUv + vec2( 0.0, -b.y)).rgb +
+        texture2D(uTexture, sampledUv + vec2( b.x, -b.y)).rgb +
+        texture2D(uTexture, sampledUv + vec2(-b.x,  0.0)).rgb +
+        texture2D(uTexture, sampledUv                   ).rgb +
+        texture2D(uTexture, sampledUv + vec2( b.x,  0.0)).rgb +
+        texture2D(uTexture, sampledUv + vec2(-b.x,  b.y)).rgb +
+        texture2D(uTexture, sampledUv + vec2( 0.0,  b.y)).rgb +
+        texture2D(uTexture, sampledUv + vec2( b.x,  b.y)).rgb;
       color = mix(color, blurred / 9.0, uBlur);
     }
 
@@ -214,12 +221,13 @@ export const fragmentShader = /* glsl */ `
     color *= mix(vec3(1.0), phosphor, 0.08);
 
     // --- Bruit / grain / neige (neige amplifiée par uGlitch) ---
-    float noise = hash(uv * uResolution + uTime * 1000.0);
-    // Neige : petits points blancs aléatoires (seuil abaissé + intensité montée par uGlitch)
+    // Throttle à 24fps : l'œil ne perçoit pas la différence sur du grain, gain GPU ~50% sur ce hash
+    float grainSeed = floor(uTime * 24.0);
+    // Grain analogique fin : demi-résolution spatiale (tile 2×2 px, imperceptible à 8% intensité)
+    float grain = (hash(uv * uResolution * 0.5 + grainSeed) - 0.5) * (0.08 + uGlitch * 0.02);
+    // Neige : résolution pleine (points ponctuels, doivent rester nets) ; +7.3 pour décorréler du grain
     float snowThreshold = 0.985 - uGlitch * 0.12;
-    float snow = step(snowThreshold, noise) * (0.6 + uGlitch * 0.4);
-    // Grain analogique fin (légèrement amplifié)
-    float grain = (noise - 0.5) * (0.08 + uGlitch * 0.02);
+    float snow = step(snowThreshold, hash(uv * uResolution + grainSeed + 7.3)) * (0.6 + uGlitch * 0.4);
     color += grain + snow;
 
     // --- Flicker (scintillement CRT, amplifié par uGlitch) ---

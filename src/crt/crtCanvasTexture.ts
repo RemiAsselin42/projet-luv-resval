@@ -18,9 +18,14 @@ import {
 
 export interface CrtCanvasTexture {
   texture: THREE.CanvasTexture;
-  draw: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover?: boolean) => void;
+  draw: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover?: boolean, elapsedMs?: number) => void;
   dispose: () => void;
 }
+
+// ── Constantes d'animation ─────────────────────────────────────────────────────
+
+/** Durée d'un quantum de pulse du bouton PLAY (ms). Correspond à ~24 fps. */
+export const PULSE_QUANTUM_MS = 1000 / 24;
 
 // ── Constantes de mise en page ─────────────────────────────────────────────────
 
@@ -98,6 +103,7 @@ const drawLoaderScreen = (
   clampedLoadingProgress: number,
   loaderOpacity: number,
   playHover: boolean,
+  elapsedMs: number,
 ): void => {
   const { ctx, width, height, resScale, textScale } = dc;
   ctx.globalAlpha = loaderOpacity;
@@ -145,7 +151,7 @@ const drawLoaderScreen = (
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const pulse = PLAY_BUTTON_PULSE_BASE + PLAY_BUTTON_PULSE_AMP * Math.sin(performance.now() / PLAY_BUTTON_PULSE_PERIOD_MS);
+    const pulse = PLAY_BUTTON_PULSE_BASE + PLAY_BUTTON_PULSE_AMP * Math.sin(elapsedMs / PLAY_BUTTON_PULSE_PERIOD_MS);
     ctx.globalAlpha = loaderOpacity * pulse;
 
     if (playHover) {
@@ -277,26 +283,27 @@ export const createTextCanvasTexture = (
   let lastTextScale = -1;
   let lastLoadingProgress = -1;
   let lastPlayHover = false;
+  let lastPulseQuantum = -1;
 
-  const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover = false): void => {
+  const draw = (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress: number, playHover = false, elapsedMs = 0): void => {
     const clampedTitleProgress = Math.min(Math.max(titleProgress, 0), 1);
     const clampedMenuOpacity = Math.min(Math.max(menuOpacity, 0), 1);
     const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
     const textScale = getResponsiveTextScale();
     const resScale = width / 1024;
 
-    // Skip redraw if nothing changed significantly.
-    // On compare loadingProgress brut (pas clampé) pour détecter la sentinelle > 1.
-    // Le bouton PLAY pulse avec performance.now() → bypass dirty quand il est visible.
-    const playButtonPulsing = isPlayButtonPulsing(loadingProgress);
+    // Quantum ~24fps : le pulse du bouton PLAY n'a besoin de se redessiner
+    // qu'à cette cadence — évite le GPU stall à 60fps quand le bouton est visible.
+    const pulseQuantum = Math.floor(elapsedMs / PULSE_QUANTUM_MS);
+
     if (
-      !playButtonPulsing &&
       Math.abs(clampedTitleProgress - lastTitleProgress) < 0.001 &&
       Math.abs(clampedMenuOpacity - lastMenuOpacity) < 0.001 &&
       hoverIndex === lastHoverIndex &&
       Math.abs(textScale - lastTextScale) < 0.001 &&
       Math.abs(loadingProgress - lastLoadingProgress) < 0.001 &&
-      playHover === lastPlayHover
+      playHover === lastPlayHover &&
+      pulseQuantum === lastPulseQuantum
     ) {
       return;
     }
@@ -307,6 +314,7 @@ export const createTextCanvasTexture = (
     lastTextScale = textScale;
     lastLoadingProgress = loadingProgress;
     lastPlayHover = playHover;
+    lastPulseQuantum = pulseQuantum;
 
     // Fond noir
     ctx.fillStyle = '#000000';
@@ -321,7 +329,7 @@ export const createTextCanvasTexture = (
     const dc: DrawCtx = { ctx, width, height, resScale, textScale };
 
     if (loaderOpacity > 0.001) {
-      drawLoaderScreen(dc, clampedLoadingProgress, loaderOpacity, playHover);
+      drawLoaderScreen(dc, clampedLoadingProgress, loaderOpacity, playHover, elapsedMs);
     }
 
     ctx.globalAlpha = heroOpacity;

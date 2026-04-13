@@ -79,8 +79,8 @@ export const createCrtScreen = async (
     setPowerOn: (value: number) => {
       uniforms.uPowerOn.value = value;
     },
-    setUiProgress: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress = 1, playHover = false) => {
-      textTexture.draw(titleProgress, menuOpacity, hoverIndex, loadingProgress, playHover);
+    setUiProgress: (titleProgress: number, menuOpacity: number, hoverIndex: number, loadingProgress = 1, playHover = false, elapsedMs = 0) => {
+      textTexture.draw(titleProgress, menuOpacity, hoverIndex, loadingProgress, playHover, elapsedMs);
     },
     setFade: (value: number) => {
       uniforms.uFade.value = value;

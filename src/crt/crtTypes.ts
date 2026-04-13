@@ -37,6 +37,7 @@ export interface CrtScreen {
     hoverIndex: number,
     loadingProgress?: number,
     playHover?: boolean,
+    elapsedMs?: number,
   ) => void;
   setFade: (value: number) => void;
   /** Injecte la texture du render target de la preview 3D dans le shader CRT. */
