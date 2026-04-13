@@ -8,7 +8,7 @@ import type { AssetLoader } from '../core/assetLoader';
 import type { AudioManager } from '../audio/types';
 import type { CrtManager } from '../crt/crtManager';
 
-export interface SectionContext {
+export interface SectionContext<TExtras = Record<string, unknown>> {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
@@ -18,7 +18,7 @@ export interface SectionContext {
   audioManager: AudioManager;
   crtManager: CrtManager;
   /** Données additionnelles passées par le bloc loading (ex : menuPreview). */
-  extras?: Record<string, unknown>;
+  extras?: TExtras;
 }
 
 export interface SectionLifecycle {

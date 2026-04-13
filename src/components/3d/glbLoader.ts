@@ -44,6 +44,10 @@ const loadThreeExampleLoaders = async (): Promise<ThreeExampleLoaders> => {
       import('three/examples/jsm/loaders/GLTFLoader.js'),
       import('three/examples/jsm/loaders/DRACOLoader.js'),
     ]).then(([gltfLoaderModule, dracoLoaderModule]) => ({
+      // `as unknown as` : les types THREE JSM exposent des signatures plus larges que
+      // nos interfaces locales (GltfLoaderLike / DracoLoaderLike). Le double cast
+      // contourne la vérification structurelle stricte sans perdre la sûreté à
+      // l'usage — seuls les membres effectivement appelés sont typés dans l'interface.
       GLTFLoader: gltfLoaderModule.GLTFLoader as unknown as new () => GltfLoaderLike,
       DRACOLoader: dracoLoaderModule.DRACOLoader as unknown as new () => DracoLoaderLike,
     }));

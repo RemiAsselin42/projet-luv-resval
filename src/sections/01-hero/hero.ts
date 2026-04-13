@@ -3,7 +3,7 @@
 // survol des items du menu (prévisualisations 3D + navigation), et animation
 // du titre au fil du scroll. Récupère le menuPreview préparé pendant le chargement.
 
-import type { SectionInitializer } from '../types';
+import type { SectionContext, SectionLifecycle } from '../types';
 import { applyCrtModelPreview } from '../../crt/crtModelPreview';
 import { clamp01 } from '../../utils/math';
 import { BASELINE_VIEWPORT_HEIGHT } from '../../crt/crtConfig';
@@ -18,24 +18,16 @@ import type { MenuPreview3D } from '../../components/3d/menuPreview3D';
 import { createAccessibilityMenu } from './heroAccessibility';
 import { createHeroRaycaster } from './heroRaycaster';
 
-// ── Type guard pour context.extras ────────────────────────────────────────────
+// ── Extras typés ──────────────────────────────────────────────────────────────
 
 /** Extras typés transmis par le loading screen à la section hero. */
-interface HeroExtras {
-  menuPreview: MenuPreview3D;
+export interface HeroExtras extends Record<string, unknown> {
+  menuPreview?: MenuPreview3D;
 }
-
-const isHeroExtras = (extras: unknown): extras is HeroExtras =>
-  typeof extras === 'object' && extras !== null &&
-  'menuPreview' in extras &&
-  typeof (extras as Record<string, unknown>).menuPreview === 'object' &&
-  (extras as Record<string, unknown>).menuPreview !== null &&
-  'getTexture' in ((extras as Record<string, unknown>).menuPreview as object) &&
-  'preloadAll' in ((extras as Record<string, unknown>).menuPreview as object);
 
 // ── Section initializer ────────────────────────────────────────────────────────
 
-export const initHeroSection: SectionInitializer = async (context) => {
+export const initHeroSection = async (context: SectionContext<HeroExtras>): Promise<SectionLifecycle> => {
   // Fallback for browsers without WebGL support
   if (!hasWebGLSupport()) {
     console.warn('WebGL not supported, using HTML fallback for hero section');
@@ -48,7 +40,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
   const { camera, renderer, crtManager } = context;
 
   // ── Récupération du menuPreview pré-créé par le loading screen ────────────
-  if (!isHeroExtras(context.extras)) {
+  if (!context.extras?.menuPreview) {
     throw new Error('[hero] menuPreview est requis dans context.extras (initialisé par loadingScreen)');
   }
 

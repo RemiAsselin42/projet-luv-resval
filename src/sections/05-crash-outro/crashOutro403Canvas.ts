@@ -22,6 +22,9 @@ const BTN_RESTART_X_RATIO = TEXT_CENTERED ? 0.3 : 0.1;
 const BTN_SEE_MORE_X_RATIO = TEXT_CENTERED ? 0.7 : 0.55;
 const BTN_Y_RATIO = 0.88; // depuis le haut du canvas
 
+// Marge intérieure du fond de survol d'un bouton (px canvas, avant mesure du texte)
+const BTN_HOVER_PAD_PX = 8;
+
 const LINES: readonly [string, string, string] = [
   '> SIGNAL CORRUPTED',
   'ERROR 403',
@@ -68,10 +71,9 @@ const drawBtn = (
   ctx.font = `500 ${fontSize}px 'Futura-Medium'`;
   if (hovered) {
     const w = ctx.measureText(displayLabel).width;
-    const pad = 8;
-    const rectX = TEXT_CENTERED ? x - w / 2 - pad : x - pad;
+    const rectX = TEXT_CENTERED ? x - w / 2 - BTN_HOVER_PAD_PX : x - BTN_HOVER_PAD_PX;
     ctx.fillStyle = WHITE;
-    ctx.fillRect(rectX, y - fontSize + 2, w + pad * 2, fontSize + pad);
+    ctx.fillRect(rectX, y - fontSize + 2, w + BTN_HOVER_PAD_PX * 2, fontSize + BTN_HOVER_PAD_PX);
     ctx.fillStyle = '#000000';
   } else {
     ctx.fillStyle = WHITE;
