@@ -18,6 +18,11 @@ import darthVaderHelmetUrl from '../3d-models/darth_vader_helmet.glb?url';
 import cctvCameraUrl from '../3d-models/cctv_camera.glb?url';
 import mpcUrl from '../3d-models/mpc.glb?url';
 import tapeUrl from '../3d-models/tape.glb?url';
+import anakinUrl from '../3d-models/anakin_skywalker.glb?url';
+import blackPantherUrl from '../3d-models/black_panther.glb?url';
+import minotaurUrl from '../3d-models/minotaur.glb?url';
+import linkUrl from '../3d-models/link.glb?url';
+import { loadGlbWithDracoFallback } from '../components/3d/glbLoader';
 import { createLoadingController } from '../sections/01-hero/heroLoader';
 import { createHeroRaycaster } from '../sections/01-hero/heroRaycaster';
 import type { ScrollManager } from '../core/scrollManager';
@@ -104,8 +109,18 @@ export const createLoadingScreen = async (
     menuPreviewQuality,
   );
 
-  // Lance les 4 téléchargements GLB immédiatement, en parallèle de l'animation
+  // Lance les 4 téléchargements GLB du menu immédiatement, en parallèle de l'animation
   menuPreview.preloadAll();
+
+  // ── Préchargement des modèles de la section Reliques ───────────────────────
+  // Lancés ici pour que la section Reliques trouve les modèles déjà en cache
+  // via loadGlbWithDracoFallback (pas de double téléchargement).
+  const reliquesUrls = [anakinUrl, blackPantherUrl, minotaurUrl, linkUrl];
+  let reliquesSettled = 0;
+  for (const url of reliquesUrls) {
+    void loadGlbWithDracoFallback(url).finally(() => { reliquesSettled++; });
+  }
+  const getReliquesProgress = (): number => reliquesSettled / reliquesUrls.length;
 
   // ── Responsive CRT sizing ───────────────────────────────────────────────────
   crtManager.fitToViewport(camera);
@@ -114,7 +129,7 @@ export const createLoadingScreen = async (
   const loadingCtrl = createLoadingController(
     crtManager,
     scrollManager,
-    () => menuPreview.getPreloadProgress(),
+    () => (menuPreview.getPreloadProgress() + getReliquesProgress()) / 2,
   );
 
   // ── Raycaster (PLAY button UV detection uniquement) ─────────────────────────

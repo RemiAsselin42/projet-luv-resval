@@ -34,6 +34,9 @@ const DRACO_DECODER_PATHS = [
 
 let sharedThreeExampleLoadersPromise: Promise<ThreeExampleLoaders> | null = null;
 
+/** Cache URL → promesse de chargement. Évite les doubles téléchargements entre preload et section. */
+const glbCache = new Map<string, Promise<{ scene: THREE.Object3D; decoderPath: string }>>();
+
 const loadThreeExampleLoaders = async (): Promise<ThreeExampleLoaders> => {
   if (!sharedThreeExampleLoadersPromise) {
     sharedThreeExampleLoadersPromise = Promise.all([
@@ -60,7 +63,13 @@ export const loadGlbWithDracoFallback = (
   modelUrl: string,
   dracoPathIndex: number = 0,
 ): Promise<{ scene: THREE.Object3D; decoderPath: string }> => {
-  return (async () => {
+  // Retourner la promesse en cache si disponible (les retries internes contournent le cache).
+  if (dracoPathIndex === 0) {
+    const cached = glbCache.get(modelUrl);
+    if (cached) return cached;
+  }
+
+  const promise = (async () => {
     const decoderPath = DRACO_DECODER_PATHS[dracoPathIndex];
     if (!decoderPath) {
       throw new Error('Aucun chemin de fallback Draco disponible.');
@@ -96,4 +105,12 @@ export const loadGlbWithDracoFallback = (
       );
     });
   })();
+
+  if (dracoPathIndex === 0) {
+    // Mettre en cache ; retirer si échec pour permettre un retry ultérieur.
+    glbCache.set(modelUrl, promise);
+    promise.catch(() => glbCache.delete(modelUrl));
+  }
+
+  return promise;
 };
