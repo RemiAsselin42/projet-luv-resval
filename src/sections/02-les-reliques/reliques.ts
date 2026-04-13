@@ -67,7 +67,7 @@ const initReliquesSection: SectionInitializer = (context) => {
   // ── Modules ────────────────────────────────────────────────────────────────
   const preview3D = createReliquesPreview3D(renderer, RELIQUES_CHARACTERS);
   preview3D.preloadAll();
-  const crtView = createReliquesCrtView();
+  const crtView = createReliquesCrtView(RELIQUES_CHARACTERS.map((c) => c.iconUrl));
 
   // ── État ───────────────────────────────────────────────────────────────────
   let selectedIndex = 0;
@@ -79,6 +79,9 @@ const initReliquesSection: SectionInitializer = (context) => {
   // ── Sélection d'un personnage ──────────────────────────────────────────────
 
   const selectCharacter = (index: number): void => {
+    // La garde getOpacity() > 0 permet de rejouer la sélection du personnage courant
+    // si la scène 3D n'est pas encore visible (ex. : premier affichage ou retry après échec).
+    // Sans elle, re-sélectionner le même index serait ignoré et le modèle ne s'afficherait pas.
     if (index === selectedIndex && preview3D.getOpacity() > 0) return;
     selectedIndex = index;
 
@@ -234,10 +237,11 @@ const initReliquesSection: SectionInitializer = (context) => {
     onEnterBack: () => {
       isInViewport = true;
       attachListeners();
-      crtManager.resetEffects();
+      crtManager.setBlur(0);
       crtManager.setModelColorMode(1);
       crtManager.setFade(0);
       crtManager.setContentTexture(crtView.getTexture());
+      selectCharacter(selectedIndex);
       fadeAnim?.kill();
       const proxy = { v: 0 };
       fadeAnim = gsap.to(proxy, {

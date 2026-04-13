@@ -86,8 +86,11 @@ export const createMpcCrtSync = (
     onLeaveBack: () => {
       isMpcInViewport = false;
       video.pause();
-      // Ne pas toucher aux effets ni à la texture CRT : la section Reliques (au-dessus)
-      // restaure son propre état via son onEnterBack.
+      // Remet blur + fade uniquement : on quitte la MPC vers les Reliques.
+      // resetEffects() évité car il écrase uModelColorMode, que onEnterBack Reliques
+      // peut avoir déjà posé à 1 (ordre GSAP non garanti entre triggers adjacents).
+      crtManager.setBlur(0);
+      crtManager.setFade(1);
     },
     onEnterBack: () => {
       isMpcInViewport = true;
