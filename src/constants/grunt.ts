@@ -10,4 +10,4 @@ export const GRUNT_VIDEO_URL = 'video/grunt-45.mp4';
 export const CLIP_DURATION_SECONDS = 284;
 
 /** Offset du clip en secondes. */
-export const CLIP_START_IN_SONG_SECONDS = 10;
+export const CLIP_START_IN_SONG_SECONDS = 0.1;
