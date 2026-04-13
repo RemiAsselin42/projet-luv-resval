@@ -19,7 +19,7 @@ import cctvCameraUrl from '../3d-models/cctv_camera.glb?url';
 import mpcUrl from '../3d-models/mpc.glb?url';
 import tapeUrl from '../3d-models/tape.glb?url';
 import anakinUrl from '../3d-models/anakin_skywalker.glb?url';
-import blackPantherUrl from '../3d-models/black_panther.glb?url';
+import batmanUrl from '../3d-models/batman.glb?url';
 import minotaurUrl from '../3d-models/minotaur.glb?url';
 import linkUrl from '../3d-models/link.glb?url';
 import { loadGlbWithDracoFallback } from '../components/3d/glbLoader';
@@ -115,7 +115,7 @@ export const createLoadingScreen = async (
   // ── Préchargement des modèles de la section Reliques ───────────────────────
   // Lancés ici pour que la section Reliques trouve les modèles déjà en cache
   // via loadGlbWithDracoFallback (pas de double téléchargement).
-  const reliquesUrls = [anakinUrl, blackPantherUrl, minotaurUrl, linkUrl];
+  const reliquesUrls = [anakinUrl, batmanUrl, minotaurUrl, linkUrl];
   let reliquesSettled = 0;
   for (const url of reliquesUrls) {
     void loadGlbWithDracoFallback(url).finally(() => { reliquesSettled++; });
@@ -193,14 +193,14 @@ export const createLoadingScreen = async (
   return {
     getResources: (): LoadingScreenResources => ({ menuPreview }),
 
-    update: (deltaSeconds: number, _elapsedSeconds: number): void => {
+    update: (deltaSeconds: number, elapsedSeconds: number): void => {
       if (isDisposed) return;
 
       // crtManager.update() est appelé centralement dans main.ts — ne pas le rappeler ici.
       const loadingProgress = loadingCtrl.getLoadingProgress();
 
       // Pendant le loading : heroProgress=0, menuOpacity=0, aucun hover menu
-      crtManager.setUiProgress(0, 0, -1, loadingProgress, playButtonHovered);
+      crtManager.setUiProgress(0, 0, -1, loadingProgress, playButtonHovered, elapsedSeconds * 1000);
 
       menuPreview.update(deltaSeconds);
       menuPreview.renderPreview();

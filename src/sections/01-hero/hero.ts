@@ -161,7 +161,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
   window.addEventListener('click', onClick);
 
   return {
-    update: (_deltaSeconds: number, _elapsedSeconds: number) => {
+    update: (_deltaSeconds: number, elapsedSeconds: number) => {
       // crtManager.update() est appelé centralement dans main.ts — ne pas le rappeler ici.
       const scrollY = context.scrollManager.getScrollY();
 
@@ -172,7 +172,7 @@ export const initHeroSection: SectionInitializer = async (context) => {
       currentMenuOpacity = menuOpacity;
 
       // loadingProgress = 2 : transition loading complète, vue héro active
-      crtManager.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, 2, false);
+      crtManager.setUiProgress(heroProgress, menuOpacity, hoverMenuIndex, 2, false, elapsedSeconds * 1000);
 
       menuPreview.setHoveredIndex(heroRaycaster.isAtMenuSection() ? hoverMenuIndex : -1);
       menuPreview.update(_deltaSeconds);

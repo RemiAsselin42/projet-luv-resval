@@ -113,6 +113,18 @@ const init = async (): Promise<void> => {
 
   animationFrameId = window.requestAnimationFrame(renderLoop);
 
+  // ── Resize global (actif dès le démarrage, avant le clic PLAY) ────────────
+  const onResize = (): void => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(getRecommendedPixelRatio());
+    crtManager?.fitToViewport(camera);
+  };
+  window.addEventListener('resize', onResize);
+
   // ── Attendre le clic PLAY + fin d'initialisation des sections ─────────────
   try {
     await Promise.all([loadingScreen.waitForPlay(), initPromise]);
@@ -127,18 +139,6 @@ const init = async (): Promise<void> => {
   await sectionManager.initialize(sectionLoaders);
   sectionManagerActive = true;
   scrollManager.refresh();
-
-  // ── Resize global ──────────────────────────────────────────────────────────
-  const onResize = (): void => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(getRecommendedPixelRatio());
-    crtManager?.fitToViewport(camera);
-  };
-  window.addEventListener('resize', onResize);
 
   const onKeydown = (e: KeyboardEvent): void => {
     if ((e.key === 'm' || e.key === 'M') && !e.repeat) audioManager.toggleMute();
