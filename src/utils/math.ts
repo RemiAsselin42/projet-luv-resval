@@ -1,6 +1,6 @@
 // Fonctions mathématiques utilitaires réutilisées dans tout le projet.
-// Inclut : blocage de valeur (clamp), interpolation (lerp), remappage de plage (mapRange),
-// et plusieurs courbes d'accélération/décélération (easing) pour les animations.
+// Inclut : blocage de valeur (clamp), et plusieurs courbes d'accélération/décélération
+// (easing) pour les animations.
 
 /**
  * Bloque une valeur entre un minimum et un maximum.
@@ -20,36 +20,6 @@ export const clamp = (value: number, min: number, max: number): number => {
  */
 export const clamp01 = (value: number): number => {
   return clamp(value, 0, 1);
-};
-
-/**
- * Interpolation linéaire entre deux valeurs.
- * @param a Valeur de départ
- * @param b Valeur d'arrivée
- * @param t Facteur d'interpolation (0 = a, 1 = b)
- * @returns La valeur interpolée
- */
-export const lerp = (a: number, b: number, t: number): number => {
-  return a + (b - a) * clamp01(t);
-};
-
-/**
- * Convertit une valeur d'une plage vers une autre.
- * @param value La valeur d'entrée
- * @param inMin Minimum de la plage d'entrée
- * @param inMax Maximum de la plage d'entrée
- * @param outMin Minimum de la plage de sortie
- * @param outMax Maximum de la plage de sortie
- * @returns La valeur convertie dans la nouvelle plage
- */
-export const mapRange = (
-  value: number,
-  inMin: number,
-  inMax: number,
-  outMin: number,
-  outMax: number,
-): number => {
-  return ((value - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 };
 
 // ── Fonctions d'easing ────────────────────────────────────────────────────────

@@ -68,8 +68,7 @@ const sectionDefinitions = [
       'Transition dystopique, visage geant et parallax de levee de tete au scroll.',
     hidden: true,
     includeInCrtMenu: false,
-    load: async () =>
-      (await import('./03-oeil-big-brother/bigBrother')).default,
+    // Pas de champ `load` : section masquée, le code ne sera jamais chargé.
   },
   {
     id: 'mpc',
@@ -89,7 +88,7 @@ const sectionDefinitions = [
   },
 ] as const satisfies readonly SectionDefinition[];
 
-export const sections: SectionDefinition[] = [...sectionDefinitions];
+const sections: SectionDefinition[] = [...sectionDefinitions];
 
 /**
  * Identifiants canoniques des sections — utilisés pour les requêtes DOM,

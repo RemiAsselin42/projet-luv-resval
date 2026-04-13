@@ -56,7 +56,7 @@ export interface SectionDomManager {
   dispose(): void;
 }
 
-export const createSectionDomManager = (
+const createSectionDomManager = (
   definitions: readonly SectionDefinition[],
 ): SectionDomManager => {
   const elements = new Map<SectionId, HTMLElement>();

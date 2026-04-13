@@ -25,7 +25,7 @@ export interface CrtCanvasTexture {
 // ── Constantes d'animation ─────────────────────────────────────────────────────
 
 /** Durée d'un quantum de pulse du bouton PLAY (ms). Correspond à ~24 fps. */
-export const PULSE_QUANTUM_MS = 1000 / 24;
+const PULSE_QUANTUM_MS = 1000 / 24;
 
 // ── Constantes de mise en page ─────────────────────────────────────────────────
 
@@ -61,18 +61,6 @@ const PLAY_BUTTON_PAD_X_PX = 14;
 // Marge verticale haut/bas du fond de survol (px, avant resScale)
 const PLAY_BUTTON_PAD_Y_TOP_PX = 12;
 const PLAY_BUTTON_PAD_Y_BOTTOM_PX = 6;
-
-/**
- * Vrai quand le bouton PLAY doit pulser (barre complète, transition pas encore déclenchée).
- * Court-circuite l'optimisation dirty-flag pour que le bouton s'anime à chaque frame.
- * - loadingProgress = 1  → barre complète, en attente du clic PLAY → pulse
- * - loadingProgress > 1  → transition en cours (1→2)               → pas de pulse
- * - loadingProgress < 1  → barre encore en train de se remplir      → pas de pulse
- */
-export const isPlayButtonPulsing = (loadingProgress: number): boolean => {
-  const clampedLoadingProgress = Math.min(Math.max(loadingProgress, 0), 1);
-  return clampedLoadingProgress >= 1 && loadingProgress <= 1;
-};
 
 // ── Colour palette ─────────────────────────────────────────────────────────────
 

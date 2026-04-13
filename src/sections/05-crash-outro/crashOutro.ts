@@ -10,6 +10,7 @@ import { createError403Canvas, BTN_LAYOUT } from './crashOutro403Canvas';
 import { createCrashOutroOverlay } from './crashOutroOverlay';
 import { createGruntVideoTexture } from '../../utils/gruntVideoTexture';
 import { CLIP_DURATION_SECONDS, CLIP_START_IN_SONG_SECONDS } from '../../constants/grunt';
+import { CRT_Z } from '../../crt/crtZParallax';
 
 const CAPPELLA_LAYER = 5;
 const GLITCH_RAMP_SECONDS = 20; // durée du glitch progressif avant le crash total
@@ -82,13 +83,12 @@ const initGruntSection: SectionInitializer = (context) => {
   // ── Timeline scrubée : blur 0.85→0, fade 0.3→1 ──────────────────────────
   // La vidéo est chargée dès le début de la transition (top 80%) pour qu'on
   // voit la vidéo (et non le canvas hero) pendant que blur/fade s'animent.
-  // z part de FAR (-2.0) et rejoint NEAR (0) en même temps que blur/fade.
+  // z part de CRT_Z.FAR (-2.0) et rejoint NEAR (0) en même temps que blur/fade.
   // Ce scrub est créé après mpcZTimeline (dans crtZParallax) → il écrit
   // mesh.position.z en dernier et l'emporte sur le dezoom MPC pendant toute
   // la plage 'top 80%' → 'top 20%'. La mpcZTimeline est limitée à
   // 'bottom 80%' pour ne plus écrire après ce point.
-  const FAR_Z = -2.0;
-  const transitionState = { blur: 0.85, fade: 0.3, z: FAR_Z };
+  const transitionState = { blur: 0.85, fade: 0.3, z: CRT_Z.FAR };
   const transitionTimeline = gsap.timeline({
     scrollTrigger: {
       trigger: sectionElement,

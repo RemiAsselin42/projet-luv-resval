@@ -5,13 +5,13 @@
 // ── Constantes de scaling CRT ──────────────────────────────────────────────────
 
 /** Seuil de largeur viewport (px) séparant desktop et mobile pour le calcul du CRT scale. */
-export const VIEWPORT_DESKTOP_BREAKPOINT_PX = 1366;
+const VIEWPORT_DESKTOP_BREAKPOINT_PX = 1366;
 /** Ratio d'aspect minimum pour vérouiller la hauteur sur desktop (16:10, MacBook, ultrawide). */
-export const HEIGHT_LOCK_ASPECT_DESKTOP = 1.6;
+const HEIGHT_LOCK_ASPECT_DESKTOP = 1.6;
 /** Ratio d'aspect minimum pour vérouiller la hauteur sur mobile/tablet. */
-export const HEIGHT_LOCK_ASPECT_MOBILE = 1.2;
+const HEIGHT_LOCK_ASPECT_MOBILE = 1.2;
 /** Epsilon de sécurité pour éviter la division par zéro. */
-export const SAFE_MIN_VALUE = 0.0001;
+const SAFE_MIN_VALUE = 0.0001;
 
 /**
  * Calcule l'échelle du mesh CRT pour s'adapter au viewport de manière responsive.

@@ -63,19 +63,6 @@ export const RESPONSIVE_BREAKPOINTS = {
 } as const;
 
 /**
- * Retourne la catégorie de breakpoint courante selon la largeur du viewport.
- *
- * @returns Clé du breakpoint actif parmi RESPONSIVE_BREAKPOINTS
- */
-export const getCurrentBreakpoint = (): keyof typeof RESPONSIVE_BREAKPOINTS => {
-  const width = window.innerWidth;
-  if (width <= RESPONSIVE_BREAKPOINTS.MOBILE) return 'MOBILE';
-  if (width <= RESPONSIVE_BREAKPOINTS.TABLET_SM) return 'TABLET_SM';
-  if (width <= RESPONSIVE_BREAKPOINTS.TABLET_MD) return 'TABLET_MD';
-  return 'DESKTOP';
-};
-
-/**
  * Constantes de configuration de la mise en page de l'interface écran CRT.
  * Centralisées pour éviter la duplication entre hero.ts et crtShader.ts.
  */

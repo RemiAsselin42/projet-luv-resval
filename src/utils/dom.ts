@@ -2,16 +2,8 @@
 // Fournit un raccourci pour chercher un élément par son attribut data-section,
 // utilisé partout dans le code pour cibler les sections du site.
 
-/**
- * Returns a CSS attribute selector string for a section element by its data-section id.
- *
- * @example
- * getSectionDataSelector('hero') // → '[data-section="hero"]'
- *
- * @param sectionId - The value of the data-section attribute
- * @returns CSS attribute selector string
- */
-export const getSectionDataSelector = (sectionId: string): string =>
+/** Construit le sélecteur CSS d'attribut pour un élément de section donné. */
+const getSectionDataSelector = (sectionId: string): string =>
   `[data-section="${sectionId}"]`;
 
 /**

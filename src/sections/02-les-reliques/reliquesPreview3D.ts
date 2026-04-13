@@ -27,7 +27,7 @@ const LIGHT_TOP_INTENSITY     = 1.2;   // Lumière de dessus (éclaire le casque
 
 // Aspect ratio de l'aire d'affichage dans le shader CRT.
 // uModelRect = (0.47, 0.26, 0.87, 0.86) → (width UV 0.40 × 16/9) / height UV 0.60
-export const RELIQUES_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.86 - 0.26);
+const RELIQUES_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.86 - 0.26);
 
 // ── Types internes ─────────────────────────────────────────────────────────────
 

@@ -18,18 +18,6 @@ import type { MenuPreview3D } from '../../components/3d/menuPreview3D';
 import { createAccessibilityMenu } from './heroAccessibility';
 import { createHeroRaycaster } from './heroRaycaster';
 
-// Réexports pour la compatibilité des tests existants (hero.test.ts)
-export {
-  computeLoadingProgress,
-  createLoadingController,
-  LOADER_TOTAL_DURATION_SECONDS,
-  LOADER_TRANSITION_SECONDS,
-} from './heroLoader';
-export type { LoadingController } from './heroLoader';
-
-// Réexport de computeCrtScale depuis le module partagé (compatibilité hero.test.ts)
-export { computeCrtScale } from '../../crt/crtScaling';
-
 // ── Type guard pour context.extras ────────────────────────────────────────────
 
 /** Extras typés transmis par le loading screen à la section hero. */
