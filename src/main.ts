@@ -16,6 +16,9 @@ import { renderSectionsLayout } from './sections/dom';
 import { createLoadingScreen } from './loader/loadingScreen';
 import { createCrtManager } from './crt/crtManager';
 import type { CrtManager } from './crt/crtManager';
+import { createCrtZParallax } from './crt/crtZParallax';
+import type { CrtZParallax } from './crt/crtZParallax';
+import { getSectionSelector, SECTION_IDS } from './sections/definitions';
 import { detectGpuTier, getShaderComplexity } from './core/gpuCapabilities';
 
 const canvasContainer = document.getElementById('canvas-container');
@@ -44,12 +47,20 @@ let lastFrameTime = window.performance.now();
 let sectionManager: SectionManager | null = null;
 let sectionManagerActive = false;
 let crtManager: CrtManager | null = null;
+let crtZParallax: CrtZParallax | null = null;
 
 const init = async (): Promise<void> => {
   // ── CRT Manager (persistant tout le long du site) ─────────────────────────
   const gpuTier = detectGpuTier();
   const shaderSettings = getShaderComplexity(gpuTier);
   crtManager = await createCrtManager(scene, 16 / 9, shaderSettings.textureResolution);
+
+  // ── Parallaxes Z de la TV CRT (centralisées) ──────────────────────────────
+  const heroEl = document.querySelector(getSectionSelector(SECTION_IDS.HERO));
+  const mpcEl  = document.querySelector(getSectionSelector(SECTION_IDS.MPC));
+  if (heroEl && mpcEl) {
+    crtZParallax = createCrtZParallax(heroEl, mpcEl, crtManager.mesh);
+  }
 
   // ── Phase loading indépendante ─────────────────────────────────────────────
   const loadingScreen = await createLoadingScreen(
@@ -141,6 +152,7 @@ const init = async (): Promise<void> => {
       }
       sectionManagerActive = false;
       sectionManager?.dispose();
+      crtZParallax?.dispose();
       sectionDom.dispose();
       scrollManager.dispose();
       assetLoader.dispose();

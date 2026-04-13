@@ -82,7 +82,13 @@ const initGruntSection: SectionInitializer = (context) => {
   // ── Timeline scrubée : blur 0.85→0, fade 0.3→1 ──────────────────────────
   // La vidéo est chargée dès le début de la transition (top 80%) pour qu'on
   // voit la vidéo (et non le canvas hero) pendant que blur/fade s'animent.
-  const transitionState = { blur: 0.85, fade: 0.3, z: -2.5 };
+  // z part de FAR (-2.0) et rejoint NEAR (0) en même temps que blur/fade.
+  // Ce scrub est créé après mpcZTimeline (dans crtZParallax) → il écrit
+  // mesh.position.z en dernier et l'emporte sur le dezoom MPC pendant toute
+  // la plage 'top 80%' → 'top 20%'. La mpcZTimeline est limitée à
+  // 'bottom 80%' pour ne plus écrire après ce point.
+  const FAR_Z = -2.0;
+  const transitionState = { blur: 0.85, fade: 0.3, z: FAR_Z };
   const transitionTimeline = gsap.timeline({
     scrollTrigger: {
       trigger: sectionElement,
@@ -100,10 +106,11 @@ const initGruntSection: SectionInitializer = (context) => {
         }
       },
       onLeaveBack: () => {
-        // Retour vers la MPC : pause vidéo, restaurer la texture hero
+        // Retour en arrière : pause vidéo, restaurer la texture hero,
+        // puis naviguer directement vers les reliques (bypass de la MPC).
         video.pause();
         crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
-        crtManager.mesh.position.z = -2.5;
+        scrollManager.scrollToSection(SECTION_IDS.RELIQUES);
       },
     },
   });
@@ -147,7 +154,6 @@ const initGruntSection: SectionInitializer = (context) => {
     onEnterBack: () => {
       isInViewport = true;
       if (glitchPhase === 'ramping') {
-        crtManager.mesh.position.z = 0;
         void video.play().catch(() => undefined);
       }
     },

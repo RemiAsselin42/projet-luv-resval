@@ -81,14 +81,13 @@ export const createMpcCrtSync = (
       crtManager.resetEffects();
       crtManager.setFade(0.3);
       crtManager.setBlur(0.85);
-      // z reste à -2.5 (hérité du parallax hero→hub) — crash outro le ramènera à 0
+      // z est animé par crtZParallax (voir main.ts)
     },
     onLeaveBack: () => {
       isMpcInViewport = false;
-      crtManager.resetEffects();
-      crtManager.setFade(1);
-      crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
       video.pause();
+      // Ne pas toucher aux effets ni à la texture CRT : la section Reliques (au-dessus)
+      // restaure son propre état via son onEnterBack.
     },
     onEnterBack: () => {
       isMpcInViewport = true;

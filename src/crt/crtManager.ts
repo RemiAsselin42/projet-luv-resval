@@ -27,6 +27,10 @@ export interface CrtManager {
   setContentTexture(texture: THREE.Texture): void;
   /** Retourne la texture canvas initiale (menu hero). */
   getHeroCanvasTexture(): THREE.Texture;
+  /** Lance un crossfade depuis fromTexture vers la prochaine setContentTexture(). */
+  startCrossfade(fromTexture: THREE.Texture): void;
+  /** Avance le crossfade (0 = from, 1 = to). */
+  setCrossfade(blend: number): void;
 
   // ── Effets ──
   setPowerOn(value: number): void;
@@ -39,6 +43,8 @@ export interface CrtManager {
 
   // ── Preview 3D (hero) ──
   setModelPreview(texture: THREE.Texture | null, opacity: number, texelSize?: THREE.Vector2): void;
+  /** 0 = wireframe blanc (menu/hero), 1 = couleurs réelles (Reliques). */
+  setModelColorMode(mode: number): void;
 
   // ── Canvas hero (menu UI) ──
   setUiProgress(
@@ -93,6 +99,9 @@ export const createCrtManager = async (
 
     getHeroCanvasTexture: () => heroCanvasTexture,
 
+    startCrossfade: (fromTexture: THREE.Texture) => crt.startCrossfade(fromTexture),
+    setCrossfade: (blend: number) => crt.setCrossfade(blend),
+
     setPowerOn: (value: number) => crt.setPowerOn(value),
     setFade: (value: number) => crt.setFade(value),
     setGlitch: (value: number) => crt.setGlitch(value),
@@ -112,6 +121,10 @@ export const createCrtManager = async (
 
     setModelPreview: (texture: THREE.Texture | null, opacity: number, texelSize?: THREE.Vector2) => {
       crt.setModelPreview(texture, opacity, texelSize);
+    },
+
+    setModelColorMode: (mode: number) => {
+      crt.uniforms.uModelColorMode.value = mode;
     },
 
     setUiProgress: (
@@ -139,6 +152,7 @@ export const createCrtManager = async (
       crt.uniforms.uShiftX.value = 0;
       crt.uniforms.uShiftY.value = 0;
       crt.uniforms.uMosaic.value = 0;
+      crt.uniforms.uModelColorMode.value = 0;
     },
 
     dispose: () => {

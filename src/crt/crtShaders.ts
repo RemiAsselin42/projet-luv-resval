@@ -24,10 +24,13 @@ export const fragmentShader = /* glsl */ `
   precision highp float;
 
   uniform sampler2D uTexture;
+  uniform sampler2D uTexturePrev;
+  uniform float uBlend;
   uniform sampler2D uModelTexture;     // preview 3D menu (render target)
   uniform float uModelTextureOpacity;  // 0 = caché, 1 = visible
   uniform vec2  uModelTexelSize;       // 1/width, 1/height du render target
   uniform vec4  uModelRect;            // (x0, y0, x1, y1) en UV distordu
+  uniform float uModelColorMode;       // 0 = wireframe blanc, 1 = couleurs réelles
   uniform float uTime;
   uniform float uPowerOn;       // 0 → 1 : animation d'allumage
   uniform float uFade;          // 1 → 0 : fondu de sortie
@@ -118,10 +121,17 @@ export const fragmentShader = /* glsl */ `
     float chromaDrift = sin(uTime * 1.8) * 0.001;
     float dynamicAberration = glitchAberration + chromaDrift;
 
-    float r = texture2D(uTexture, sampledUv + vec2( dynamicAberration, 0.0)).r;
-    float g = texture2D(uTexture, sampledUv).g;
-    float b = texture2D(uTexture, sampledUv + vec2(-dynamicAberration, 0.0)).b;
-    vec3 color = vec3(r, g, b);
+    vec3 colorCurr = vec3(
+      texture2D(uTexture, sampledUv + vec2( dynamicAberration, 0.0)).r,
+      texture2D(uTexture, sampledUv).g,
+      texture2D(uTexture, sampledUv + vec2(-dynamicAberration, 0.0)).b
+    );
+    vec3 colorPrev = vec3(
+      texture2D(uTexturePrev, sampledUv + vec2( dynamicAberration, 0.0)).r,
+      texture2D(uTexturePrev, sampledUv).g,
+      texture2D(uTexturePrev, sampledUv + vec2(-dynamicAberration, 0.0)).b
+    );
+    vec3 color = mix(colorPrev, colorCurr, uBlend);
 
     // ── Composite contour 3D (render target) avant les effets CRT ───────────
     // Affiche uniquement une ligne externe adaptative autour de la silhouette
@@ -160,7 +170,16 @@ export const fragmentShader = /* glsl */ `
 
       float modelLineAlpha = max(outlineAlpha, internalLineAlpha);
 
-      color = mix(color, vec3(1.0), modelLineAlpha);
+      if (uModelColorMode > 0.5) {
+        // Mode couleur (Reliques) : composite le RGB réel du modèle
+        float solidAlpha = modelSample.a * uModelTextureOpacity * insideRect;
+        color = mix(color, modelSample.rgb, solidAlpha);
+        // Contour externe blanc conservé pour la lisibilité
+        color = mix(color, vec3(1.0), outlineAlpha);
+      } else {
+        // Mode wireframe (menu/hero) : lignes blanches uniquement
+        color = mix(color, vec3(1.0), modelLineAlpha);
+      }
     }
 
     // Ajouter du bruit blanc sur les bandes glitchées (amplifié par uGlitch)

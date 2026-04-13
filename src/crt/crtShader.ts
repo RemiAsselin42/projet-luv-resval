@@ -12,8 +12,8 @@ import { CRT_MENU_CONFIG } from './crtConfig';
 export type { CrtScreen, CrtUniforms } from './crtTypes';
 
 // Aspect ratio physique de la zone d'affichage du modèle 3D (uModelRect × aspect CRT 16:9).
-// uModelRect = (0.47, 0.20, 0.87, 0.80) → width UV = 0.40, height UV = 0.60
-export const CRT_MODEL_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.80 - 0.20);
+// uModelRect = (0.47, 0.26, 0.87, 0.86) → width UV = 0.40, height UV = 0.60
+export const CRT_MODEL_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.86 - 0.26);
 
 export const createCrtScreen = async (
   aspectRatio: number = 16 / 9,
@@ -33,13 +33,15 @@ export const createCrtScreen = async (
 
   const uniforms: CrtUniforms = {
     uTexture: { value: textTexture.texture },
+    uTexturePrev: { value: textTexture.texture },
+    uBlend: { value: 1.0 },
     uModelTexture: { value: new THREE.Texture() },
     uModelTextureOpacity: { value: 0.0 },
     uModelTexelSize: { value: new THREE.Vector2(1 / 512, 1 / 512) },
     // Zone centre-droite de l'écran en UV distordu : (x0, y0, x1, y1)
     // UV y=0 est en bas, y=1 en haut.
     // Contrainte : ratio UV (0.40 / 0.60) × (16/9) = CRT_MODEL_PREVIEW_ASPECT
-    uModelRect: { value: new THREE.Vector4(0.47, 0.20, 0.87, 0.80) },
+    uModelRect: { value: new THREE.Vector4(0.47, 0.26, 0.87, 0.86) },
     uTime: { value: 0.0 },
     uPowerOn: { value: 0.0 },
     uFade: { value: 1.0 },
@@ -50,6 +52,7 @@ export const createCrtScreen = async (
     uShiftY: { value: 0.0 },
     uMosaic: { value: 0.0 },
     uBlur: { value: 0.0 },
+    uModelColorMode: { value: 0.0 },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -91,6 +94,16 @@ export const createCrtScreen = async (
     },
     setGlitch: (value: number) => {
       uniforms.uGlitch.value = value;
+    },
+    setModelColorMode: (mode: number) => {
+      uniforms.uModelColorMode.value = mode;
+    },
+    startCrossfade: (fromTexture: THREE.Texture) => {
+      uniforms.uTexturePrev.value = fromTexture;
+      uniforms.uBlend.value = 0.0;
+    },
+    setCrossfade: (blend: number) => {
+      uniforms.uBlend.value = blend;
     },
     dispose: () => {
       geometry.dispose();
