@@ -57,8 +57,8 @@ const sectionDefinitions = [
     id: 'reliques',
     heading: 'Les Reliques',
     screenReaderOnlyHeading: true,
-    hidden: true,
-    includeInCrtMenu: false,
+    includeInCrtMenu: true,
+    crtMenuLabel: 'LES RELIQUES',
     load: async () => (await import('./02-les-reliques/reliques')).default,
   },
   {
