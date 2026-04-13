@@ -17,7 +17,6 @@ import {
 import type { MenuPreview3D } from '../../components/3d/menuPreview3D';
 import { createAccessibilityMenu } from './heroAccessibility';
 import { createHeroRaycaster } from './heroRaycaster';
-import { createHeroScrollTimelines } from './heroTimelines';
 
 // Réexports pour la compatibilité des tests existants (hero.test.ts)
 export {
@@ -67,21 +66,9 @@ export const initHeroSection: SectionInitializer = async (context) => {
 
   const { menuPreview } = context.extras;
 
-  // ── Parallax TV ──────────────────────────────────────────────────────────
-  const heroElement = document.querySelector(
-    getSectionSelector(SECTION_IDS.HERO),
-  );
-  const menuElement = document.querySelector(
-    getSectionSelector(SECTION_IDS.HUB_CENTRAL),
-  );
-
-  const { heroTimeline } = createHeroScrollTimelines(
-    heroElement,
-    menuElement,
-    crtManager,
-  );
-
   // ── Détection hover menu via raycaster ─────────────────────
+  const heroElement = document.querySelector(getSectionSelector(SECTION_IDS.HERO));
+  const menuElement = document.querySelector(getSectionSelector(SECTION_IDS.HUB_CENTRAL));
   const heroRaycaster = createHeroRaycaster(
     camera,
     renderer,
@@ -201,7 +188,6 @@ export const initHeroSection: SectionInitializer = async (context) => {
     dispose: () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('click', onClick);
-      heroTimeline?.kill();
       accessibilityMenu.dispose();
 
       if (heroFocusElement.parentNode) {
