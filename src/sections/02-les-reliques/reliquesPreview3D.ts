@@ -7,15 +7,18 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { loadGlbWithDracoFallback } from '../../components/3d/glbLoader';
 import type { ReliquesCharacterData, ReliquesCharacterId } from './reliquesData';
+import {
+  fitModel,
+  ANIM_DURATION_IN,
+  ANIM_DURATION_OUT,
+  ANIM_EASE_IN,
+  ANIM_EASE_OUT,
+} from '../../components/3d/modelUtils';
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
 
 const RENDER_TARGET_SIZE = 512;
 const ROTATION_SPEED = 0.8; // rad/s
-const DURATION_IN = 0.35;
-const DURATION_OUT = 0.22;
-const EASE_IN = 'back.out(1.3)';
-const EASE_OUT = 'power2.in';
 
 // Éclairage de la mini-scène — ajuster ici pour tous les modèles à la fois.
 // Intensités calibrées pour les matériaux PBR (batman, minotaur) et non-PBR (anakin, link).
@@ -42,20 +45,6 @@ interface ReliquesModelEntry {
   mixer: THREE.AnimationMixer | null;
   idleAction: THREE.AnimationAction | null;
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-const fitModel = (model: THREE.Object3D, targetDimension: number): void => {
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const scale = maxDim > 0 ? targetDimension / maxDim : 1;
-  model.scale.setScalar(scale);
-
-  const scaledBox = new THREE.Box3().setFromObject(model);
-  const center = scaledBox.getCenter(new THREE.Vector3());
-  model.position.sub(center);
-};
 
 // ── Interface publique ─────────────────────────────────────────────────────────
 
@@ -140,8 +129,8 @@ export const createReliquesPreview3D = (
     entry.tween = gsap.to(entry.proxy, {
       opacity: 1,
       scale: 1,
-      duration: DURATION_IN,
-      ease: EASE_IN,
+      duration: ANIM_DURATION_IN,
+      ease: ANIM_EASE_IN,
       onUpdate: () => {
         entry.group.scale.setScalar(entry.proxy.scale);
       },
@@ -153,8 +142,8 @@ export const createReliquesPreview3D = (
     entry.tween = gsap.to(entry.proxy, {
       opacity: 0,
       scale: 0,
-      duration: DURATION_OUT,
-      ease: EASE_OUT,
+      duration: ANIM_DURATION_OUT,
+      ease: ANIM_EASE_OUT,
       onUpdate: () => {
         entry.group.scale.setScalar(entry.proxy.scale);
       },

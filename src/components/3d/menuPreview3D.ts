@@ -10,22 +10,19 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import type { GpuTier } from '../../core/gpuCapabilities';
 import { loadGlbWithDracoFallback } from './glbLoader';
+import {
+  fitModel,
+  ANIM_DURATION_IN,
+  ANIM_DURATION_OUT,
+  ANIM_EASE_IN,
+  ANIM_EASE_OUT,
+} from './modelUtils';
 
 // ── Render Target ──────────────────────────────────────────────────────────────
 // Le modèle est rendu dans une mini-scène isolée, dont la texture est ensuite
 // injectée dans le shader CRT AVANT les effets (scanlines, barrel distortion…).
 // Ainsi le modèle apparaît réellement "à l'intérieur" de l'écran.
 const DEFAULT_RENDER_TARGET_SIZE = 512;
-
-// Taille cible par défaut du modèle dans la mini-scène.
-// Caméra FOV 45° à z=3 → hauteur visible ≈ 2.49 u.
-const DEFAULT_TARGET_DIMENSION = 2.5;
-
-// Durées des transitions
-const DURATION_IN = 0.35;
-const DURATION_OUT = 0.22;
-const EASE_IN = 'back.out(1.3)';
-const EASE_OUT = 'power2.in';
 
 // Vitesse de rotation automatique (radians/seconde)
 const DEFAULT_ROTATION_SPEED = 0.9;
@@ -123,23 +120,6 @@ const applyModelMask = (
   }
 };
 
-// ── Fit + centrage du modèle ───────────────────────────────────────────────────
-
-const fitModel = (model: THREE.Object3D, targetDimension: number): void => {
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const safeTargetDimension =
-    targetDimension > 0 ? targetDimension : DEFAULT_TARGET_DIMENSION;
-  const scale = maxDim > 0 ? safeTargetDimension / maxDim : 1;
-  model.scale.setScalar(scale);
-
-  // Recentrage sur l'origine locale du groupe
-  const scaledBox = new THREE.Box3().setFromObject(model);
-  const center = scaledBox.getCenter(new THREE.Vector3());
-  model.position.sub(center);
-};
-
 // ── Interface publique ─────────────────────────────────────────────────────────
 
 export interface MenuPreviewItem {
@@ -222,8 +202,8 @@ const hideEntry = (entry: ModelEntry): void => {
   entry.tween = gsap.to(entry.proxy, {
     opacity: 0,
     scale: 0,
-    duration: DURATION_OUT,
-    ease: EASE_OUT,
+    duration: ANIM_DURATION_OUT,
+    ease: ANIM_EASE_OUT,
     onUpdate: () => {
       entry.group.scale.setScalar(entry.proxy.scale);
     },
@@ -239,8 +219,8 @@ const showEntry = (entry: ModelEntry): void => {
   entry.tween = gsap.to(entry.proxy, {
     opacity: 1,
     scale: 1,
-    duration: DURATION_IN,
-    ease: EASE_IN,
+    duration: ANIM_DURATION_IN,
+    ease: ANIM_EASE_IN,
     onUpdate: () => {
       entry.group.scale.setScalar(entry.proxy.scale);
     },
