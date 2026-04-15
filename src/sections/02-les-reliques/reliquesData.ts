@@ -3,15 +3,11 @@
 
 import anakinUrl from '../../3d-models/anakin_skywalker.glb?url';
 import batmanUrl from '../../3d-models/batman.glb?url';
-import minotaurUrl from '../../3d-models/minotaur.glb?url';
+import cerbereUrl from '../../3d-models/cerberus.glb?url';
 import linkUrl from '../../3d-models/link.glb?url';
 import { publicUrl } from '../../utils/publicUrl';
 
-export type ReliquesCharacterId =
-  | 'anakin'
-  | 'batman'
-  | 'minotaur'
-  | 'link';
+export type ReliquesCharacterId = 'anakin' | 'batman' | 'cerbère' | 'link';
 
 export interface ReliquesCharacterData {
   id: ReliquesCharacterId;
@@ -35,7 +31,6 @@ export interface ReliquesCharacterData {
    * Nom de l'animation idle à jouer (doit correspondre à un AnimationClip du GLB). Optionnel.
    * Les noms proviennent des métadonnées des fichiers GLB exportés depuis Blender/Mixamo :
    * - `'IDLE001'`     → batman.glb     (animation exportée depuis Adobe Mixamo, piste "IDLE001")
-   * - `'Warrior_Idle'` → minotaur.glb  (animation exportée depuis Mixamo, piste "Warrior_Idle")
    * Pour inspecter les noms disponibles dans un GLB : `gltf.animations.map(c => c.name)`.
    */
   idleAnimationName?: string;
@@ -47,7 +42,7 @@ export const RELIQUES_CHARACTERS: ReliquesCharacterData[] = [
     label: 'ANAKIN',
     modelUrl: anakinUrl,
     iconUrl: publicUrl('image/anakin.svg'),
-    targetDimension: 1.8,
+    targetDimension: 2.2,
     stats: { egoTrip: 90, spleen: 75, legacy: 65, charisma: 85 },
     lyrics: "Le soir comme Anakin quand j'ai la rage n*gro c'est violent",
     tickerKeyword: 'Anakin',
@@ -57,23 +52,22 @@ export const RELIQUES_CHARACTERS: ReliquesCharacterData[] = [
     label: 'BATMAN',
     modelUrl: batmanUrl,
     iconUrl: publicUrl('image/batman.svg'),
-    targetDimension: 1.8,
+    targetDimension: 2.2,
     stats: { egoTrip: 80, spleen: 85, legacy: 90, charisma: 80 },
     lyrics: 'Coup de pied a Statham, racks dans un jean tout noir comme Batman',
     tickerKeyword: 'Batman',
     idleAnimationName: 'IDLE001',
   },
   {
-    id: 'minotaur',
-    label: 'MINOTAUR',
-    modelUrl: minotaurUrl,
-    iconUrl: publicUrl('image/minotaur.svg'),
+    id: 'cerbère',
+    label: 'CERBÈRE',
+    modelUrl: cerbereUrl,
+    iconUrl: publicUrl('image/cerbere.svg'),
     targetDimension: 1.8,
     stats: { egoTrip: 95, spleen: 60, legacy: 85, charisma: 70 },
     lyrics:
       "Toi, tu crois qu'la mort c'est rien, tu crois qu'c'est tout noir, pas d'sortie, trois têtes de chien au bout du couloir",
     tickerKeyword: 'trois têtes de chien',
-    idleAnimationName: 'Warrior_Idle',
   },
   {
     id: 'link',
