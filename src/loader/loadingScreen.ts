@@ -20,7 +20,6 @@ import {
 } from '../sections/02-les-reliques/reliquesPreview3D';
 import type { ReliquesCharacterData } from '../sections/02-les-reliques/reliquesData';
 import darthVaderHelmetUrl from '../3d-models/darth_vader_helmet.glb?url';
-import cctvCameraUrl from '../3d-models/cctv_camera.glb?url';
 import mpcUrl from '../3d-models/mpc.glb?url';
 import tapeUrl from '../3d-models/tape.glb?url';
 import { createLoadingController } from '../sections/01-hero/heroLoader';
@@ -32,7 +31,6 @@ import type { AudioManager } from '../audio/types';
 
 const MENU_PREVIEW_TARGET_DIMENSIONS = {
   RELIQUES: 2.25,
-  BIG_BROTHER: 1.46,
   MPC: 1.44,
   CRASH_OUTRO: 1.35,
 } as const;
@@ -81,7 +79,7 @@ export const createLoadingScreen = async (
 ): Promise<LoadingScreen> => {
   const gpuTier = detectGpuTier();
 
-  // ── Menu preview (4 GLBs) ───────────────────────────────────────────────────
+  // ── Menu preview (3 GLBs — correspond aux 3 items visibles du menu CRT) ────
   const menuPreviewQuality = getMenuPreviewQualityOptions(gpuTier, CRT_MODEL_PREVIEW_ASPECT);
   const menuPreview = createMenuPreview3D(
     renderer,
@@ -94,19 +92,13 @@ export const createLoadingScreen = async (
       },
       {
         menuIndex: 1,
-        modelUrl: cctvCameraUrl,
-        targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.BIG_BROTHER,
-        yOffset: 0.35,
-      },
-      {
-        menuIndex: 2,
         modelUrl: mpcUrl,
         targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.MPC,
         initialRotation: { x: Math.PI / 5 },
         yOffset: 0.35,
       },
       {
-        menuIndex: 3,
+        menuIndex: 2,
         modelUrl: tapeUrl,
         targetDimension: MENU_PREVIEW_TARGET_DIMENSIONS.CRASH_OUTRO,
         yOffset: 0.35,
@@ -115,7 +107,7 @@ export const createLoadingScreen = async (
     menuPreviewQuality,
   );
 
-  // Lance les 4 téléchargements GLB du menu immédiatement, en parallèle de l'animation
+  // Lance les 3 téléchargements GLB du menu immédiatement, en parallèle de l'animation
   menuPreview.preloadAll();
 
   // ── Préchargement des modèles de la section Reliques ───────────────────────
