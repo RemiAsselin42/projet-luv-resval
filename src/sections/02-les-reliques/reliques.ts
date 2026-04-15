@@ -55,7 +55,7 @@ const getCellIndexFromUV = (
 // ── Section initializer ───────────────────────────────────────────────────────
 
 const initReliquesSection: SectionInitializer = (context) => {
-  const { camera, renderer, crtManager, scrollManager } = context;
+  const { camera, renderer, crtManager, scrollManager, audioManager } = context;
   const sectionElement = document.querySelector(
     getSectionSelector(SECTION_IDS.RELIQUES),
   );
@@ -156,6 +156,7 @@ const initReliquesSection: SectionInitializer = (context) => {
     if (overCell !== cursorIsPointer) {
       document.body.style.cursor = overCell ? 'pointer' : '';
       cursorIsPointer = overCell;
+      if (overCell) audioManager.playUiFx();
     }
   };
 
@@ -234,6 +235,9 @@ const initReliquesSection: SectionInitializer = (context) => {
       crtManager.setModelColorMode(0);
       // Crossfade reliques → menu (canvas figé sur le dernier frame, 0.8s)
       fadeAnim?.kill();
+      // Garantit la visibilité si onEnterBack avait mis fade=0 (ex : restart rapide
+      // depuis le crash outro qui traverse la section en < 0.8 s, tuant l'anim de fade).
+      crtManager.setFade(1);
       crtManager.startCrossfade(crtView.getTexture());
       crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
       const proxy = { v: 0 };
