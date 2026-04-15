@@ -14,6 +14,7 @@ import type { SectionManager } from './sections/sectionManager';
 import { sectionLoaders } from './sections/registry';
 import { renderSectionsLayout } from './sections/dom';
 import { createLoadingScreen } from './loader/loadingScreen';
+import { RELIQUES_CHARACTERS } from './sections/02-les-reliques/reliquesData';
 import { createCrtManager } from './crt/crtManager';
 import type { CrtManager } from './crt/crtManager';
 import { createCrtZParallax } from './crt/crtZParallax';
@@ -69,10 +70,11 @@ const init = async (): Promise<void> => {
     renderer,
     scrollManager,
     audioManager,
+    RELIQUES_CHARACTERS,
   );
 
   // ── Pré-initialiser les sections pendant le loading ────────────────────────
-  const { menuPreview } = loadingScreen.getResources();
+  const { menuPreview, reliquesPreview3D } = loadingScreen.getResources();
   sectionsRoot.style.visibility = 'hidden';
 
   sectionManager = createSectionManager({
@@ -84,7 +86,7 @@ const init = async (): Promise<void> => {
     assetLoader,
     audioManager,
     crtManager,
-    extras: { menuPreview },
+    extras: { menuPreview, reliquesPreview3D },
   });
 
   // Hero et menu sont exclus du pre-init : leurs interactions CRT (clic/hover)

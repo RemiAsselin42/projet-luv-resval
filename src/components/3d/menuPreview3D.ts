@@ -131,6 +131,8 @@ export interface MenuPreviewItem {
   targetDimension: number;
   /** Rotation initiale statique appliquée au modèle (radians) */
   initialRotation?: { x?: number; y?: number; z?: number };
+  /** Décalage vertical appliqué après fitModel pour centrer visuellement le modèle (unités monde, positif = descend dans le viewport). */
+  yOffset?: number;
 }
 
 export interface MenuPreview3D {
@@ -376,6 +378,7 @@ export const createMenuPreview3D = (
         }
 
         fitModel(gltf.scene, item.targetDimension);
+        if (item.yOffset !== undefined) gltf.scene.position.y -= item.yOffset;
         if (item.initialRotation) {
           gltf.scene.rotation.x = item.initialRotation.x ?? 0;
           gltf.scene.rotation.y = item.initialRotation.y ?? 0;

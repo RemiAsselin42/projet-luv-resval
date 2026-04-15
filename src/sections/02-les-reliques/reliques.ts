@@ -9,7 +9,7 @@ import gsap from 'gsap';
 import type { SectionInitializer } from '../types';
 import { getSectionSelector, SECTION_IDS } from '../definitions';
 import { RELIQUES_CHARACTERS } from './reliquesData';
-import { createReliquesPreview3D } from './reliquesPreview3D';
+import { createReliquesPreview3D, type ReliquesPreview3D } from './reliquesPreview3D';
 import { createReliquesCrtView, CELL_HALF_U, CELL_HALF_V } from './reliquesCrtView';
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
@@ -65,8 +65,17 @@ const initReliquesSection: SectionInitializer = (context) => {
   }
 
   // ── Modules ────────────────────────────────────────────────────────────────
-  const preview3D = createReliquesPreview3D(renderer, RELIQUES_CHARACTERS);
-  preview3D.preloadAll();
+  // L'instance est créée et préchargée pendant le loading screen (via loadingScreen.ts)
+  // pour que fitModel() et la construction Three.js soient faits avant l'arrivée ici.
+  const preview3DFromExtras = context.extras?.reliquesPreview3D as ReliquesPreview3D | undefined;
+  if (!preview3DFromExtras) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[Reliques] reliquesPreview3D absent de context.extras — création en fallback (modèles non préchargés).',
+    );
+  }
+  const preview3D: ReliquesPreview3D =
+    preview3DFromExtras ?? createReliquesPreview3D(renderer, RELIQUES_CHARACTERS);
   const crtView = createReliquesCrtView(RELIQUES_CHARACTERS.map((c) => c.iconUrl));
 
   // ── État ───────────────────────────────────────────────────────────────────
