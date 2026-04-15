@@ -58,7 +58,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
     ACAP_LAYER,
     () => isAcapPlayingRef.value,
   );
-  const { syncCrtVideo } = crtSync;
+  const { syncCrtVideo, notifyVolumeChange } = crtSync;
 
   const mpcRoot = buildMpcDom();
   sectionElement.appendChild(mpcRoot);
@@ -95,7 +95,7 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   // ── Câblage des contrôles ─────────────────────────────────────────────────
   const cleanupLoops    = setupLoopButtons(mpcRoot, audioManager);
   const cleanupPlay     = setupPlayButton(mpcRoot, audioManager, ACAP_LAYER, isAcapPlayingRef, syncCrtVideo);
-  const cleanupKnob     = setupVolumeKnob(mpcRoot, { setMusicVolume: (v) => { currentVolume = v; audioManager.setMusicVolume(v); } }, padSounds);
+  const cleanupKnob     = setupVolumeKnob(mpcRoot, { setMusicVolume: (v) => { currentVolume = v; audioManager.setMusicVolume(v); notifyVolumeChange(v); } }, padSounds);
   const cleanupMute     = setupMuteButton(mpcRoot, audioManager);
   const cleanupStop     = setupStopButton(mpcRoot, audioManager, ACAP_LAYER, isAcapPlayingRef, syncCrtVideo, () => currentVolume, isStopActiveRef);
   const cleanupRecord   = setupRecordButton(mpcRoot);

@@ -3,7 +3,7 @@
 // synchronisée avec la position audio. Gère aussi le flou du CRT et la restauration
 // de l'écran quand on quitte ou revient dans la section.
 
-import type { VideoTexture } from 'three';
+import { DataTexture, RGBAFormat, UnsignedByteType, type VideoTexture } from 'three';
 import type { ScrollManager } from '../../core/scrollManager';
 import type { AudioManager } from '../../audio/types';
 import type { CrtManager } from '../../crt/crtManager';
@@ -18,6 +18,11 @@ export interface MpcCrtSync {
    * Ne fait rien si la MPC n'est pas dans le viewport.
    */
   syncCrtVideo: (cappellaOn: boolean) => void;
+  /**
+   * Notifie un changement de volume global (potard MPC).
+   * Si volume ≤ 0, affiche un écran noir avec bruit CRT à la place de la vidéo.
+   */
+  notifyVolumeChange: (volume: number) => void;
   /** Met à jour isMpcInViewport (à appeler depuis syncCrtVideo si besoin externe). */
   setInViewport: (inViewport: boolean) => void;
   /** Tue le ScrollTrigger CRT et libère la videoTexture + l'élément video. */
@@ -50,25 +55,62 @@ export const createMpcCrtSync = (
   // ── Vidéo Grünt (affichée floutée derrière la MPC) ────────────────────────
   const { video, videoTexture, dispose: disposeVideo } = createGruntVideoTexture();
 
+  // Valide que CLIP_DURATION_SECONDS est cohérent avec le fichier vidéo réel.
+  // Un écart > 5 s indiquerait que l'asset a changé sans que la constante soit mise à jour.
+  video.addEventListener('loadedmetadata', () => {
+    if (Math.abs(video.duration - CLIP_DURATION_SECONDS) > 5) {
+      console.warn(
+        `[MpcCrtSync] Durée vidéo inattendue : ${video.duration.toFixed(1)}s vs ${CLIP_DURATION_SECONDS}s attendu dans CLIP_DURATION_SECONDS`,
+      );
+    }
+  }, { once: true });
+
+  // Texture noire pour le mode "son coupé" : fond noir + bruit CRT natif du shader.
+  // DataTexture 1×1 RGBA (tous octets à 0 = noir opaque) — pas de canvas ni de contexte 2D.
+  const blackTexture = new DataTexture(new Uint8Array(4), 1, 1, RGBAFormat, UnsignedByteType);
+  blackTexture.needsUpdate = true;
+
   let isMpcInViewport = false;
+  let isAcapPlaying = false;
+  let currentVolume = 1;
 
   const setInViewport = (inViewport: boolean) => {
     isMpcInViewport = inViewport;
   };
 
-  /** Synchronise la vidéo Grünt sur le CRT quand la cappella est activée/désactivée. */
-  const syncCrtVideo = (cappellaOn: boolean) => {
+  /**
+   * Décide ce qu'affiche le CRT selon l'état courant :
+   *  - volume ≤ 0      → texture noire (bruit CRT natif visible)
+   *  - cappella active → vidéo Grünt synchronisée
+   *  - sinon           → texture noire (écran noir, bruit CRT natif)
+   */
+  const updateDisplay = () => {
     if (!isMpcInViewport) return;
-    if (cappellaOn) {
+    if (currentVolume <= 0) {
+      video.pause();
+      crtManager.setContentTexture(blackTexture);
+    } else if (isAcapPlaying) {
       const cappellaPos = audioManager.getMusicLayerPosition(acapLayer);
-      video.currentTime = CLIP_START_IN_SONG_SECONDS + cappellaPos % CLIP_DURATION_SECONDS;
+      video.currentTime = CLIP_START_IN_SONG_SECONDS + (cappellaPos % CLIP_DURATION_SECONDS);
       void video.play().catch(() => undefined);
       crtManager.setContentTexture(videoTexture);
     } else {
       video.pause();
-      // Écran noir : on remet la texture hero (invisible car blur=0.85)
-      crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
+      crtManager.setContentTexture(blackTexture);
     }
+  };
+
+  /** Synchronise la vidéo Grünt sur le CRT quand la cappella est activée/désactivée. */
+  const syncCrtVideo = (cappellaOn: boolean) => {
+    if (!isMpcInViewport) return;
+    isAcapPlaying = cappellaOn;
+    updateDisplay();
+  };
+
+  /** Met à jour le volume courant et rafraîchit l'affichage CRT si nécessaire. */
+  const notifyVolumeChange = (volume: number) => {
+    currentVolume = volume;
+    updateDisplay();
   };
 
   // ── ScrollTrigger : blur CRT quand la MPC est visible ─────────────────────
@@ -82,13 +124,14 @@ export const createMpcCrtSync = (
       crtManager.setFade(0.3);
       crtManager.setBlur(0.85);
       // z est animé par crtZParallax (voir main.ts)
+      updateDisplay();
     },
     onLeaveBack: () => {
       isMpcInViewport = false;
       video.pause();
       // Remet blur + fade uniquement : on quitte la MPC vers les Reliques.
-      // resetEffects() évité car il écrase uModelColorMode, que onEnterBack Reliques
-      // peut avoir déjà posé à 1 (ordre GSAP non garanti entre triggers adjacents).
+      // resetEffects() ET setContentTexture() sont évités : l'onEnterBack des Reliques
+      // peut avoir déjà posé sa propre texture (ordre GSAP non garanti entre triggers adjacents).
       crtManager.setBlur(0);
       crtManager.setFade(1);
     },
@@ -96,23 +139,27 @@ export const createMpcCrtSync = (
       isMpcInViewport = true;
       crtManager.setFade(0.3);
       crtManager.setBlur(0.85);
-      // Restaurer la vidéo si la cappella était active
-      if (getIsAcapPlaying()) {
-        syncCrtVideo(true);
-      }
+      isAcapPlaying = getIsAcapPlaying();
+      updateDisplay();
     },
     onLeave: () => {
       isMpcInViewport = false;
-      // Note : on ne reset pas le blur ici — crashOutro.onEnter fera resetEffects()
+      video.pause();
+      // Ne pas toucher la texture ici : crashOutro.transitionTimeline.onEnter (top 80%)
+      // a déjà posé videoTexture sur le CRT avant que ce trigger (bottom top) ne se déclenche.
+      // Écraser avec blackTexture provoquerait un éclair noir sur la transition.
+      // crashOutro.onEnter appellera resetEffects() pour nettoyer blur/fade.
     },
   });
 
   return {
     videoTexture,
     syncCrtVideo,
+    notifyVolumeChange,
     setInViewport,
     dispose: () => {
       crtTrigger.kill();
+      blackTexture.dispose();
       disposeVideo();
     },
   };
