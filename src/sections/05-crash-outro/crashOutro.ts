@@ -96,7 +96,11 @@ const initGruntSection: SectionInitializer = (context) => {
       end: 'top 20%',
       scrub: true,
       onEnter: () => {
-        // Positionner la vidéo dès le début de la transition
+        // Positionner la vidéo dès le début de la transition (top 80%).
+        // Contrainte d'ordre ScrollTrigger : ce trigger (top 80%) se déclenche AVANT
+        // le onLeave de mpcCrtSync (bottom top). mpcCrtSync.onLeave ne touche pas la
+        // texture pour cette raison — écraser avec blackTexture après ce point
+        // provoquerait un éclair noir. Symétrie du commentaire dans mpcCrtSync.onLeave.
         if (glitchPhase === 'idle') {
           const cappellaPos = audioManager.getMusicLayerPosition(CAPPELLA_LAYER);
           video.currentTime = CLIP_START_IN_SONG_SECONDS + cappellaPos % CLIP_DURATION_SECONDS;
@@ -106,11 +110,10 @@ const initGruntSection: SectionInitializer = (context) => {
         }
       },
       onLeaveBack: () => {
-        // Retour en arrière : pause vidéo, restaurer la texture hero,
-        // puis naviguer directement vers les reliques (bypass de la MPC).
+        // Retour en arrière : pause vidéo uniquement.
+        // Le scrub inverse automatiquement blur/fade/z vers les valeurs MPC.
+        // La MPC onEnterBack se charge de restaurer sa propre texture CRT.
         video.pause();
-        crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
-        scrollManager.scrollToSection(SECTION_IDS.RELIQUES);
       },
     },
   });
@@ -134,6 +137,16 @@ const initGruntSection: SectionInitializer = (context) => {
     end: 'bottom top',
     onEnter: () => {
       isInViewport = true;
+
+      // Garantie : quelle que soit la section précédente, la vidéo est toujours
+      // affichée sur le CRT quand le scroll entre pleinement dans l'outro.
+      crtManager.setContentTexture(videoTexture);
+      if (video.paused) {
+        const cappellaPos = audioManager.getMusicLayerPosition(CAPPELLA_LAYER);
+        video.currentTime = CLIP_START_IN_SONG_SECONDS + cappellaPos % CLIP_DURATION_SECONDS;
+        void video.play().catch(() => undefined);
+      }
+
       if (glitchPhase !== 'idle') return;
 
       // Fade-in progressif de toutes les layers audio
