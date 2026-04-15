@@ -13,6 +13,15 @@ import * as THREE from 'three';
 import type { ReliquesCharacterData } from './reliquesData';
 import { STAT_LABELS, STAT_DISPLAY } from './reliquesData';
 
+// ── Fallback texture ───────────────────────────────────────────────────────────
+// Créée une seule fois par module, partagée entre toutes les instances dégradées.
+// 1×1 RGBA noir opaque — évite un throw si getContext('2d') retourne null.
+const createBlackFallbackTexture = (): THREE.DataTexture => {
+  const tex = new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat);
+  tex.needsUpdate = true;
+  return tex;
+};
+
 // ── Dimensions du canvas ───────────────────────────────────────────────────────
 
 const CANVAS_W = 1024;
@@ -75,9 +84,9 @@ const STATS_BAR_H = 10;
 const STATS_ROW_H = 28;
 
 // Ticker lyrics : banderole défilante sous le modèle 3D
-// uModelRect = (0.47, 0.26, 0.87, 0.86)
+// uModelRect = (0.47, 0.26, 0.87, 0.94)
 //   → x canvas : 0.47×1024=481  à  0.87×1024=891  (centre 686, largeur 410)
-//   → bottom modèle : (1−0.26)×576 = 426px
+//   → bottom modèle : (1−0.26)×576 = 426px  (y0 inchangé → ticker stable)
 const TICKER_X = 481;          // bord gauche aligné avec le modèle
 const TICKER_W = 410;          // largeur égale à celle du modèle
 const TICKER_Y = 436;          // 10px sous le bottom du modèle (426+10)
@@ -158,7 +167,19 @@ export const createReliquesCrtView = (iconUrls: string[]): ReliquesCrtView => {
   canvas.height = CANVAS_H;
 
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('[ReliquesCrtView] Canvas 2D context unavailable');
+  if (!ctx) {
+    // eslint-disable-next-line no-console
+    console.warn('[ReliquesCrtView] Canvas 2D context unavailable — interface 2D désactivée.');
+    // Retourner immédiatement une implémentation dégradée : texture noire 1×1,
+    // draw() et getCellUVs() sont des no-ops sûrs.
+    const fallbackTexture = createBlackFallbackTexture();
+    return {
+      draw: () => { /* pas de contexte 2D, rien à dessiner */ },
+      getTexture: () => fallbackTexture,
+      getCellUVs: () => [],
+      dispose: () => { fallbackTexture.dispose(); },
+    };
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
