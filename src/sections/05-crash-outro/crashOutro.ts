@@ -71,6 +71,8 @@ const initGruntSection: SectionInitializer = (context) => {
     crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
     audioManager.resetExperienceAudio();
     audioManager.startExperience();
+    // Notifie les sections (ex : MPC) qu'elles doivent remettre leur UI à zéro.
+    window.dispatchEvent(new CustomEvent('experience-restart'));
   };
 
   const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart, () => audioManager.playUiFx());

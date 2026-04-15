@@ -102,10 +102,34 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   const cleanupPads     = setupPads(mpcRoot, padSounds);
   const cleanupKeyboard = setupKeyboardShortcuts(mpcRoot, padSounds, isStopActiveRef);
 
+  // Remet l'UI à zéro quand l'expérience redémarre depuis le crash outro.
+  // L'audio est déjà coupé par audioManager.resetExperienceAudio() ; il faut
+  // seulement synchroniser les classes CSS et les refs d'état des boutons.
+  const onExperienceRestart = () => {
+    mpcRoot.querySelectorAll<HTMLButtonElement>('.mpc-loop-btn--active').forEach((btn) => {
+      btn.classList.remove('mpc-loop-btn--active');
+    });
+    const playBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-play-btn');
+    if (playBtn) {
+      playBtn.classList.remove('mpc-play-btn--active');
+      playBtn.setAttribute('aria-label', 'Lecture');
+    }
+    isAcapPlayingRef.value = false;
+    const stopBtn = mpcRoot.querySelector<HTMLButtonElement>('.mpc-stop-btn');
+    if (stopBtn) {
+      stopBtn.classList.remove('mpc-stop-btn--active');
+      stopBtn.setAttribute('aria-label', 'Arrêt des boucles');
+    }
+    isStopActiveRef.value = false;
+    delete mpcRoot.dataset.stopped;
+  };
+  window.addEventListener('experience-restart', onExperienceRestart);
+
   return {
     // Toute la logique est event-driven — aucun traitement nécessaire par frame.
     update: () => {},
     dispose: () => {
+      window.removeEventListener('experience-restart', onExperienceRestart);
       crtSync.dispose();
       stopWaveform?.();
       ro.disconnect();
