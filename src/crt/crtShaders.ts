@@ -137,6 +137,11 @@ export const fragmentShader = /* glsl */ `
     // Affiche uniquement une ligne externe adaptative autour de la silhouette
     // projetée du modèle (intérieur transparent), puis applique les effets CRT.
     if (uModelTextureOpacity > 0.0) {
+      // uBlend module l'opacité du modèle pour que le crossfade 2D (menu → reliques)
+      // s'applique aussi aux objets 3D — sans ça, le modèle apparaît instantanément
+      // pendant que le contenu 2D est encore en train de fondre.
+      float effectiveModelOpacity = uModelTextureOpacity * uBlend;
+
       vec2 inRectStep = step(uModelRect.xy, uv.xy) * step(uv.xy, uModelRect.zw);
       float insideRect = inRectStep.x * inRectStep.y;
       vec2 modelUv = clamp(
@@ -160,19 +165,19 @@ export const fragmentShader = /* glsl */ `
 
       float outerEdge = clamp(maxNeighbor - modelSample.a, 0.0, 1.0);
       float outline = smoothstep(0.03, 0.25, outerEdge);
-      float outlineAlpha = outline * uModelTextureOpacity * insideRect;
+      float outlineAlpha = outline * effectiveModelOpacity * insideRect;
 
       // Lignes internes: détectées depuis le RGB du render target.
       // Le masque silhouette est rendu en noir, donc l'intérieur reste transparent.
       float sampleLuma = max(modelSample.r, max(modelSample.g, modelSample.b));
       float internalLine = smoothstep(0.35, 0.85, sampleLuma);
-      float internalLineAlpha = internalLine * modelSample.a * uModelTextureOpacity * insideRect;
+      float internalLineAlpha = internalLine * modelSample.a * effectiveModelOpacity * insideRect;
 
       float modelLineAlpha = max(outlineAlpha, internalLineAlpha);
 
       if (uModelColorMode > 0.5) {
         // Mode couleur (Reliques) : composite le RGB réel du modèle
-        float solidAlpha = modelSample.a * uModelTextureOpacity * insideRect;
+        float solidAlpha = modelSample.a * effectiveModelOpacity * insideRect;
         color = mix(color, modelSample.rgb, solidAlpha);
         // Contour externe blanc conservé pour la lisibilité
         color = mix(color, vec3(1.0), outlineAlpha);
