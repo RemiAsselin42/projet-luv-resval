@@ -186,6 +186,17 @@ export const getPlayButtonUVBounds = (): {
   };
 };
 
+/**
+ * Zone d'affichage du modèle 3D sur l'écran CRT, en coordonnées UV distordées (x0, y0, x1, y1).
+ * UV y=0 est en bas, y=1 en haut. Source de vérité partagée entre crtShader.ts,
+ * reliquesPreview3D.ts et reliquesCrtView.ts.
+ *
+ * @example
+ * // Dans crtShader.ts
+ * uModelRect: { value: new THREE.Vector4(...CRT_MODEL_RECT) }
+ */
+export const CRT_MODEL_RECT = [0.47, 0.26, 0.87, 0.94] as const;
+
 export const CRT_TITLE_CONFIG = {
   /** Title text to display */
   TEXT: 'LUV RESVAL',

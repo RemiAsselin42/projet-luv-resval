@@ -14,6 +14,7 @@ import {
   ANIM_EASE_IN,
   ANIM_EASE_OUT,
 } from '../../components/3d/modelUtils';
+import { CRT_MODEL_RECT } from '../../crt/crtConfig';
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
 
@@ -21,16 +22,17 @@ const RENDER_TARGET_SIZE = 512;
 const ROTATION_SPEED = 0.8; // rad/s
 
 // Éclairage de la mini-scène — ajuster ici pour tous les modèles à la fois.
-// Intensités calibrées pour les matériaux PBR (batman, minotaur) et non-PBR (anakin, link).
+// Intensités calibrées pour les matériaux PBR Metallic/Roughness (batman),
+// PBR Specular/Glossiness (cerbère) et non-PBR (anakin, link).
 const LIGHT_AMBIENT_INTENSITY = 1.8;   // Lumière de remplissage globale (évite les zones noires)
 const LIGHT_KEY_INTENSITY     = 4.0;   // Source principale (droite avant, angle 3/4)
 const LIGHT_FILL_INTENSITY    = 1.5;   // Contre-lumière gauche (adoucit les ombres dures)
 const LIGHT_RIM_INTENSITY     = 2.0;   // Lumière de bord bleue (séparation fond noir)
 const LIGHT_TOP_INTENSITY     = 1.2;   // Lumière de dessus (éclaire le casque / tête)
 
-// Aspect ratio de l'aire d'affichage dans le shader CRT.
-// uModelRect = (0.47, 0.26, 0.87, 0.86) → (width UV 0.40 × 16/9) / height UV 0.60
-const RELIQUES_PREVIEW_ASPECT = ((0.87 - 0.47) * (16 / 9)) / (0.86 - 0.26);
+// Aspect ratio de l'aire d'affichage dans le shader CRT — dérivé de CRT_MODEL_RECT.
+const RELIQUES_PREVIEW_ASPECT =
+  ((CRT_MODEL_RECT[2] - CRT_MODEL_RECT[0]) * (16 / 9)) / (CRT_MODEL_RECT[3] - CRT_MODEL_RECT[1]);
 
 // ── Types internes ─────────────────────────────────────────────────────────────
 
@@ -67,6 +69,19 @@ export interface ReliquesPreview3D {
   isLoading: () => boolean;
   /** Indique si le dernier chargement du personnage courant a échoué. */
   hasFailed: () => boolean;
+  /** Fraction [0–1] des personnages dont le chargement est terminé (succès ou échec). */
+  getPreloadProgress: () => number;
+  /**
+   * Libère tous les buffers GPU (géométries, matériaux, render target) et arrête les tweens.
+   *
+   * Cycle de vie : appeler une seule fois, à la destruction de la section.
+   * Après `dispose()`, aucune méthode de cette interface ne doit être appelée —
+   * le flag `isDisposed` interne interrompt silencieusement les callbacks asynchrones
+   * en vol (chargements GLB) mais les autres méthodes ne sont pas protégées.
+   *
+   * Note : les scènes GLB elles-mêmes NE sont PAS disposées ici car elles sont
+   * référencées par le `glbCache` global — c'est le cache qui en est propriétaire.
+   */
   dispose: () => void;
 }
 
@@ -271,7 +286,7 @@ export const createReliquesPreview3D = (
     if (isDisposed) return;
     for (const [, entry] of entries) {
       if (entry.group.visible && entry.proxy.opacity > 0) {
-        entry.group.rotation.y += ROTATION_SPEED * deltaSeconds;
+        entry.group.rotation.y -= ROTATION_SPEED * deltaSeconds;
         entry.mixer?.update(deltaSeconds);
       }
     }
@@ -343,6 +358,16 @@ export const createReliquesPreview3D = (
     renderTarget.dispose();
   };
 
+  const getPreloadProgress = (): number => {
+    if (characters.length === 0) return 1;
+    let settled = 0;
+    for (const c of characters) {
+      const entry = entries.get(c.id);
+      if (entry && (entry.ready || entry.failed)) settled += 1;
+    }
+    return settled / characters.length;
+  };
+
   return {
     loadCharacter,
     preloadAll,
@@ -353,6 +378,7 @@ export const createReliquesPreview3D = (
     getOpacity,
     isLoading,
     hasFailed,
+    getPreloadProgress,
     dispose,
   };
 };
