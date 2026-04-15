@@ -56,6 +56,7 @@ export const createCrashOutroOverlay = (
   onHoverChange: (which: 'restart' | 'see-more' | null) => void,
   btnLayout: BtnLayout,
   onRestart?: () => void,
+  onHoverEnter?: () => void,
 ): CrashOutroOverlay => {
   const container = document.createElement('div');
   container.className = 'crash-outro-overlay';
@@ -86,7 +87,7 @@ export const createCrashOutroOverlay = (
     btn.tabIndex = -1;
     positionBtn(btn, xRatio);
     btn.addEventListener('click', onClick);
-    btn.addEventListener('mouseenter', () => onHoverChange(hoverKey));
+    btn.addEventListener('mouseenter', () => { onHoverChange(hoverKey); onHoverEnter?.(); });
     btn.addEventListener('mouseleave', () => onHoverChange(null));
     btn.addEventListener('focus', () => {
       onHoverChange(hoverKey);

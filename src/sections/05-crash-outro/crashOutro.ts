@@ -13,8 +13,10 @@ import { CLIP_DURATION_SECONDS, CLIP_START_IN_SONG_SECONDS } from '../../constan
 import { CRT_Z } from '../../crt/crtZParallax';
 
 const CAPPELLA_LAYER = 5;
+const EVIL_SAMPLE_LAYER = 4;
+const ACAP_CURSED_LAYER = 6;
 const GLITCH_RAMP_SECONDS = 20; // durée du glitch progressif avant le crash total
-const AUDIO_FADE_IN_MS = 3000;
+const AUDIO_CROSSFADE_MS = 3000;
 const SPIKE_CHECK_INTERVAL = 0.016; // ~1 frame à 60fps
 const SPIKE_PROBABILITY = 0.05;
 const SPIKE_MAX_MAGNITUDE = 0.4;
@@ -62,11 +64,16 @@ const initGruntSection: SectionInitializer = (context) => {
 
   const handleRestart = () => {
     resetState();
+    // Restaure immédiatement la texture hero pour éviter que l'écran reste noir
+    // (errorCanvas vidé = canvas noir) pendant toute la durée de l'animation de scroll.
+    // Les callbacks des sections intermédiaires (mpc, reliques) prendront le relai
+    // au fil du défilement — reliques.onLeaveBack garantit fade=1 à l'arrivée.
+    crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
     audioManager.resetExperienceAudio();
     audioManager.startExperience();
   };
 
-  const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart);
+  const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart, () => audioManager.playUiFx());
 
   // ── État du glitch ────────────────────────────────────────────────────────
   type GlitchPhase = 'idle' | 'ramping' | 'crashed';
@@ -74,6 +81,13 @@ const initGruntSection: SectionInitializer = (context) => {
   let glitchAccum = 0;
   let spikeAccum = 0;
   let isInViewport = false;
+  // Indique si la cappella était active (volume > 0) au moment de l'entrée dans l'outro,
+  // pour savoir si on doit la restaurer lors du onLeaveBack.
+  let cappellaWasActive = false;
+  // Mémorise quels drums (layers 1-3) étaient actifs à l'entrée dans l'outro.
+  // Les drums sont fade-in à l'entrée pour accompagner les versions "cursed" ;
+  // au retour arrière on les remet exactement à leur état pré-outro (actifs ou silencieux).
+  const drumsWereActive: boolean[] = [false, false, false]; // indices relatifs aux layers 1,2,3
 
   // Timers des effets ponctuels (0.1s chacun)
   let blackoutTimer = 0;
@@ -149,10 +163,19 @@ const initGruntSection: SectionInitializer = (context) => {
 
       if (glitchPhase !== 'idle') return;
 
-      // Fade-in progressif de toutes les layers audio
-      [0, 1, 2, 3, CAPPELLA_LAYER].forEach((i) =>
-        audioManager.fadeMusicLayerIn(i, AUDIO_FADE_IN_MS),
-      );
+      // Cross-fade vers les versions "cursed" : EVIL_SAMPLE remplace SAMPLE,
+      // ACAP-CURSED remplace ACAP-luv-resval. Les drums sont forcés actifs pour
+      // accompagner le crash même si l'utilisateur ne les avait pas débloqués sur la MPC.
+      // On mémorise l'état pré-outro (cappella + drums) pour l'éventuel retour arrière.
+      cappellaWasActive = audioManager.getMusicLayerVolume(CAPPELLA_LAYER) > 0;
+      [1, 2, 3].forEach((i) => {
+        drumsWereActive[i - 1] = audioManager.getMusicLayerVolume(i) > 0;
+      });
+      audioManager.fadeMusicLayerOut(0, AUDIO_CROSSFADE_MS);                // SAMPLE → 0
+      audioManager.fadeMusicLayerIn(EVIL_SAMPLE_LAYER, AUDIO_CROSSFADE_MS); // EVIL_SAMPLE ↑
+      audioManager.fadeMusicLayerOut(CAPPELLA_LAYER, AUDIO_CROSSFADE_MS);   // ACAP → 0
+      audioManager.fadeMusicLayerIn(ACAP_CURSED_LAYER, AUDIO_CROSSFADE_MS); // ACAP-CURSED ↑
+      [1, 2, 3].forEach((i) => audioManager.fadeMusicLayerIn(i, AUDIO_CROSSFADE_MS));
 
       glitchPhase = 'ramping';
       glitchAccum = 0;
@@ -161,6 +184,15 @@ const initGruntSection: SectionInitializer = (context) => {
     onLeaveBack: () => {
       isInViewport = false;
       if (glitchPhase === 'ramping' || glitchPhase === 'crashed') {
+        // Inverse le cross-fade : remet SAMPLE en place, coupe les versions cursed.
+        // La cappella et les drums ne sont restaurés que s'ils étaient actifs à l'entrée.
+        audioManager.fadeMusicLayerIn(0, AUDIO_CROSSFADE_MS);                 // SAMPLE ↑
+        audioManager.fadeMusicLayerOut(EVIL_SAMPLE_LAYER, AUDIO_CROSSFADE_MS); // EVIL_SAMPLE → 0
+        if (cappellaWasActive) audioManager.fadeMusicLayerIn(CAPPELLA_LAYER, AUDIO_CROSSFADE_MS);
+        audioManager.fadeMusicLayerOut(ACAP_CURSED_LAYER, AUDIO_CROSSFADE_MS); // ACAP-CURSED → 0
+        [1, 2, 3].forEach((i) => {
+          if (!drumsWereActive[i - 1]) audioManager.fadeMusicLayerOut(i, AUDIO_CROSSFADE_MS);
+        });
         resetState();
       }
     },
@@ -237,7 +269,8 @@ const initGruntSection: SectionInitializer = (context) => {
           crtManager.setContentTexture(errorCanvas.texture);
           crtManager.setGlitch(CRASHED_GLITCH_LEVEL);
           video.pause();
-          for (let i = 0; i < 6; i++) audioManager.lockMusicLayer(i);
+          for (let i = 0; i < 7; i++) audioManager.lockMusicLayer(i);
+          audioManager.playCrashTypingFx();
           scrollManager.lock();
           errorCanvas.start(() => overlay.show());
         }
