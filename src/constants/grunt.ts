@@ -7,7 +7,7 @@
 export const GRUNT_VIDEO_URL = 'video/grunt-45.mp4';
 
 /** Durée réelle du clip grunt-45.mp4 en secondes. */
-export const CLIP_DURATION_SECONDS = 284;
+export const CLIP_DURATION_SECONDS = 240;
 
 /** Offset du clip en secondes. */
 export const CLIP_START_IN_SONG_SECONDS = 0.1;
