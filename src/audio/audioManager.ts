@@ -1,7 +1,8 @@
 // Gère toute la musique du site.
-// Six pistes audio jouent en boucle de façon synchronisée.
-// La piste de base est toujours active ; les autres (kick, snare, hihat, cappella)
-// se débloquent progressivement via les boutons de la MPC.
+// Sept pistes audio jouent en boucle de façon synchronisée.
+// La piste de base est toujours active ; les autres (kick, snare, hihat, evil sample,
+// cappella, cappella cursed) se débloquent progressivement via les boutons de la MPC
+// ou lors de la progression de l'expérience.
 // Gère aussi le volume global, le mute (touche M) et les effets sonores de l'interface.
 
 import { Howl, Howler } from 'howler';
@@ -23,13 +24,14 @@ const MUSIC_TRACKS = [
   `${MUSIC_BASE_PATH}DRUMS-loop-hihat.wav`,
   `${MUSIC_BASE_PATH}EVIL_SAMPLE.wav`,
   `${MUSIC_BASE_PATH}ACAP-luv-resval.wav`,
+  `${MUSIC_BASE_PATH}ACAP-CURSED-luv-resval.wav`,
 ] as const;
 
 /**
  * Crée le gestionnaire audio central du site.
  *
- * Démarre six pistes synchronisées (sample de fond, kick, snare, hihat, evil sample,
- * a cappella). La piste de base (layer 0) est toujours active ; les autres se débloquent
+ * Démarre sept pistes synchronisées (sample de fond, kick, snare, hihat, evil sample,
+ * a cappella, a cappella cursed). La piste de base (layer 0) est toujours active ; les autres se débloquent
  * via lockMusicLayer / unlockMusicLayer (boutons MPC, progression de l'expérience).
  * Gère aussi le volume global, le mute (touche M) et les effets sonores de l'interface.
  *
@@ -52,7 +54,7 @@ export const createAudioManager = (): AudioManager => {
   const _uiFx = new Howl({
     src: [`${FX_BASE_PATH}SFX-hover-link.wav`],
     volume: 0.5,
-    pool: 4,
+    pool: 10,
     preload: true,
   });
 
@@ -62,7 +64,7 @@ export const createAudioManager = (): AudioManager => {
   const startExperience = (): void => {
     if (_experienceStarted) return;
     _experienceStarted = true;
-    // Layers 1-5 sont verrouillées au départ : seul le débloquage explicite (loop/play buttons)
+    // Layers 1-6 sont verrouillées au départ : seul le débloquage explicite (loop/play buttons)
     // les rend audibles. Sans ça, setMusicVolume les passerait à volume 1 dès l'init du potard.
     _musicLayers.forEach((layer, i) => {
       layer.play();
@@ -103,6 +105,15 @@ export const createAudioManager = (): AudioManager => {
     layer.fade(currentVol, MUSIC_LAYER_VOLUME, durationMs);
   };
 
+  const fadeMusicLayerOut = (index: number, durationMs: number): void => {
+    const layer = _musicLayers[index];
+    if (!layer) return;
+    const currentVol = layer.volume() as number;
+    if (currentVol <= 0) return; // déjà silencieux, rien à faire
+    layer.fade(currentVol, 0, durationMs);
+    _lockedLayers.add(index);
+  };
+
   const lockMusicLayer = (index: number): void => {
     const layer = _musicLayers[index];
     if (!layer) return;
@@ -112,6 +123,17 @@ export const createAudioManager = (): AudioManager => {
 
   const playUiFx = (): void => {
     _uiFx.play();
+  };
+
+  const _typingFxTimers: ReturnType<typeof setTimeout>[] = [];
+
+  const playCrashTypingFx = (count = 20, intervalMs = 75): void => {
+    // Annule tout burst en cours avant d'en démarrer un nouveau
+    _typingFxTimers.forEach((id) => clearTimeout(id));
+    _typingFxTimers.length = 0;
+    for (let i = 0; i < count; i++) {
+      _typingFxTimers.push(setTimeout(() => { _uiFx.play(); }, i * intervalMs));
+    }
   };
 
   const setMusicVolume = (volume: number): void => {
@@ -142,7 +164,16 @@ export const createAudioManager = (): AudioManager => {
     return typeof pos === 'number' ? pos : 0;
   };
 
+  const getMusicLayerVolume = (index: number): number => {
+    const layer = _musicLayers[index];
+    if (!layer) return 0;
+    return layer.volume() as number;
+  };
+
   const dispose = (): void => {
+    // Annule les setTimeout du burst de frappe encore en attente
+    _typingFxTimers.forEach((id) => clearTimeout(id));
+    _typingFxTimers.length = 0;
     _musicLayers.forEach((layer) => layer.unload());
     _uiFx.unload();
   };
@@ -152,13 +183,16 @@ export const createAudioManager = (): AudioManager => {
     resetExperienceAudio,
     unlockMusicLayer,
     fadeMusicLayerIn,
+    fadeMusicLayerOut,
     lockMusicLayer,
     playUiFx,
+    playCrashTypingFx,
     setMusicVolume,
     toggleMute,
     isMuted,
     seekMusicLayer,
     getMusicLayerPosition,
+    getMusicLayerVolume,
     dispose,
   };
 };

@@ -49,8 +49,9 @@ Six pistes audio jouent en boucle de façon synchronisée depuis le début de l'
 
 - une piste de fond (sample principal, toujours active)
 - kick, snare, hi-hat (débloquables via le beatmaker)
-- un "evil sample" secondaire
 - la a cappella de Luv Resval
+- un "evil sample" secondaire (débloqué dans la section crash outro)
+- la a cappella cursed (débloquée dans la section crash outro)
 
 L'audioManager gère tout ça. Voici comment il fonctionne :
 
