@@ -84,6 +84,11 @@ const initReliquesSection: SectionInitializer = (context) => {
   let statsAnim: gsap.core.Tween | null = null;
   let fadeAnim: gsap.core.Tween | null = null;
   let isInViewport = false;
+  // Valeur courante du fade CRT géré par cette section.
+  // Permet à onEnterBack de reprendre là où l'animation s'était arrêtée
+  // (au lieu de repartir systématiquement de 0 et de produire un écran noir persistant
+  // lors d'allers-retours rapides entre Reliques et MPC sans snap).
+  let sectionFade = 0;
 
   // ── Sélection d'un personnage ──────────────────────────────────────────────
 
@@ -216,6 +221,7 @@ const initReliquesSection: SectionInitializer = (context) => {
       attachListeners();
       crtManager.resetEffects();
       crtManager.setModelColorMode(1);
+      sectionFade = 1;
       crtManager.setFade(1);
       crtManager.startCrossfade(crtManager.getHeroCanvasTexture());
       crtManager.setContentTexture(crtView.getTexture());
@@ -235,8 +241,7 @@ const initReliquesSection: SectionInitializer = (context) => {
       crtManager.setModelColorMode(0);
       // Crossfade reliques → menu (canvas figé sur le dernier frame, 0.8s)
       fadeAnim?.kill();
-      // Garantit la visibilité si onEnterBack avait mis fade=0 (ex : restart rapide
-      // depuis le crash outro qui traverse la section en < 0.8 s, tuant l'anim de fade).
+      sectionFade = 1;
       crtManager.setFade(1);
       crtManager.startCrossfade(crtView.getTexture());
       crtManager.setContentTexture(crtManager.getHeroCanvasTexture());
@@ -252,19 +257,25 @@ const initReliquesSection: SectionInitializer = (context) => {
       attachListeners();
       crtManager.setBlur(0);
       crtManager.setModelColorMode(1);
-      crtManager.setFade(0);
+      // Reprend depuis sectionFade plutôt que depuis 0 : évite l'écran noir persistant
+      // lors d'allers-retours rapides sans snap (la valeur courante est conservée entre
+      // les bounces grâce au kill dans onLeave et au tracking dans onUpdate ci-dessous).
+      crtManager.setFade(sectionFade);
       crtManager.setContentTexture(crtView.getTexture());
       selectCharacter(selectedIndex);
       fadeAnim?.kill();
-      const proxy = { v: 0 };
+      const proxy = { v: sectionFade };
       fadeAnim = gsap.to(proxy, {
         v: 1, duration: 0.8, ease: 'power2.inOut',
-        onUpdate: () => crtManager.setFade(proxy.v),
+        onUpdate: () => { sectionFade = proxy.v; crtManager.setFade(proxy.v); },
       });
     },
     onLeave: () => {
       isInViewport = false;
       detachListeners();
+      // Tue l'animation en cours pour éviter qu'elle continue à appeler setFade()
+      // alors que la MPC est active (ce qui interférait avec son propre setFade(0.3)).
+      fadeAnim?.kill();
       crtManager.setModelColorMode(0);
     },
   });
