@@ -62,16 +62,6 @@ export const initHeroSection = async (context: SectionContext<HeroExtras>): Prom
   const heroFocusElement = document.createElement('button');
   heroFocusElement.setAttribute('aria-label', 'Section Hero - Luv Resval');
   heroFocusElement.className = 'hero-focus-anchor';
-  heroFocusElement.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-    overflow: hidden;
-  `;
 
   if (heroElement) heroElement.appendChild(heroFocusElement);
 

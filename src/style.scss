@@ -776,6 +776,46 @@ button.mpc-record-btn {
   border: 0;
 }
 
+// ── Section Hero — navigation accessible invisible ──────────────────────────
+.hero-focus-anchor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.crt-menu-accessibility {
+  position: fixed;
+  top: 50%;
+  left: 8%;
+  transform: translateY(-50%);
+  z-index: 10;
+  pointer-events: none;
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  cursor: pointer;
+}
+
+.crt-menu-button {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: transparent;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  font-size: 1.2em;
+  text-align: left;
+  pointer-events: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
 // ── Section Crash Outro (05-crash-outro) ────────────────────────────────────
 // Boutons accessibles invisibles positionnés SOUS le canvas Three.js.
 // Les positions individuelles (left/bottom/transform) sont gérées en JS

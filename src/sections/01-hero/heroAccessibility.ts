@@ -20,18 +20,6 @@ export const createAccessibilityMenu = (
   container.setAttribute('aria-label', 'Menu de navigation CRT');
   container.className = 'crt-menu-accessibility';
 
-  Object.assign(container.style, {
-    position: 'fixed',
-    top: '50%',
-    left: '8%',
-    transform: 'translateY(-50%)',
-    zIndex: '10',
-    pointerEvents: 'none',
-    display: 'none',
-    flexDirection: 'column',
-    gap: '0',
-  });
-
   const buttons: HTMLButtonElement[] = [];
 
   for (const [index, item] of CRT_MENU_CONFIG.ITEMS.entries()) {
@@ -39,20 +27,6 @@ export const createAccessibilityMenu = (
     button.textContent = item;
     button.className = 'crt-menu-button';
     button.setAttribute('aria-label', `Naviguer vers ${item}`);
-
-    Object.assign(button.style, {
-      opacity: '0',
-      background: 'transparent',
-      border: 'none',
-      color: 'transparent',
-      padding: '0.5em 1em',
-      cursor: 'pointer',
-      fontSize: '1.2em',
-      textAlign: 'left',
-      pointerEvents: 'none',
-      outline: 'none',
-      transition: 'all 0.2s ease',
-    });
 
     button.tabIndex = -1;
 
