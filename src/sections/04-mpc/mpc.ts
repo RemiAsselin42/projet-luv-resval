@@ -69,8 +69,19 @@ const initBeatmakerSection: SectionInitializer = (context) => {
   const MPC_NATURAL_W = 388; // 372 + 2 * 8px padding body
   const MPC_NATURAL_H = 356; // hauteur naturelle approximative
   const applyScale = () => {
+    // Utiliser window.innerHeight évite la dépendance circulaire avec min-height:100vh :
+    // sectionElement.clientHeight est gonflé par le layout box naturel de la MPC
+    // (transform:scale ne réduit pas l'empreinte layout), ce qui suréstime availH.
+    const sectionStyle = getComputedStyle(sectionElement);
+    const paddingY =
+      parseFloat(sectionStyle.paddingTop) + parseFloat(sectionStyle.paddingBottom);
+    const gap = parseFloat(sectionStyle.gap) || 0;
+    const sectionContent = sectionElement.querySelector<HTMLElement>('.section-content');
+    const contentH = sectionContent ? sectionContent.offsetHeight : 0;
+
     const availW = sectionElement.clientWidth * 0.9;
-    const availH = sectionElement.clientHeight * 0.85;
+    const availH = window.innerHeight - paddingY - contentH - gap;
+
     const scale = Math.min(availW / MPC_NATURAL_W, availH / MPC_NATURAL_H, 1.8);
     mpcRoot.style.setProperty('--mpc-scale', scale.toFixed(3));
   };
