@@ -641,6 +641,7 @@ $_mpc-btn-shadow:
   justify-content: center;
   align-items: center;
   position: relative;
+  cursor: pointer;
 
   >p {
       transform: translateY(2px);
@@ -673,6 +674,7 @@ button.mpc-record-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 
   >.mpc-logo-awa-img {
   max-height: calc($btn-size / 2);

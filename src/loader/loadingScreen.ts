@@ -161,6 +161,7 @@ export const createLoadingScreen = async (
     } else {
       playButtonHovered = false;
     }
+    document.body.style.cursor = playButtonHovered ? 'pointer' : '';
   };
 
   const onClick = (event: MouseEvent): void => {
@@ -221,6 +222,7 @@ export const createLoadingScreen = async (
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('click', onClick);
       window.removeEventListener('resize', onViewportResize);
+      document.body.style.cursor = '';
       loadingCtrl.dispose();
     },
   };

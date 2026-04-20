@@ -79,9 +79,26 @@ export const initHeroSection = async (context: SectionContext<HeroExtras>): Prom
 
   // ── Interactions post-loading ──────────────────────────────────────────────
 
+  let cursorIsPointer = false;
+
+  const setCursor = (pointer: boolean): void => {
+    if (pointer === cursorIsPointer) return;
+    document.body.style.cursor = pointer ? 'pointer' : '';
+    cursorIsPointer = pointer;
+  };
+
   const onMouseMove = (event: MouseEvent): void => {
+    // Sections après le menu (big brother, mpc…) : ne pas interférer avec le curseur
+    if (menuElement instanceof HTMLElement && menuElement.getBoundingClientRect().bottom <= 0) {
+      setCursor(false);
+      hoverMenuIndex = -1;
+      return;
+    }
+
     if (!heroRaycaster.isAtMenuSection()) {
       hoverMenuIndex = -1;
+      // Section hero : pointer si la souris est sur la TV CRT
+      setCursor(heroRaycaster.isClickOnCrt(event.clientX, event.clientY));
       return;
     }
     try {
@@ -94,9 +111,12 @@ export const initHeroSection = async (context: SectionContext<HeroExtras>): Prom
       if (hoverMenuIndex !== prevHoverMenuIndex && hoverMenuIndex >= 0) {
         context.audioManager.playUiFx();
       }
+      // Section menu : pointer si on survole un item
+      setCursor(hoverMenuIndex >= 0);
     } catch (error) {
       console.warn('Raycasting hover detection failed:', error);
       hoverMenuIndex = -1;
+      setCursor(false);
     }
   };
 
@@ -158,6 +178,7 @@ export const initHeroSection = async (context: SectionContext<HeroExtras>): Prom
     dispose: () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('click', onClick);
+      setCursor(false);
       accessibilityMenu.dispose();
 
       if (heroFocusElement.parentNode) {
