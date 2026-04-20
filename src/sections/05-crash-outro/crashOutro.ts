@@ -37,7 +37,7 @@ const SECTION_END       = 'bottom top'; // bas de section (sortie vers le bas)
 
 // ── Section initializer ──────────────────────────────────────────────────────
 const initGruntSection: SectionInitializer = (context) => {
-  const { audioManager, scrollManager, crtManager } = context;
+  const { audioManager, scrollManager, crtManager, camera } = context;
 
   const sectionElement = document.querySelector(
     getSectionSelector(SECTION_IDS.CRASH_OUTRO),
@@ -86,7 +86,10 @@ const initGruntSection: SectionInitializer = (context) => {
     window.dispatchEvent(new CustomEvent('experience-restart'));
   };
 
-  const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, handleRestart, () => audioManager.playUiFx());
+  const overlay = createCrashOutroOverlay(scrollManager, errorCanvas.setHovered, BTN_LAYOUT, crtManager.mesh, camera, handleRestart, () => audioManager.playUiFx());
+
+  const onResize = () => overlay.reposition();
+  window.addEventListener('resize', onResize);
 
   // ── État du glitch ────────────────────────────────────────────────────────
   type GlitchPhase = 'idle' | 'ramping' | 'crashed';
@@ -301,6 +304,7 @@ const initGruntSection: SectionInitializer = (context) => {
       trigger.kill();
       errorCanvas.stop();
       overlay.dispose();
+      window.removeEventListener('resize', onResize);
       disposeVideo();
       errorCanvas.texture.dispose();
       // Déverrouille le scroll si la section est détruite alors que le crash était actif
