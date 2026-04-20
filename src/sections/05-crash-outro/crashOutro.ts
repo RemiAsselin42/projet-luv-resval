@@ -30,6 +30,11 @@ const MOSAIC_PROB     = 0.36;
 const SHIFT_X_MAX     = 0.15;
 const SHIFT_Y_MAX     = 0.10;
 
+// ── Seuils de scroll ─────────────────────────────────────────────────────────
+const TRANSITION_START  = 'top 80%';  // début du scrub blur/fade/z
+const TRANSITION_END    = 'top 20%';  // fin du scrub → début de la zone glitch
+const SECTION_END       = 'bottom top'; // bas de section (sortie vers le bas)
+
 // ── Section initializer ──────────────────────────────────────────────────────
 const initGruntSection: SectionInitializer = (context) => {
   const { audioManager, scrollManager, crtManager } = context;
@@ -43,6 +48,12 @@ const initGruntSection: SectionInitializer = (context) => {
 
   // ── Vidéo ─────────────────────────────────────────────────────────────────
   const { video, videoTexture, dispose: disposeVideo } = createGruntVideoTexture();
+
+  /** Positionne la vidéo en synchronie avec la cappella (loop-aware). */
+  const seekVideoToAudioPosition = () => {
+    const cappellaPos = audioManager.getMusicLayerPosition(CAPPELLA_LAYER);
+    video.currentTime = CLIP_START_IN_SONG_SECONDS + (cappellaPos % CLIP_DURATION_SECONDS);
+  };
 
   // ── Canvas 403 + overlay ──────────────────────────────────────────────────
   const errorCanvas = createError403Canvas();
@@ -108,8 +119,8 @@ const initGruntSection: SectionInitializer = (context) => {
   const transitionTimeline = gsap.timeline({
     scrollTrigger: {
       trigger: sectionElement,
-      start: 'top 80%',
-      end: 'top 20%',
+      start: TRANSITION_START,
+      end: TRANSITION_END,
       scrub: true,
       onEnter: () => {
         // Positionner la vidéo dès le début de la transition (top 80%).
@@ -118,9 +129,11 @@ const initGruntSection: SectionInitializer = (context) => {
         // texture pour cette raison — écraser avec blackTexture après ce point
         // provoquerait un éclair noir. Symétrie du commentaire dans mpcCrtSync.onLeave.
         if (glitchPhase === 'idle') {
-          const cappellaPos = audioManager.getMusicLayerPosition(CAPPELLA_LAYER);
-          video.currentTime = CLIP_START_IN_SONG_SECONDS + cappellaPos % CLIP_DURATION_SECONDS;
+          seekVideoToAudioPosition();
           crtManager.setContentTexture(videoTexture);
+          // Si le crossfade des Reliques a été interrompu (saut depuis le menu),
+          // uBlend peut rester à 0 et masquer videoTexture derrière le canvas hero.
+          crtManager.setCrossfade(1);
           crtManager.setPowerOn(1);
           void video.play().catch(() => undefined);
         }
@@ -149,17 +162,21 @@ const initGruntSection: SectionInitializer = (context) => {
   // ── Trigger lifecycle : glitch + audio (déclenché quand transition terminée) ─
   const trigger = scrollManager.createTrigger({
     trigger: sectionElement,
-    start: 'top 20%',
-    end: 'bottom top',
+    start: TRANSITION_END,
+    end: SECTION_END,
     onEnter: () => {
       isInViewport = true;
 
       // Garantie : quelle que soit la section précédente, la vidéo est toujours
       // affichée sur le CRT quand le scroll entre pleinement dans l'outro.
+      // Nettoie les effets MPC résiduels (blur=0.85, fade=0.3) en cas de saut direct
+      // depuis le menu sans passer par Reliques (cf. mpcCrtSync.ts — promesse non tenue).
+      crtManager.resetEffects();
+      crtManager.setFade(1);
+      crtManager.setCrossfade(1);
       crtManager.setContentTexture(videoTexture);
       if (video.paused) {
-        const cappellaPos = audioManager.getMusicLayerPosition(CAPPELLA_LAYER);
-        video.currentTime = CLIP_START_IN_SONG_SECONDS + cappellaPos % CLIP_DURATION_SECONDS;
+        seekVideoToAudioPosition();
         void video.play().catch(() => undefined);
       }
 

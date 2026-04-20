@@ -148,7 +148,7 @@ export const createMpcCrtSync = (
       // Ne pas toucher la texture ici : crashOutro.transitionTimeline.onEnter (top 80%)
       // a déjà posé videoTexture sur le CRT avant que ce trigger (bottom top) ne se déclenche.
       // Écraser avec blackTexture provoquerait un éclair noir sur la transition.
-      // crashOutro.onEnter appellera resetEffects() pour nettoyer blur/fade.
+      // crashOutro.onEnter appelle resetEffects() + setFade(1) pour nettoyer blur/fade.
     },
   });
 
